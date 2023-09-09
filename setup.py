@@ -23,7 +23,7 @@ setup(
     name=NAME,
     version=VERSION,
     description="aio support for OANDA v20 REST API (Unofficial)",
-    author="OANDA API Support",
+    author="Sean Champ",
     author_email="spchamp@users.noreply.github.com",
     url="https://github.com/fxtatools/pyfx_dispatch_oanda",
     keywords=["OpenAPI", "OpenAPI-Generator", "OANDA v20 REST API"],

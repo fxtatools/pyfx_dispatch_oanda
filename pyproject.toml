@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "pyfx.dispatch.oanda"
 version = "1.0.0"
-description = "OANDA v20 REST API"
-authors = ["OANDA API Support <api@oanda.com>"]
+description = "aio support for OANDA v20 REST API (Unofficial)"
+authors = ["Sean Champ <spchamp@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/GIT_USER_ID/GIT_REPO_ID"
+repository = "https://github.com/fxtatools/pyfx_dispatch_oanda"
 keywords = ["OpenAPI", "OpenAPI-Generator", "OANDA v20 REST API"]
 include = ["pyfx.dispatch.oanda/py.typed"]
 
