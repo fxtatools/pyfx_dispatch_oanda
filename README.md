@@ -52,11 +52,12 @@ pip install git+https://github.com/fxtatools/pyfx_dispatch_oanda.git
 
 ### Setuptools
 
-This project can be installed from source, using
-[Setuptools](http://pypi.python.org/pypi/setuptools).
+This project can be installed from source, using `pip`
 
 ```sh
-python setup.py install --user
+python -m venv env
+source env/bin/activate
+pip install -e .
 ```
 
 ### Verifying the Installation
