@@ -1,31 +1,46 @@
-[tool.poetry]
-name = "pyfx.dispatch.oanda"
-version = "1.0.0"
-description = "aio support for OANDA v20 REST API (Unofficial)"
-authors = ["Sean Champ <spchamp@users.noreply.github.com>"]
-license = "MIT"
-readme = "README.md"
-repository = "https://github.com/fxtatools/pyfx_dispatch_oanda"
-keywords = ["OpenAPI", "OpenAPI-Generator", "OANDA v20 REST API"]
-include = ["pyfx.dispatch.oanda/py.typed"]
-
-[tool.poetry.dependencies]
-python = "^3.7"
-
-urllib3 = ">= 1.25.3"
-python-dateutil = ">=2.8.2"
-aiohttp = ">= 3.8.4"
-pydantic = "^1.10.5, <2"
-aenum = ">=3.1.11"
-
-[tool.poetry.dev-dependencies]
-pytest = ">=7.2.1"
-tox = ">=3.9.0"
-flake8 = ">=4.0.0"
-
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project.urls]
+Home = "https://github.com/fxtatools/pyfx_dispatch_oanda"
+
+[project]
+name = "pyfx.dispatch.oanda"
+version = "1.0.0"
+description = "aio support for OANDA v20 REST API (Unofficial)"
+authors = [{ name = "Sean Champ", email = "spchamp@users.noreply.github.com" }]
+license = { file = "COPYING" }
+readme = "README.md"
+keywords = ["OpenAPI", "OpenAPI-Generator", "OANDA v20 REST API"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Private :: Do not Upload",
+]
+dependencies = [
+    "urllib3 >= 1.25.3",
+    "python-dateutil >=2.8.2",
+    "aiohttp >= 3.8.4",
+    "pydantic >1.10.5, <2",
+    "aenum >=3.1.11",
+]
+requires-python = "> 3.7"
+
+[project.optional-dependencies]
+dev = [
+    "pytest >=7.2.1",
+    "tox >=3.9.0",
+    "flake8 >=4.0.0",
+    "autopep8",
+    "pip-tools",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
 
 [tool.pylint.'MESSAGES CONTROL']
 extension-pkg-whitelist = "pydantic"

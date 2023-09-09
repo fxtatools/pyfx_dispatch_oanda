@@ -72,3 +72,4 @@ target/
 *.log
 *.orig
 *.rej
+requirements.local
