@@ -64,3 +64,11 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+*~
+.#*
+*#
+*.bak
+*.log
+*.orig
+*.rej
