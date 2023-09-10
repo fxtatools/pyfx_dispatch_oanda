@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Update host distutils
         run: |
-          if dpkg-query -W -f='${Status}' python${{ matrix.python-version }}-distutils 2>/dev/null | grep -c "ok installed" &>/dev/null; then sudo apt-get install --reinstall python${{ matrix.python-version }}-distutils; fi
+          if dpkg-query python${{ matrix.python-version }}-distutils 2>/dev/null; then sudo apt-get install --reinstall python${{ matrix.python-version }}-distutils; fi
       - name: Create virtual environment. Install project and dependencies
         run: |
           python -m venv env
