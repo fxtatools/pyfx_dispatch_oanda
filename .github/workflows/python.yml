@@ -23,7 +23,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Update host distutils
         run: |
-          apt-get install --reinstall python${{ matrix.python-version }}-distutils
+          sudo apt-get install --reinstall python${{ matrix.python-version }}-distutils
       - name: Create virtual environment. Install project and dependencies
         run: |
           python -m venv env
