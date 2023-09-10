@@ -1,0 +1,2 @@
+## runtime requirements for development
+-e ".[dev]"
