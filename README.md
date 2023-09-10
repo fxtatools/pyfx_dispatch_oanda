@@ -89,23 +89,37 @@ This example will access the Oanda v20 server for demo trading accounts,
 via HTTPS.
 
 ```python
-import pyfx.dispatch.oanda
+import pyfx.dispatch.oanda as dispatch
+import pyfx.dispatch.oanda.logging as dispatch_logging
 from pprint import pprint
 
-configuration = pyfx.dispatch.oanda.Configuration(
-    host = 'https://api-fxpractice.oanda.com/v3'
+# Configure a debug-level console logger for the API
+dispatch_logging.configure_debug_logger()
+
+# Set host information and token for API requests
+configuration = dispatch.Configuration(
+    host = 'https://api-fxpractice.oanda.com/v3',
+    access_token = '<private_api_token_>'
 )
 
-## Create an asynchronous context with an instance of the API client
-async with pyfx.dispatch.oanda.ApiClient(configuration) as api_client:
+api_response = None
+
+# Create an asynchronous context with an instance of the API client
+async with dispatch.ApiClient(configuration) as api_client:
     ## Create an instance of the API class
-    api_instance = pyfx.dispatch.oanda.DefaultApi(api_client)
+    api_instance = dispatch.DefaultApi(api_client)
     ## Authentication bearer token for Oanda v20
-    auth = 'Bearer <private_api_token>'
+    auth = 'Bearer %s' % configuration.access_token
     ## Send a single API request
     api_response = await api_instance.list_accounts(auth)
-    pprint(api_response)
+
+# print the result of the API query
+if api_response:
+    pprint(api_response.accounts)
+
 ```
+
+A more expansive example is available in [examples/quotes.py](examples/quotes.py)
 
 ## Documentation for API Endpoints
 
