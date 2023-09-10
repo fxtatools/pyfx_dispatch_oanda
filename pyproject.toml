@@ -43,9 +43,6 @@ namespaces = true
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
-addopts = [
-    "-rsxX", "-l", "--tb=short"
-]
 
 [tool.pylint.'MESSAGES CONTROL']
 extension-pkg-whitelist = "pydantic"
