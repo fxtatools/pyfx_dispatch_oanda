@@ -8,7 +8,7 @@ REQUIREMENTS_DEPS?=	pyproject.toml ${REQUIREMENTS_IN} $(wildcard requirements.lo
 PYVENV_DEPS?=		${PYVENV_DIR}/pyvenv.cfg
 PROJECT_PY?=		project.py
 
-PYVENV_BINDIR?=		$(shell if [ -e "${PYVENV_DIR}/Scripts" ]; then echo "${PYVENV_DIR}/Scripts"; else echo "${PYVENV_DIR}/bin"; fi)
+PYVENV_BINDIR?=		$(shell if [ -e "${PYVENV_DIR}/Scripts" ]; then readlink -f "${PYVENV_DIR}/Scripts"; else readlink -f "${PYVENV_DIR}/bin"; fi)
 
 FETCH?=			${PYTHON} ${PROJECT_PY} fetch
 FETCH_DEPS?=		${PROJECT_PY}
