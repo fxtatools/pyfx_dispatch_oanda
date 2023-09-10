@@ -44,7 +44,7 @@ namespaces = true
 [tool.pytest.ini_options]
 testpaths = ["test"]
 addopts = [
-    "--import-mode=importlib", "-rsxX", "-l", "--tb=short"
+    "-rsxX", "-l", "--tb=short"
 ]
 
 [tool.pylint.'MESSAGES CONTROL']
