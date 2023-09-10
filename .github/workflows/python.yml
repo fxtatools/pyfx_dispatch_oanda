@@ -34,4 +34,4 @@ jobs:
           env/bin/flake8 --extend-exclude src/pyfx/dispatch/oanda/models --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics src
       - name: Test with pytest
         run: |
-          env/bin/pytest test
+          SETUPTOOLS_USE_DISTUTILS=stdlib env/bin/pytest test
