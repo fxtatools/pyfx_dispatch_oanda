@@ -1,6 +1,8 @@
 ## GNU Makefile for PyFX::Dispatch::Oanda
 
-PYTHON?=		$(shell if which python3; then echo python3; else echo python; fi)
+ifndef PYTHON
+PYTHON:=		$(shell if [ -n "$(which python3)" ]; then echo python3; else echo python; fi)
+endif
 PYVENV_DIR?=		env
 REQUIREMENTS_IN?=	requirements.in
 REQUIREMENTS_TXT?=	requirements.txt
@@ -8,7 +10,9 @@ REQUIREMENTS_DEPS?=	pyproject.toml ${REQUIREMENTS_IN} $(wildcard requirements.lo
 PYVENV_DEPS?=		${PYVENV_DIR}/pyvenv.cfg
 PROJECT_PY?=		project.py
 
-PYVENV_BINDIR?=		$(shell if [ -e "${PYVENV_DIR}/Scripts" ]; then readlink -f "${PYVENV_DIR}/Scripts"; else readlink -f "${PYVENV_DIR}/bin"; fi)
+ifndef PYVENV_BINDIR
+PYVENV_BINDIR:=		$(shell if [ "$$(${PYTHON} -c 'import sys; print(sys.platform)')" = "win32" ]; then readlink -f "${PYVENV_DIR}/Scripts"; else readlink -f "${PYVENV_DIR}/bin"; fi)
+endif
 
 FETCH?=			${PYTHON} ${PROJECT_PY} fetch
 FETCH_DEPS?=		${PROJECT_PY}
