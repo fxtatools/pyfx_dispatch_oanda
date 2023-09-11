@@ -165,15 +165,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method cancel_order" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method cancel_order" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -331,15 +337,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method close_position" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method close_position" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -505,15 +517,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method close_trade" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method close_trade" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -674,15 +692,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method configure_account" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method configure_account" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -841,15 +865,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method create_order" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method create_order" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1003,15 +1033,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_account" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_account" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1158,15 +1194,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_account_changes" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_account_changes" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1312,15 +1354,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_account_instruments" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_account_instruments" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1462,15 +1510,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_account_summary" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_account_summary" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1612,15 +1666,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_base_prices" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_base_prices" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1758,15 +1818,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_external_user_info" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_external_user_info" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -1955,15 +2021,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_instrument_candles" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_instrument_candles" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -2191,15 +2263,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_instrument_candles_0" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_instrument_candles_0" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -2380,15 +2458,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_instrument_price" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_instrument_price" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -2544,15 +2628,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_instrument_price_range" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_instrument_price_range" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -2706,15 +2796,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_order" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_order" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -2859,15 +2955,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_position" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_position" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -3019,15 +3121,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_price_range" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_price_range" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -3196,15 +3304,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_prices" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_prices" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -3365,15 +3479,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_trade" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_trade" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -3523,15 +3643,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_transaction" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_transaction" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -3691,15 +3817,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_transaction_range" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_transaction_range" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -3858,15 +3990,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_transactions_since_id" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_transactions_since_id" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4008,15 +4146,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method get_user_info" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method get_user_info" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4160,15 +4304,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method instruments_instrument_order_book_get" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method instruments_instrument_order_book_get" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4319,15 +4469,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method instruments_instrument_position_book_get" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method instruments_instrument_position_book_get" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4463,15 +4619,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_accounts" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_accounts" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4601,15 +4763,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_open_positions" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_open_positions" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4748,15 +4916,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_open_trades" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_open_trades" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -4923,15 +5097,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_orders" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_orders" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -5089,15 +5269,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_pending_orders" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_pending_orders" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -5234,15 +5420,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_positions" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_positions" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -5406,15 +5598,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_trades" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_trades" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -5592,15 +5790,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method list_transactions" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method list_transactions" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -5773,15 +5977,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method replace_order" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method replace_order" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -5950,15 +6160,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method set_order_client_extensions" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method set_order_client_extensions" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -6124,15 +6340,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method set_trade_client_extensions" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method set_trade_client_extensions" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -6298,15 +6520,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method set_trade_dependent_orders" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method set_trade_dependent_orders" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -6472,15 +6700,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method stream_pricing" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method stream_pricing" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
@@ -6625,15 +6859,21 @@ class DefaultApi(object):
             ]
         )
 
-        # validate the arguments
-        for _key, _val in _params['kwargs'].items():
-            if _key not in _all_params:
-                raise ApiTypeError(
-                    "Got an unexpected keyword argument '%s'"
-                    " to method stream_transactions" % _key
-                )
-            _params[_key] = _val
-        del _params['kwargs']
+        if __debug__:
+            # validate the arguments
+            for _key, _val in _params['kwargs'].items():
+                if _key not in _all_params:
+                    raise ApiTypeError(
+                        "Got an unexpected keyword argument '%s'"
+                        " to method stream_transactions" % _key
+                    )
+                _params[_key] = _val
+            del _params['kwargs']
+        else:
+            kw = _params['kwargs']
+            del _params['kwargs']
+            _params.update(kw)
+            del kw
 
         _collection_formats = {}
 
