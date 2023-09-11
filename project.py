@@ -212,9 +212,7 @@ def ensure_env(options: ap.Namespace) -> int:
                 ## e.g error: [WinError 2] The system cannot find the file specified
                 ##
                 ## Known Workaround: Installing Python 3 using the Chocolatey
-                ## package management system. Optionally, adding the resulting
-                ## python installation dir to the front of MSYS env PATH     and
-                ## calling the local Makefile with PYTHON=python
+                ## package management system
                 with Popen(
                     pip_install_argv,
                     stdin=sys.stdin,
