@@ -10,9 +10,10 @@ REQUIREMENTS_DEPS?=	pyproject.toml ${REQUIREMENTS_IN} $(wildcard requirements.lo
 PYVENV_DEPS?=		${PYVENV_DIR}/pyvenv.cfg
 PROJECT_PY?=		project.py
 
-ifndef PYVENV_BINDIR
-PYVENV_BINDIR:=		$(shell if [ "$$(${PYTHON} -c 'import sys; print(sys.platform)')" = "win32" ]; then readlink -f "${PYVENV_DIR}/Scripts"; else readlink -f "${PYVENV_DIR}/bin"; fi)
+ifndef PYVENV_SUBDIR
+PYVENV_SUBDIR:=		$(shell if [ "$$(${PYTHON} -c 'import sys; print(sys.platform)')" = "win32" ]; then echo "Scripts"; else echo "bin"; fi)
 endif
+PYVENV_BINDIR?=		${PYVENV_DIR}/${PYVENV_SUBDIR}
 
 FETCH?=			${PYTHON} ${PROJECT_PY} fetch
 FETCH_DEPS?=		${PROJECT_PY}
