@@ -21,7 +21,7 @@ jobs:
       - name: Create virtual environment. Install project and dependencies
         run: |
           bash -c 'case "${{ matrix.os }}" in macos*) brew install make ;; esac'
-          gmake env sync
+          gmake env ci-sync
       - name: Lint with flake8
         run: |
           gmake lint

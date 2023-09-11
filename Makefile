@@ -39,7 +39,9 @@ ${REQUIREMENTS_TXT}: ${REQUIREMENTS_DEPS} ${PYVENV_BINDIR}/pip-compile
 	${PYVENV_BINDIR}/pip-compile -v --pip-args "${PIP_ARGS}" -o $@ ${REQUIREMENTS_DEPS}
 
 sync: ${REQUIREMENTS_TXT} ${PYVENV_BINDIR}/pip-compile
-## --no-build-isolation may prevent errors during tmpdir deletion on Windows
+	${PYVENV_BINDIR}/pip-sync --ask -v --pip-args "--no-build-isolation ${PIP_ARGS}"
+
+ci-sync: ${REQUIREMENTS_TXT} ${PYVENV_BINDIR}/pip-compile
 	${PYVENV_BINDIR}/pip-sync -v --pip-args "--no-build-isolation ${PIP_ARGS}"
 
 ${PYVENV_BINDIR}/flake8:

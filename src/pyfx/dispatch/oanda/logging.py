@@ -8,4 +8,5 @@ def configure_debug_logger():
     if not os.path.exists(debug_ini):
         sys.stderr.print("File not found: %s", debug_ini)
         return False
+    # configuring loggers without disabling those not listed in the configuration file
     return logging.config.fileConfig(debug_ini, disable_existing_loggers=False)
