@@ -11,10 +11,6 @@ from pprint import pprint
 import sys
 from typing import List, Optional
 
-dispatch_logging.configure_debug_logger()
-
-logger = logging.getLogger(__name__)
-
 def get_abspath(path: os.PathLike, dir_source: Optional[os.PathLike] = None) -> os.PathLike:
     '''utility function for get_config()'''
     if os.path.isabs(path):
@@ -39,8 +35,8 @@ host = https://api-fxpractice.oanda.com/v3
 ```
 
 For purpose of test under the __main__ section below,
-the INI file should be located at `account.ini` in 
-the same directory as this script. 
+the INI file should be located at `account.ini` in
+the same directory as this script.
 
 The file should be created with access permissions
 limiting all file operations to the creating user.
@@ -67,16 +63,18 @@ async def get_account_info(token: str, api: dispatch.DefaultApi) -> List:
 async def run_example(config: Optional[dispatch.Configuration] = None) -> List:
     '''print latest quotes for each available instrument in each Account'''
     cfg = config if config else dispatch.Configuration.get_default()
-    async with dispatch.ApiClient(cfg) as api_client:
+    loop = aio.get_event_loop()
+    async with dispatch.ApiClient(loop, cfg) as api_client:
         api_instance = dispatch.DefaultApi(api_client)
         auth = 'Bearer %s' % cfg.access_token
         api_response = await api_instance.list_accounts(auth)
+
         accts = api_response.accounts
         for acctinfo in accts:
             id = acctinfo.id
             print("[%s]" % id)
             api_response = await api_instance.get_account_instruments(auth, id)
-            instruments = api_response.instruments
+            instruments = api_response.data.instruments
             instruments.sort(key=lambda inst: inst.name)
             for inst in instruments:
                 sys.stdout.write(inst.display_name)
@@ -93,6 +91,11 @@ async def run_example(config: Optional[dispatch.Configuration] = None) -> List:
                     pass
 
 if __name__ == "__main__":
+    dispatch_logging.configure_debug_logger()
+    logger = logging.getLogger("pyfx.dispatch.oanda")
+    logger.info("Loading configuration")
     config = get_config("account.ini", __file__)
     dispatch.Configuration.set_default(config)
-    aio.get_event_loop().run_until_complete(run_example())
+    loop = aio.get_event_loop()
+    loop.run_until_complete(run_example())
+    loop.close()

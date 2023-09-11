@@ -19,7 +19,6 @@ import sys
 import urllib3
 
 import http.client as httplib
-from pyfx.dispatch.oanda.exceptions import ApiValueError
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {
     'multipleOf', 'maximum', 'exclusiveMaximum',

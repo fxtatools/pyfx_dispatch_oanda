@@ -18,6 +18,9 @@ PYVENV_BINDIR?=		${PYVENV_DIR}/${PYVENV_SUBDIR}
 FETCH?=			${PYTHON} ${PROJECT_PY} fetch
 FETCH_DEPS?=		${PROJECT_PY}
 
+FLAKE8_LINT_SELECT=E9,F63,F7,F82
+FLAKE8_LINT_IGNORE=E117,E128,E203,E127,E251,E252,E266,W291,E302,E303,E501
+
 all: sync
 
 env: ${PYVENV_DIR}/pyvenv.cfg
@@ -53,9 +56,11 @@ ${PYVENV_BINDIR}/pytest:
 lint: ${REQUIREMENTS_TXT} ${PYVENV_BINDIR}/flake8 ${PYVENV_BINDIR}/pytest
 ## adapted from .github/workflows/python.yml
 # stop the build if there are Python syntax errors or undefined names
-	${PYVENV_BINDIR}/flake8 --extend-exclude src/pyfx/dispatch/oanda/models --count --select=E9,F63,F7,F82 --show-source --statistics src
+	${PYVENV_BINDIR}/flake8 --extend-exclude src/pyfx/dispatch/oanda/models --count \
+		--select=${FLAKE8_LINT_SELECT} --show-source --statistics src
 # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-	${PYVENV_BINDIR}/flake8 --extend-exclude src/pyfx/dispatch/oanda/models --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics src
+	${PYVENV_BINDIR}/flake8 --extend-exclude src/pyfx/dispatch/oanda/models --count --exit-zero \
+		--extend-ignore ${FLAKE8_LINT_IGNORE} --max-line-length=127 --statistics src
 
 tests: ${REQUIREMENTS_TXT} ${PYVENV_BINDIR}/pytest
 	${PYVENV_BINDIR}/pytest test
