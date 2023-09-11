@@ -60,13 +60,12 @@ async def get_account_info(token: str, api: dispatch.DefaultApi) -> List:
     return response.accounts
 
 
-async def run_example(config: Optional[dispatch.Configuration] = None) -> List:
+async def run_example(config: dispatch.Configuration]) -> List:
     '''print latest quotes for each available instrument in each Account'''
-    cfg = config if config else dispatch.Configuration.get_default()
     loop = aio.get_event_loop()
-    async with dispatch.ApiClient(loop, cfg) as api_client:
+    async with dispatch.ApiClient(loop, config) as api_client:
         api_instance = dispatch.DefaultApi(api_client)
-        auth = 'Bearer %s' % cfg.access_token
+        auth = 'Bearer %s' % config.access_token
         api_response = await api_instance.list_accounts(auth)
 
         accts = api_response.accounts
@@ -97,5 +96,5 @@ if __name__ == "__main__":
     config = get_config("account.ini", __file__)
     dispatch.Configuration.set_default(config)
     loop = aio.get_event_loop()
-    loop.run_until_complete(run_example())
+    loop.run_until_complete(run_example(config))
     loop.close()

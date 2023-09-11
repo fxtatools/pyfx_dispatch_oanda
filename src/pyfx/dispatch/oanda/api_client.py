@@ -17,7 +17,7 @@ from .configuration import Configuration
 from .api_response import ApiResponse
 from . import models
 from . import rest
-from .exceptions import ApiValueError, ApiException
+from .exceptions import ApiValueError, ApiException, ProgramError
 from .request_constants import RequestMethod
 
 class ApiClient(object):
@@ -102,22 +102,26 @@ class ApiClient(object):
     def get_default(cls) -> "ApiClient":
         """Return the default ApiClient.
 
-        If a default has not been initialized, a new ApiClient
-        will be created using the default constructor
+        If a default has not been initialized, raises
+        a ProgramError
 
         :return: The ApiClient object.
         """
         if cls._default is None:
-            cls._default = ApiClient()
+            raise ProgramError("No default ApiClient configured")
         return cls._default
 
     @classmethod
     def set_default(cls, default: "ApiClient"):
         """Set the default ApiClient
 
+        If a default has been initialized, raises a ProgramError
         :param default: ApiClient object
         """
-        cls._default = default
+        if cls._default is None:
+            cls._default = default
+        else:
+            raise ProgramError("ApiClient default already configured")
 
     async def __call_api(
             self, resource_path, method, path_params=None,
