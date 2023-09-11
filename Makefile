@@ -1,7 +1,7 @@
 ## GNU Makefile for PyFX::Dispatch::Oanda
 
 ifndef PYTHON
-PYTHON:=		$(shell if [ -n "$(which python3)" ]; then echo python3; else echo python; fi)
+PYTHON:=		$(shell if [ -n "$(which python3 2>/dev/null)" ]; then echo python3; else echo python; fi)
 endif
 PYVENV_DIR?=		env
 REQUIREMENTS_IN?=	requirements.in
