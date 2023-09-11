@@ -5,7 +5,6 @@ import atexit
 import datetime
 from dateutil.parser import parse
 import json
-import logging
 import mimetypes
 import os
 import re
