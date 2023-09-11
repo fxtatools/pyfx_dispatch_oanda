@@ -1,6 +1,11 @@
 {
-        "[python]": {
-                "editor.insertSpaces": true,
-                "editor.tabSize": 4
-        }
+    "[python]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
+    "autopep8.args": [
+        "--ignore",
+        "E266,E226,E24,W50,W690,E501"
+    ],
+    "editor.tabSize": 8
 }
