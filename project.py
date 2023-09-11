@@ -56,6 +56,7 @@ import shlex
 from subprocess import Popen
 import sys
 from tempfile import TemporaryDirectory, TemporaryFile
+from time import sleep
 import traceback
 from urllib.error import HTTPError
 import urllib.request
@@ -179,8 +180,7 @@ def ensure_env(options: ap.Namespace) -> int:
         rc = 1
         with TemporaryDirectory(
             prefix=options.prog + ".",
-            dir=options.tmpdir,
-            ignore_cleanup_errors=sys.platform == "win32"
+            dir=options.tmpdir
         ) as tmpenv_dir:
             notify("Creating bootstrap venv %s", tmpenv_dir)
             if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
@@ -223,6 +223,8 @@ def ensure_env(options: ap.Namespace) -> int:
                 ) as proc:
                     proc.wait()
                     rc = proc.returncode
+                    ## pause for host synchronization before tmpdir deletion
+                    sleep(0)
             except Exception as e:
                 notify("Failed to create primary virtual environment: %s", e)
                 return 23
