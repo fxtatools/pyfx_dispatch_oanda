@@ -1,2 +1,2 @@
 ## runtime requirements for development
--e ".[dev]"
+-e ".[dev,socks]"

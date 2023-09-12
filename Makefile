@@ -1,7 +1,7 @@
 ## GNU Makefile for PyFX::Dispatch::Oanda
 
 ifndef PYTHON
-PYTHON:=		$(shell if [ -n "$(which python3 2>/dev/null)" ]; then echo python3; else echo python; fi)
+PYTHON:=		$(shell if python3 --version 1>/dev/null 2>/dev/null; then echo python3; else echo python; fi)
 endif
 PYVENV_DIR?=		env
 REQUIREMENTS_IN?=	requirements.in
@@ -29,6 +29,8 @@ env: ${PYVENV_DIR}/pyvenv.cfg
 projects: ${BUILDDIR}/oanda/pyproject.toml
 
 requirements: ${REQUIREMENTS_TXT}
+
+test: tests
 
 ${PYVENV_DIR}/pyvenv.cfg:
 	if ! [ -e "${PYVENV_DIR}" ]; then \

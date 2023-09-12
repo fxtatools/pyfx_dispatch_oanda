@@ -11,7 +11,7 @@ class TestDefaultApi(unittest.TestCase):
 
     def setUp(self):
         loop = aio.get_event_loop_policy().get_event_loop()
-        config = context.Configuration()
+        config = context.Configuration("https://beta.example.com")
         client = context.ApiClient(loop, config)
         self.api = context.DefaultApi(client)  # noqa: E501
 

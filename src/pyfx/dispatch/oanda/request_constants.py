@@ -5,17 +5,20 @@ from enum import Enum
 class RequestMethod(Enum):
     '''Enum class for HTTP request methods
 
-For request methods `GET` and `HEAD`, the instance method
-`isContentRequest()` returns `False`. For other request
-methods, `isContentRequest()` returns `True`'''
-    GET = 1
-    HEAD = 2
-    _CONTENT_OFFSET = HEAD << 1
-    OPTIONS = 1 << _CONTENT_OFFSET | _CONTENT_OFFSET
-    POST = 2 << _CONTENT_OFFSET | _CONTENT_OFFSET
-    PUT = 3 << _CONTENT_OFFSET | _CONTENT_OFFSET
-    PATCH = 4 << _CONTENT_OFFSET | _CONTENT_OFFSET
-    DELETE = 5 << _CONTENT_OFFSET | _CONTENT_OFFSET
+For request methods `GET`, `HEAD`,  and `OPTIONS`, the 
+`RequestMethod` instance method `isFormRequest()` returns
+`False`. 
 
-    def isContentRequest(self) -> bool:
-        return (self.value & self.__class__._CONTENT_OFFSET.value) != 0
+For `POST`, `PUT`, `PATCH`, and `DELETE` request methods, 
+`isFormRequest()` returns `True`'''
+    GET = 1
+    HEAD = 1 << 2
+    OPTIONS = 1 << 3
+    _FORM_OFFSET = 1 << 4
+    POST = 1 << _FORM_OFFSET + 1 | _FORM_OFFSET
+    PUT = 1 << _FORM_OFFSET + 2 | _FORM_OFFSET
+    PATCH = 1 << _FORM_OFFSET + 3 | _FORM_OFFSET
+    DELETE = 1 << _FORM_OFFSET + 4 | _FORM_OFFSET
+
+    def isFormRequest(self) -> bool:
+        return (self.value & self.__class__._FORM_OFFSET.value) != 0
