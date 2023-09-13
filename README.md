@@ -147,8 +147,6 @@ Subsequent of installing GNU make, the following tasks will be available:
 * `${MAKE} lint` : Ensure virtual environment; Run `flake8`
 * `${MAKE} tests` : Ensure virtual environment; Run `pytest`
 
-\* This project's `Makefile` is not compatible with BSD Make (bmake)
-
 ### Verifying the Installation
 
 The `lint` and `tests` tasks may be used to verify the installation using GNU Make,
@@ -263,7 +261,7 @@ of their associated institutions.
  -->
 <!--  LocalWords:  pyqt PyQt pyside PySide PyPI PythonQwt QtPy FIXME
  -->
-<!--  LocalWords:  pyproject toml gmake ZSH pytest Makefile bmake api
+<!--  LocalWords:  pyproject toml gmake ZSH pytest api
  -->
 <!--  LocalWords:  HTTPS IPython pprint async ApiClient DefaultApi auth
  -->
