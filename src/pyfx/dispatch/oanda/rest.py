@@ -63,7 +63,8 @@ class RESTClientObject(object):
                                              trust_env=True, retries=configuration.retries,
                                              limits=limits, verify=ssl_context)
 
-        ses = httpx.AsyncClient(transport = transport)
+        ## enabling follow_redirects after response "307", "Temporary Redirect"
+        ses = httpx.AsyncClient(transport = transport, follow_redirects=True)
         self.session = ses
 
     @property
@@ -132,14 +133,12 @@ class RESTClientObject(object):
 
         # For `POST`, `PUT`, `PATCH`, and `DELETE`
         if method.isFormRequest():
-            # Implementation Note:
-            #
             # All form requests in the v20 API will use json encoding
             # in the request body
             if body:
                 args['json'] = json.dumps(body)
             else:
-                raise ApiException("No request body provided for %s request" % method.name, url)
+                raise ApiException("No request body provided for %s request" % method.name)
 
         if __debug__:
             logger.debug("request %s %s", method.name, url)

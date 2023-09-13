@@ -455,28 +455,19 @@ class ApiClient(object):
         :param dict collection_formats: Parameter collection formats
         :return: Parameters as list of tuples, collections formatted
         """
-        new_params = []
-        if collection_formats is None:
-            collection_formats = {}
         for k, v in params.items() if isinstance(params, dict) else params:  # noqa: E501
-            if k in collection_formats:
-                collection_format = collection_formats[k]
-                if collection_format == 'multi':
-                    new_params.extend((k, value) for value in v)
-                else:
-                    if collection_format == 'ssv':
-                        delimiter = ' '
-                    elif collection_format == 'tsv':
-                        delimiter = '\t'
-                    elif collection_format == 'pipes':
-                        delimiter = '|'
-                    else:  # csv is the default
-                        delimiter = ','
-                    new_params.append(
-                        (k, delimiter.join(str(value) for value in v)))
+            if collection_formats:
+                ## csv is the single collection_formats kind used in the v20 API
+                ## - get_account_instruments_with_http_info
+                ## - get_prices_with_http_info
+                ## - get_transaction_range_with_http_info
+                ## - list_orders_with_http_info
+                ## - list_trades_with_http_info
+                ## - list_transactions_with_http_info
+                ## - stream_pricing_with_http_info
+                yield(k, ",".join(str(value) for value in v))
             else:
-                new_params.append((k, v))
-        return new_params
+                yield(k, v,)
 
     def parameters_to_url_query(self, params, collection_formats):
         """Get parameters as list of tuples, formatting collections.
@@ -486,8 +477,6 @@ class ApiClient(object):
         :return: URL query string (e.g. a=Hello%20World&b=123)
         """
         new_params = []
-        if collection_formats is None:
-            collection_formats = {}
         for k, v in params.items() if isinstance(params, dict) else params:  # noqa: E501
             if isinstance(v, (int, float)):
                 v = str(v)
@@ -495,26 +484,13 @@ class ApiClient(object):
                 v = str(v).lower()
             if isinstance(v, dict):
                 v = json.dumps(v)
-
-            if k in collection_formats:
-                collection_format = collection_formats[k]
-                if collection_format == 'multi':
-                    new_params.extend((k, value) for value in v)
-                else:
-                    if collection_format == 'ssv':
-                        delimiter = ' '
-                    elif collection_format == 'tsv':
-                        delimiter = '\t'
-                    elif collection_format == 'pipes':
-                        delimiter = '|'
-                    else:  # csv is the default
-                        delimiter = ','
-                    new_params.append(
-                        (k, delimiter.join(quote(str(value)) for value in v)))
+            if collection_formats:
+                ## csv is the single collection_formats kind used in the v20 API
+                new_params.append(
+                    (k, ",".join(quote(str(value), safe ='') for value in v)))
             else:
-                new_params.append((k, quote(str(v))))
-
-        return "&".join(["=".join(item) for item in new_params])
+                new_params.append((k, quote(str(v), safe='')))
+        return "&".join(k + "=" + v for (k, v) in new_params)
 
     def files_parameters(self, files=None):
         """Builds form parameters.

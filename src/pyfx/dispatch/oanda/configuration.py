@@ -6,6 +6,7 @@ import os
 import sys
 from typing import Optional, Union
 
+import sysconfig
 
 # JSON_SCHEMA_VALIDATION_KEYWORDS = {
 #     'multipleOf', 'maximum', 'exclusiveMaximum',
@@ -23,15 +24,6 @@ class Configuration(object):
 
     :param host: Base url.
     :param access_token: Access token.
-    :param server_index: Index to servers configuration.
-    :param server_variables: Mapping with string values to replace variables in
-      templated server configuration. The validation of enums is performed for
-      variables with defined enum values before.
-    :param server_operation_index: Mapping from operation ID to an index to server
-      configuration.
-    :param server_operation_variables: Mapping from operation ID to a mapping with
-      string values to replace variables in templated server configuration.
-      The validation of enums is performed for variables with defined enum values before.
     :param ssl_ca_cert: str - the path to a file of concatenated CA certificates
       in PEM format.
     """
@@ -39,24 +31,12 @@ class Configuration(object):
     _default = None
 
     def __init__(self, host: str,
-                 access_token=None,
-                 server_index=None, server_variables=None,
-                 server_operation_index=None, server_operation_variables=None,
-                 ssl_ca_cert=None,
+                 access_token=None, ssl_ca_cert=None,
                  ):
         """Constructor
         """
-        self._base_path = host
-        """Default Base url
-        """
-        self.server_index = 0 if server_index is None and host is None else server_index
-        self.server_operation_index = server_operation_index or {}
-        """Default server index
-        """
-        self.server_variables = server_variables or {}
-        self.server_operation_variables = server_operation_variables or {}
-        """Default server variables
-        """
+        self._host = host
+
         self.temp_folder_path = None
         """Temp file folder for downloading files
         """
@@ -74,18 +54,16 @@ class Configuration(object):
            Set this to false to skip verifying SSL certificate when calling API
            from https server.
         """
-        self.ssl_ca_cert = ssl_ca_cert
-        """Set this to customize the certificate file to verify the peer.
-        """
+        if ssl_ca_cert:
+            self.ssl_ca_cert = ssl_ca_cert
+        else:
+            certifi_cert = os.path.join(sysconfig.get_paths()['purelib'], "certifi", "cacert.pem")
+            self.ssl_ca_cert = os.path.abspath(certifi_cert) if os.path.exists(certifi_cert) else None
+
+        ## SSL certificate and key pair
         self.cert_file = None
-        """client certificate file
-        """
         self.key_file = None
-        """client key file
-        """
-        self.assert_hostname = None
-        """Set this to True/False to enable/disable SSL hostname verification.
-        """
+
         self.tls_server_name = None
         """SSL/TLS Server Name Indication (SNI)
            Set this to the SNI value expected by the server.
@@ -114,9 +92,7 @@ class Configuration(object):
         self.proxy_headers = None
         """Proxy headers
         """
-        self.safe_chars_for_path_param = ''
-        """Safe chars for path_param
-        """
+
         self.retries = 5
         """Connection retry limit [int], zero for none
         """
@@ -227,64 +203,10 @@ class Configuration(object):
                "SDK Package Version: 1.0.0".\
                format(env=sys.platform, pyversion=sys.version)
 
-    def get_host_settings(self):
-        """Gets an array of host settings
-
-        :return: An array of host settings
-        """
-        return [
-            {
-                'url': "/v3",
-                'description': "No description provided",
-            }
-        ]
-
-    def get_host_from_settings(self, index, variables=None, servers=None):
-        """Gets host URL based on the index and variables
-        :param index: array index of the host settings
-        :param variables: hash of variable and the corresponding value
-        :param servers: an array of host settings or None
-        :return: URL based on host settings
-        """
-        if index is None:
-            return self._base_path
-
-        variables = {} if variables is None else variables
-        servers = self.get_host_settings() if servers is None else servers
-
-        try:
-            server = servers[index]
-        except IndexError:
-            raise ValueError(
-                "Invalid index {0} when selecting the host settings. "
-                "Must be less than {1}".format(index, len(servers)))
-
-        url = server['url']
-
-        # go through variables and replace placeholders
-        for variable_name, variable in server.get('variables', {}).items():
-            used_value = variables.get(
-                variable_name, variable['default_value'])
-
-            if 'enum_values' in variable \
-                    and used_value not in variable['enum_values']:
-                raise ValueError(
-                    "The variable `{0}` in the host URL has invalid value "
-                    "{1}. Must be {2}.".format(
-                        variable_name, variables[variable_name],
-                        variable['enum_values']))
-
-            url = url.replace("{" + variable_name + "}", used_value)
-
-        return url
-
     @property
-    def host(self):
-        """Return generated host."""
-        return self.get_host_from_settings(self.server_index, variables=self.server_variables)
+    def host(self) -> str:
+        return self._host
 
     @host.setter
-    def host(self, value):
-        """Fix base path."""
-        self._base_path = value
-        self.server_index = None
+    def host(self, value: str):
+        self._host = value

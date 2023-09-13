@@ -177,7 +177,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -349,7 +349,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -529,7 +529,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -704,7 +704,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -877,7 +877,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -1045,7 +1045,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -1206,7 +1206,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -1366,7 +1366,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -1522,7 +1522,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -1678,7 +1678,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -1830,7 +1830,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -2033,7 +2033,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -2275,7 +2275,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -2470,7 +2470,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -2640,7 +2640,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -2808,7 +2808,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -2967,7 +2967,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -3133,7 +3133,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -3316,7 +3316,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -3491,7 +3491,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -3655,7 +3655,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -3829,7 +3829,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4002,7 +4002,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4158,7 +4158,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4316,7 +4316,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4481,7 +4481,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4631,7 +4631,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4775,7 +4775,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -4928,7 +4928,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -5109,7 +5109,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -5281,7 +5281,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -5432,7 +5432,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -5610,7 +5610,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -5802,7 +5802,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -5989,7 +5989,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -6172,7 +6172,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -6352,7 +6352,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -6532,7 +6532,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -6712,7 +6712,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
@@ -6871,7 +6871,7 @@ class DefaultApi(object):
             _params.update(kw)
             del kw
 
-        _collection_formats = {}
+        _collection_formats = None
 
         # process the path parameters
         _path_params = {}
