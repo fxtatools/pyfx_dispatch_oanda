@@ -1,5 +1,14 @@
 ## GNU Makefile for PyFX::Dispatch::Oanda
 
+ifndef OSKIND
+UNAME_O:=		$(shell uname -o)
+## _OSKIND_ defines the effective default
+_OSKIND_?=		NIX
+_OSKIND_Msys?=		NT
+_OSKIND_Cygwin?=	NT
+OSKIND:=		${_OSKIND_${UNAME_O}}
+endif
+
 ifndef PYTHON
 PYTHON:=		$(shell if python3 --version 1>/dev/null 2>/dev/null; then echo python3; else echo python; fi)
 endif
@@ -9,6 +18,12 @@ REQUIREMENTS_TXT?=	requirements.txt
 REQUIREMENTS_DEPS?=	pyproject.toml ${REQUIREMENTS_IN} $(wildcard requirements.local)
 PYVENV_DEPS?=		${PYVENV_DIR}/pyvenv.cfg
 PROJECT_PY?=		project.py
+
+## goal: configure pip-compile to use the same cache dir as pip
+PIP_CACHE?=		$(if ${OSKIND} == "NT",${LOCALAPPDATA}\\pip\\cache,${HOME}/.cache/pip)
+
+## values that may contain spaces within PIP_ARGS should be double quoted, generally
+PIP_ARGS?=		${PIP_PROXY_ARGS} --no-build-isolation -v --cache-dir="${PIP_CACHE}"
 
 ifndef PYVENV_SUBDIR
 PYVENV_SUBDIR:=		$(shell if [ "$$(${PYTHON} -c 'import sys; print(sys.platform)')" = "win32" ]; then echo "Scripts"; else echo "bin"; fi)
@@ -23,6 +38,10 @@ FLAKE8_LINT_IGNORE?=	E117,E127,E128,E203,E251,E252,E266,W291,E302,E303,E501
 FLAKE8_LINT_IGNORE_PER_FILE?=	__init__.py:F401
 
 all: sync
+
+check-vars:
+	@echo OSKIND: ${OSKIND}
+	@echo PIP_CACHE: ${PIP_CACHE}
 
 env: ${PYVENV_DIR}/pyvenv.cfg
 
@@ -42,13 +61,13 @@ ${PYVENV_BINDIR}/pip-compile: ${PYVENV_DIR}/pyvenv.cfg
 	if ! [ -e "${@}" ]; then ${PYVENV_BINDIR}/pip ${PIP_ARGS} install pip-tools; fi
 
 ${REQUIREMENTS_TXT}: ${REQUIREMENTS_DEPS} ${PYVENV_BINDIR}/pip-compile
-	${PYVENV_BINDIR}/pip-compile -v --pip-args "${PIP_ARGS}" -o $@ ${REQUIREMENTS_DEPS}
+	${PYVENV_BINDIR}/pip-compile -v --cache-dir "${PIP_CACHE}" --pip-args '${PIP_ARGS}' -o $@ ${REQUIREMENTS_DEPS}
 
 sync: ${REQUIREMENTS_TXT} ${PYVENV_BINDIR}/pip-compile
-	${PYVENV_BINDIR}/pip-sync --ask -v --pip-args "--no-build-isolation ${PIP_ARGS}"
+	${PYVENV_BINDIR}/pip-sync --ask -v --pip-args '${PIP_ARGS}'
 
 ci-sync: ${REQUIREMENTS_TXT} ${PYVENV_BINDIR}/pip-compile
-	${PYVENV_BINDIR}/pip-sync -v --pip-args "--no-build-isolation ${PIP_ARGS}"
+	${PYVENV_BINDIR}/pip-sync -v --pip-args '${PIP_ARGS}'
 
 ${PYVENV_BINDIR}/flake8:
 	if ! [ -e "${@}" ]; then ${PYVENV_BINDIR}/pip ${PIP_ARGS} install flake8; fi
