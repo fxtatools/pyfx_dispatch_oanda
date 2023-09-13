@@ -102,7 +102,7 @@ applications.
 For the `pyfx.dispatch.oanda` project, the PyQt5 and PySide2 frameworks may be
 supported for purposes of testing.
 
-Primary development is oriented to PySide2, with additional testing for PyQt6.
+Primary development is oriented to PySide6, with additional testing for PyQt6.
 
 ### Installation with GNU Make
 
