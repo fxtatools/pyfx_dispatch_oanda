@@ -61,7 +61,7 @@ ${PYTHON} quotes_async.py
 
 The [faulthandler][faulthandler] support may be of use when debugging at
 the application or platform scope. For instance, a segfault may occur in
-relation the Python IOCP support on Microsoft Windows, subsequent of an
+relation to the Python IOCP support on Microsoft Windows, subsequent of an
 abnormal exit from or termination of the asyncio event loop - as utilized
 together with asyncio networking support, in these examples - mainly, after
 an uncaught exception within some asyncio task.

@@ -77,7 +77,7 @@ the following optional components may be installed:
 * `app-pyside2` : PySide2 support (Qt5). On Microsoft Windows platforms,
    this feature may not be available outside of the `anaconda` framework,
    or when using PyPI with Python 3 releases previous to 3.10.
-* `app-pyside` : PySide6 support (Qt6)
+* `app-pyside6` : PySide6 support (Qt6)
 
 The following example shows how to install a subset of optional
 dependencies, within an existing Git working tree for this project.
