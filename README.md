@@ -79,14 +79,14 @@ the following optional components may be installed:
    or when using PyPI with Python 3 releases previous to 3.10.
 * `app-pyside` : PySide6 support (Qt6)
 
-To install a subset of the optional dependencies within an existing Git working
-tree for this project.
+The following example shows how to install a subset of optional
+dependencies, within an existing Git working tree for this project.
 
 **Example: Direct Installation With Optional Dependencies**
 ```sh
 if ! [ -e "env/pyvenv.cfg" ]; then python -m venv env; fi
 source env/bin/activate
-pip install -e .[socks, app-pyqt6, dev]
+pip install -e ".[socks, app-pyqt6, dev]"
 ```
 
 
@@ -104,8 +104,6 @@ supported for purposes of testing.
 
 Primary development is oriented to PySide2, with additional testing for PyQt6.
 
-(FIXME: Example needed, for illustrating QT_API, etc)
-
 ### Installation with GNU Make
 
 For purposes of development, the installation can be automated with
@@ -115,8 +113,8 @@ The `make sync` target will ensure a Python virtual environment
 is created, then installing this project and a set of optional
 dependencies within that virtual environment.
 
-For Python dependency selection, the `make sync` task will use set of
-optional dependencies specified in `requirements.in` as well as any
+For Python dependency selection, the `make sync` task will use the set
+of optional dependencies specified in `requirements.in` as well as any
 dependencies listed in the optional `requirements.local` file, if the
 file exists. Lastly, the main runtime dependencies will be selected
 as enumerated in `pyproject.toml`. The dependency selection is managed
