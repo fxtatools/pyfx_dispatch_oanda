@@ -148,12 +148,7 @@ class ApiClient(object):
             path_params = self.sanitize_for_serialization(path_params)
             path_params = self.parameters_to_tuples(path_params,
                                                     collection_formats)
-            for k, v in path_params:
-                # specified safe chars, encode everything
-                resource_path = resource_path.replace(
-                    '{%s}' % k,
-                    quote(str(v), safe=config.safe_chars_for_path_param)
-                )
+            resource_path = resource_path.format(**{k: quote(v, safe='') for k, v in path_params})
 
         # post parameters
         if post_params or files:
