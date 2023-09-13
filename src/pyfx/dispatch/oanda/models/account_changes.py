@@ -56,7 +56,7 @@ class AccountChanges(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> AccountChanges:
+    def from_json(cls, json_str: str) -> "AccountChanges":
         """Create an instance of AccountChanges from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

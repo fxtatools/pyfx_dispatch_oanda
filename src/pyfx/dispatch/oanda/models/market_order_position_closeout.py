@@ -45,7 +45,7 @@ class MarketOrderPositionCloseout(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarketOrderPositionCloseout:
+    def from_json(cls, json_str: str) -> "MarketOrderPositionCloseout":
         """Create an instance of MarketOrderPositionCloseout from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

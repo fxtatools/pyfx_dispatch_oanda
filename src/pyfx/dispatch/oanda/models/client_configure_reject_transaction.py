@@ -73,7 +73,7 @@ class ClientConfigureRejectTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ClientConfigureRejectTransaction:
+    def from_json(cls, json_str: str) -> "ClientConfigureRejectTransaction":
         """Create an instance of ClientConfigureRejectTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

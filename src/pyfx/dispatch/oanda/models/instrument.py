@@ -67,7 +67,7 @@ class Instrument(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Instrument:
+    def from_json(cls, json_str: str) -> "Instrument":
         """Create an instance of Instrument from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

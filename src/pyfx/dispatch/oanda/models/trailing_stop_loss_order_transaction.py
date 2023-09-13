@@ -102,7 +102,7 @@ class TrailingStopLossOrderTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> TrailingStopLossOrderTransaction:
+    def from_json(cls, json_str: str) -> "TrailingStopLossOrderTransaction":
         """Create an instance of TrailingStopLossOrderTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

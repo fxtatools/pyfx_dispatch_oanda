@@ -79,7 +79,7 @@ class OrderCancelReason(str, Enum):
     STOP_LOSS_ON_FILL_GUARANTEED_ASK_HALTED = 'STOP_LOSS_ON_FILL_GUARANTEED_ASK_HALTED'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderCancelReason:
+    def from_json(cls, json_str: str) -> "OrderCancelReason":
         """Create an instance of OrderCancelReason from a JSON string"""
         return OrderCancelReason(json.loads(json_str))
 

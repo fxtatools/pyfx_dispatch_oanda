@@ -35,7 +35,7 @@ class TradeState(str, Enum):
     CLOSE_WHEN_TRADEABLE = 'CLOSE_WHEN_TRADEABLE'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TradeState:
+    def from_json(cls, json_str: str) -> "TradeState":
         """Create an instance of TradeState from a JSON string"""
         return TradeState(json.loads(json_str))
 

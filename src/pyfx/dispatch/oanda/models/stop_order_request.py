@@ -101,7 +101,7 @@ class StopOrderRequest(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> StopOrderRequest:
+    def from_json(cls, json_str: str) -> "StopOrderRequest":
         """Create an instance of StopOrderRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

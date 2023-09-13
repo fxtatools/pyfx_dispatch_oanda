@@ -35,7 +35,7 @@ class TradePL(str, Enum):
     ZERO = 'ZERO'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TradePL:
+    def from_json(cls, json_str: str) -> "TradePL":
         """Create an instance of TradePL from a JSON string"""
         return TradePL(json.loads(json_str))
 

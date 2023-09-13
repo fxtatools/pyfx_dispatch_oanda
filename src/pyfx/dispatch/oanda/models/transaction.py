@@ -49,7 +49,7 @@ class Transaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Transaction:
+    def from_json(cls, json_str: str) -> "Transaction":
         """Create an instance of Transaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

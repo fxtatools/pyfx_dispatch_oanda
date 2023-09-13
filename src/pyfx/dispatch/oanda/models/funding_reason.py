@@ -37,7 +37,7 @@ class FundingReason(str, Enum):
     ADJUSTMENT = 'ADJUSTMENT'
 
     @classmethod
-    def from_json(cls, json_str: str) -> FundingReason:
+    def from_json(cls, json_str: str) -> "FundingReason":
         """Create an instance of FundingReason from a JSON string"""
         return FundingReason(json.loads(json_str))
 

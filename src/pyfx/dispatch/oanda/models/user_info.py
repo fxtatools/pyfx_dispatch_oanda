@@ -47,7 +47,7 @@ class UserInfo(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> UserInfo:
+    def from_json(cls, json_str: str) -> "UserInfo":
         """Create an instance of UserInfo from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

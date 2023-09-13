@@ -76,7 +76,7 @@ class OrderClientExtensionsModifyRejectTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderClientExtensionsModifyRejectTransaction:
+    def from_json(cls, json_str: str) -> "OrderClientExtensionsModifyRejectTransaction":
         """Create an instance of OrderClientExtensionsModifyRejectTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

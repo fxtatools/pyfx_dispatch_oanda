@@ -35,7 +35,7 @@ class InstrumentType(str, Enum):
     METAL = 'METAL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> InstrumentType:
+    def from_json(cls, json_str: str) -> "InstrumentType":
         """Create an instance of InstrumentType from a JSON string"""
         return InstrumentType(json.loads(json_str))
 

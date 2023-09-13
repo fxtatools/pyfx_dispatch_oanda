@@ -45,7 +45,7 @@ class GetInstrumentPrice200Response(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> GetInstrumentPrice200Response:
+    def from_json(cls, json_str: str) -> "GetInstrumentPrice200Response":
         """Create an instance of GetInstrumentPrice200Response from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

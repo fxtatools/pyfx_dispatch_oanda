@@ -47,7 +47,7 @@ class SetOrderClientExtensions200Response(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> SetOrderClientExtensions200Response:
+    def from_json(cls, json_str: str) -> "SetOrderClientExtensions200Response":
         """Create an instance of SetOrderClientExtensions200Response from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

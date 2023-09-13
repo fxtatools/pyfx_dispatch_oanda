@@ -82,7 +82,7 @@ class TrailingStopLossOrderRequest(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> TrailingStopLossOrderRequest:
+    def from_json(cls, json_str: str) -> "TrailingStopLossOrderRequest":
         """Create an instance of TrailingStopLossOrderRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

@@ -39,7 +39,7 @@ class WeeklyAlignment(str, Enum):
     SUNDAY = 'Sunday'
 
     @classmethod
-    def from_json(cls, json_str: str) -> WeeklyAlignment:
+    def from_json(cls, json_str: str) -> "WeeklyAlignment":
         """Create an instance of WeeklyAlignment from a JSON string"""
         return WeeklyAlignment(json.loads(json_str))
 

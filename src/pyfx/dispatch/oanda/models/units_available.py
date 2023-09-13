@@ -48,7 +48,7 @@ class UnitsAvailable(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> UnitsAvailable:
+    def from_json(cls, json_str: str) -> "UnitsAvailable":
         """Create an instance of UnitsAvailable from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

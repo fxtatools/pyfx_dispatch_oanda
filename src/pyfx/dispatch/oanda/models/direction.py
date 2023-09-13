@@ -34,7 +34,7 @@ class Direction(str, Enum):
     SHORT = 'SHORT'
 
     @classmethod
-    def from_json(cls, json_str: str) -> Direction:
+    def from_json(cls, json_str: str) -> "Direction":
         """Create an instance of Direction from a JSON string"""
         return Direction(json.loads(json_str))
 

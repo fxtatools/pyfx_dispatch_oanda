@@ -46,7 +46,7 @@ class ListOpenTrades200Response(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ListOpenTrades200Response:
+    def from_json(cls, json_str: str) -> "ListOpenTrades200Response":
         """Create an instance of ListOpenTrades200Response from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

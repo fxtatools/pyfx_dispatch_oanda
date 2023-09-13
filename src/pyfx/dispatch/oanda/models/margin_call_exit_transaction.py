@@ -60,7 +60,7 @@ class MarginCallExitTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarginCallExitTransaction:
+    def from_json(cls, json_str: str) -> "MarginCallExitTransaction":
         """Create an instance of MarginCallExitTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

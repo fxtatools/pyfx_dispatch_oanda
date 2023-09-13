@@ -60,7 +60,7 @@ class ResetResettablePLTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ResetResettablePLTransaction:
+    def from_json(cls, json_str: str) -> "ResetResettablePLTransaction":
         """Create an instance of ResetResettablePLTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

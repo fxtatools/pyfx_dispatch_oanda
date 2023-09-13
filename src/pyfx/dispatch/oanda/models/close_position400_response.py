@@ -50,7 +50,7 @@ class ClosePosition400Response(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ClosePosition400Response:
+    def from_json(cls, json_str: str) -> "ClosePosition400Response":
         """Create an instance of ClosePosition400Response from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

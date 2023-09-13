@@ -58,7 +58,7 @@ class Order(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Order:
+    def from_json(cls, json_str: str) -> "Order":
         """Create an instance of Order from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

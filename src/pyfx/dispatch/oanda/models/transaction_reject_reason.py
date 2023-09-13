@@ -175,7 +175,7 @@ class TransactionRejectReason(str, Enum):
     REPLACING_TRADE_ID_INVALID = 'REPLACING_TRADE_ID_INVALID'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TransactionRejectReason:
+    def from_json(cls, json_str: str) -> "TransactionRejectReason":
         """Create an instance of TransactionRejectReason from a JSON string"""
         return TransactionRejectReason(json.loads(json_str))
 

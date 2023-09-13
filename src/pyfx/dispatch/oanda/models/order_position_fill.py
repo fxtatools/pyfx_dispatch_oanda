@@ -36,7 +36,7 @@ class OrderPositionFill(str, Enum):
     DEFAULT = 'DEFAULT'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderPositionFill:
+    def from_json(cls, json_str: str) -> "OrderPositionFill":
         """Create an instance of OrderPositionFill from a JSON string"""
         return OrderPositionFill(json.loads(json_str))
 

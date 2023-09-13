@@ -35,7 +35,7 @@ class PositionAggregationMode(str, Enum):
     NET_SUM = 'NET_SUM'
 
     @classmethod
-    def from_json(cls, json_str: str) -> PositionAggregationMode:
+    def from_json(cls, json_str: str) -> "PositionAggregationMode":
         """Create an instance of PositionAggregationMode from a JSON string"""
         return PositionAggregationMode(json.loads(json_str))
 

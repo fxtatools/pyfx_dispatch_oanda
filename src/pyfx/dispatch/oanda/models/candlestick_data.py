@@ -47,7 +47,7 @@ class CandlestickData(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> CandlestickData:
+    def from_json(cls, json_str: str) -> "CandlestickData":
         """Create an instance of CandlestickData from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

@@ -34,7 +34,7 @@ class LimitOrderReason(str, Enum):
     REPLACEMENT = 'REPLACEMENT'
 
     @classmethod
-    def from_json(cls, json_str: str) -> LimitOrderReason:
+    def from_json(cls, json_str: str) -> "LimitOrderReason":
         """Create an instance of LimitOrderReason from a JSON string"""
         return LimitOrderReason(json.loads(json_str))
 

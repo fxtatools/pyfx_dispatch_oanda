@@ -60,7 +60,7 @@ class StopLossDetails(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> StopLossDetails:
+    def from_json(cls, json_str: str) -> "StopLossDetails":
         """Create an instance of StopLossDetails from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

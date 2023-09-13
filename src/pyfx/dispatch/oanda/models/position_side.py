@@ -51,7 +51,7 @@ class PositionSide(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> PositionSide:
+    def from_json(cls, json_str: str) -> "PositionSide":
         """Create an instance of PositionSide from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

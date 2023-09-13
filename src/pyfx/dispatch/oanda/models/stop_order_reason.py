@@ -34,7 +34,7 @@ class StopOrderReason(str, Enum):
     REPLACEMENT = 'REPLACEMENT'
 
     @classmethod
-    def from_json(cls, json_str: str) -> StopOrderReason:
+    def from_json(cls, json_str: str) -> "StopOrderReason":
         """Create an instance of StopOrderReason from a JSON string"""
         return StopOrderReason(json.loads(json_str))
 

@@ -89,7 +89,7 @@ class AccountSummary(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> AccountSummary:
+    def from_json(cls, json_str: str) -> "AccountSummary":
         """Create an instance of AccountSummary from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

@@ -51,7 +51,7 @@ class TradeOpen(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> TradeOpen:
+    def from_json(cls, json_str: str) -> "TradeOpen":
         """Create an instance of TradeOpen from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

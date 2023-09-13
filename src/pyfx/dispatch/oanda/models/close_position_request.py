@@ -48,7 +48,7 @@ class ClosePositionRequest(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ClosePositionRequest:
+    def from_json(cls, json_str: str) -> "ClosePositionRequest":
         """Create an instance of ClosePositionRequest from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

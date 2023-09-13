@@ -60,7 +60,7 @@ class ReopenTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ReopenTransaction:
+    def from_json(cls, json_str: str) -> "ReopenTransaction":
         """Create an instance of ReopenTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

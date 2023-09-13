@@ -48,7 +48,7 @@ class CalculatedPositionState(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> CalculatedPositionState:
+    def from_json(cls, json_str: str) -> "CalculatedPositionState":
         """Create an instance of CalculatedPositionState from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

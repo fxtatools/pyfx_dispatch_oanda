@@ -46,7 +46,7 @@ class UserInfoExternal(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> UserInfoExternal:
+    def from_json(cls, json_str: str) -> "UserInfoExternal":
         """Create an instance of UserInfoExternal from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

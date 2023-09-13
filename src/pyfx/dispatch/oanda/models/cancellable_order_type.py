@@ -38,7 +38,7 @@ class CancellableOrderType(str, Enum):
     TRAILING_STOP_LOSS = 'TRAILING_STOP_LOSS'
 
     @classmethod
-    def from_json(cls, json_str: str) -> CancellableOrderType:
+    def from_json(cls, json_str: str) -> "CancellableOrderType":
         """Create an instance of CancellableOrderType from a JSON string"""
         return CancellableOrderType(json.loads(json_str))
 

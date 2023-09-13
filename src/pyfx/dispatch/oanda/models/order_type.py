@@ -40,7 +40,7 @@ class OrderType(str, Enum):
     FIXED_PRICE = 'FIXED_PRICE'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderType:
+    def from_json(cls, json_str: str) -> "OrderType":
         """Create an instance of OrderType from a JSON string"""
         return OrderType(json.loads(json_str))
 

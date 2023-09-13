@@ -72,7 +72,7 @@ class TransactionFilter(str, Enum):
     RESET_RESETTABLE_PL = 'RESET_RESETTABLE_PL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TransactionFilter:
+    def from_json(cls, json_str: str) -> "TransactionFilter":
         """Create an instance of TransactionFilter from a JSON string"""
         return TransactionFilter(json.loads(json_str))
 

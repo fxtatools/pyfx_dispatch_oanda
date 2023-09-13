@@ -45,7 +45,7 @@ class QuoteHomeConversionFactors(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> QuoteHomeConversionFactors:
+    def from_json(cls, json_str: str) -> "QuoteHomeConversionFactors":
         """Create an instance of QuoteHomeConversionFactors from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

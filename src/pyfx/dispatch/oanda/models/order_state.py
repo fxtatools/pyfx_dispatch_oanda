@@ -36,7 +36,7 @@ class OrderState(str, Enum):
     CANCELLED = 'CANCELLED'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderState:
+    def from_json(cls, json_str: str) -> "OrderState":
         """Create an instance of OrderState from a JSON string"""
         return OrderState(json.loads(json_str))
 

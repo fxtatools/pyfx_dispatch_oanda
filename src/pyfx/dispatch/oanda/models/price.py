@@ -53,7 +53,7 @@ class Price(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> Price:
+    def from_json(cls, json_str: str) -> "Price":
         """Create an instance of Price from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

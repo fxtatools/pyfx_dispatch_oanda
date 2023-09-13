@@ -75,7 +75,7 @@ class DailyFinancingTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> DailyFinancingTransaction:
+    def from_json(cls, json_str: str) -> "DailyFinancingTransaction":
         """Create an instance of DailyFinancingTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

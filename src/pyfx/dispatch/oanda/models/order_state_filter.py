@@ -37,7 +37,7 @@ class OrderStateFilter(str, Enum):
     ALL = 'ALL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderStateFilter:
+    def from_json(cls, json_str: str) -> "OrderStateFilter":
         """Create an instance of OrderStateFilter from a JSON string"""
         return OrderStateFilter(json.loads(json_str))
 

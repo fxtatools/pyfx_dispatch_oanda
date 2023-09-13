@@ -35,7 +35,7 @@ class GuaranteedStopLossOrderMode(str, Enum):
     REQUIRED = 'REQUIRED'
 
     @classmethod
-    def from_json(cls, json_str: str) -> GuaranteedStopLossOrderMode:
+    def from_json(cls, json_str: str) -> "GuaranteedStopLossOrderMode":
         """Create an instance of GuaranteedStopLossOrderMode from a JSON string"""
         return GuaranteedStopLossOrderMode(json.loads(json_str))
 

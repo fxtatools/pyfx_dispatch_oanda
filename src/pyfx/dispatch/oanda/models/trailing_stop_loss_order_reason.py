@@ -35,7 +35,7 @@ class TrailingStopLossOrderReason(str, Enum):
     ON_FILL = 'ON_FILL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TrailingStopLossOrderReason:
+    def from_json(cls, json_str: str) -> "TrailingStopLossOrderReason":
         """Create an instance of TrailingStopLossOrderReason from a JSON string"""
         return TrailingStopLossOrderReason(json.loads(json_str))
 

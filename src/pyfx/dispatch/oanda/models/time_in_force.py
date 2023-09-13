@@ -37,7 +37,7 @@ class TimeInForce(str, Enum):
     IOC = 'IOC'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TimeInForce:
+    def from_json(cls, json_str: str) -> "TimeInForce":
         """Create an instance of TimeInForce from a JSON string"""
         return TimeInForce(json.loads(json_str))
 

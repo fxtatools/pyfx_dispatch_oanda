@@ -107,7 +107,7 @@ class StopLossOrder(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> StopLossOrder:
+    def from_json(cls, json_str: str) -> "StopLossOrder":
         """Create an instance of StopLossOrder from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

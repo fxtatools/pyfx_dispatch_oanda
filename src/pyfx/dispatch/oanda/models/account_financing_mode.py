@@ -35,7 +35,7 @@ class AccountFinancingMode(str, Enum):
     DAILY = 'DAILY'
 
     @classmethod
-    def from_json(cls, json_str: str) -> AccountFinancingMode:
+    def from_json(cls, json_str: str) -> "AccountFinancingMode":
         """Create an instance of AccountFinancingMode from a JSON string"""
         return AccountFinancingMode(json.loads(json_str))
 

@@ -35,7 +35,7 @@ class TakeProfitOrderReason(str, Enum):
     ON_FILL = 'ON_FILL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TakeProfitOrderReason:
+    def from_json(cls, json_str: str) -> "TakeProfitOrderReason":
         """Create an instance of TakeProfitOrderReason from a JSON string"""
         return TakeProfitOrderReason(json.loads(json_str))
 

@@ -49,7 +49,7 @@ class OrderBook(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderBook:
+    def from_json(cls, json_str: str) -> "OrderBook":
         """Create an instance of OrderBook from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

@@ -46,7 +46,7 @@ class MarketOrderTradeClose(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarketOrderTradeClose:
+    def from_json(cls, json_str: str) -> "MarketOrderTradeClose":
         """Create an instance of MarketOrderTradeClose from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

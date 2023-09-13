@@ -43,7 +43,7 @@ class OrderFillReason(str, Enum):
     MARKET_ORDER_DELAYED_TRADE_CLOSE = 'MARKET_ORDER_DELAYED_TRADE_CLOSE'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderFillReason:
+    def from_json(cls, json_str: str) -> "OrderFillReason":
         """Create an instance of OrderFillReason from a JSON string"""
         return OrderFillReason(json.loads(json_str))
 

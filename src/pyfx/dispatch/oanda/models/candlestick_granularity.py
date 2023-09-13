@@ -53,7 +53,7 @@ class CandlestickGranularity(str, Enum):
     M = 'M'
 
     @classmethod
-    def from_json(cls, json_str: str) -> CandlestickGranularity:
+    def from_json(cls, json_str: str) -> "CandlestickGranularity":
         """Create an instance of CandlestickGranularity from a JSON string"""
         return CandlestickGranularity(json.loads(json_str))
 

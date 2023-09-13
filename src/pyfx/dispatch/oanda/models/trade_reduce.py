@@ -50,7 +50,7 @@ class TradeReduce(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> TradeReduce:
+    def from_json(cls, json_str: str) -> "TradeReduce":
         """Create an instance of TradeReduce from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

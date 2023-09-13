@@ -35,7 +35,7 @@ class MarketOrderMarginCloseoutReason(str, Enum):
     REGULATORY_MARGIN_CHECK_VIOLATION = 'REGULATORY_MARGIN_CHECK_VIOLATION'
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarketOrderMarginCloseoutReason:
+    def from_json(cls, json_str: str) -> "MarketOrderMarginCloseoutReason":
         """Create an instance of MarketOrderMarginCloseoutReason from a JSON string"""
         return MarketOrderMarginCloseoutReason(json.loads(json_str))
 

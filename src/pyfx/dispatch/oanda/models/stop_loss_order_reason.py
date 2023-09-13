@@ -35,7 +35,7 @@ class StopLossOrderReason(str, Enum):
     ON_FILL = 'ON_FILL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> StopLossOrderReason:
+    def from_json(cls, json_str: str) -> "StopLossOrderReason":
         """Create an instance of StopLossOrderReason from a JSON string"""
         return StopLossOrderReason(json.loads(json_str))
 

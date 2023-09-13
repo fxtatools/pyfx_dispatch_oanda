@@ -56,7 +56,7 @@ class CalculatedAccountState(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> CalculatedAccountState:
+    def from_json(cls, json_str: str) -> "CalculatedAccountState":
         """Create an instance of CalculatedAccountState from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

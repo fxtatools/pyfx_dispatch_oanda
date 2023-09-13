@@ -34,7 +34,7 @@ class MarketIfTouchedOrderReason(str, Enum):
     REPLACEMENT = 'REPLACEMENT'
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarketIfTouchedOrderReason:
+    def from_json(cls, json_str: str) -> "MarketIfTouchedOrderReason":
         """Create an instance of MarketIfTouchedOrderReason from a JSON string"""
         return MarketIfTouchedOrderReason(json.loads(json_str))
 

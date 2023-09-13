@@ -46,7 +46,7 @@ class ClientExtensions(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ClientExtensions:
+    def from_json(cls, json_str: str) -> "ClientExtensions":
         """Create an instance of ClientExtensions from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

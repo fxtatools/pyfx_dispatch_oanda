@@ -67,7 +67,7 @@ class TransactionType(str, Enum):
     RESET_RESETTABLE_PL = 'RESET_RESETTABLE_PL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TransactionType:
+    def from_json(cls, json_str: str) -> "TransactionType":
         """Create an instance of TransactionType from a JSON string"""
         return TransactionType(json.loads(json_str))
 

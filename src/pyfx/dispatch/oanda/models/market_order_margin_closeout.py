@@ -54,7 +54,7 @@ class MarketOrderMarginCloseout(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarketOrderMarginCloseout:
+    def from_json(cls, json_str: str) -> "MarketOrderMarginCloseout":
         """Create an instance of MarketOrderMarginCloseout from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

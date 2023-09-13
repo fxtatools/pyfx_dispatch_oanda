@@ -47,7 +47,7 @@ class PositionFinancing(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> PositionFinancing:
+    def from_json(cls, json_str: str) -> "PositionFinancing":
         """Create an instance of PositionFinancing from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

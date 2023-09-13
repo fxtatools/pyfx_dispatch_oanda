@@ -37,7 +37,7 @@ class OrderTriggerCondition(str, Enum):
     MID = 'MID'
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderTriggerCondition:
+    def from_json(cls, json_str: str) -> "OrderTriggerCondition":
         """Create an instance of OrderTriggerCondition from a JSON string"""
         return OrderTriggerCondition(json.loads(json_str))
 

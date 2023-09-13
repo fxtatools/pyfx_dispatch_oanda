@@ -45,7 +45,7 @@ class PriceBucket(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> PriceBucket:
+    def from_json(cls, json_str: str) -> "PriceBucket":
         """Create an instance of PriceBucket from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

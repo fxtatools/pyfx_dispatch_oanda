@@ -33,7 +33,7 @@ class FixedPriceOrderReason(str, Enum):
     PLATFORM_ACCOUNT_MIGRATION = 'PLATFORM_ACCOUNT_MIGRATION'
 
     @classmethod
-    def from_json(cls, json_str: str) -> FixedPriceOrderReason:
+    def from_json(cls, json_str: str) -> "FixedPriceOrderReason":
         """Create an instance of FixedPriceOrderReason from a JSON string"""
         return FixedPriceOrderReason(json.loads(json_str))
 

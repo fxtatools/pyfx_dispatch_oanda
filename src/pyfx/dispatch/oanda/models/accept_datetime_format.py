@@ -34,7 +34,7 @@ class AcceptDatetimeFormat(str, Enum):
     RFC3339 = 'RFC3339'
 
     @classmethod
-    def from_json(cls, json_str: str) -> AcceptDatetimeFormat:
+    def from_json(cls, json_str: str) -> "AcceptDatetimeFormat":
         """Create an instance of AcceptDatetimeFormat from a JSON string"""
         return AcceptDatetimeFormat(json.loads(json_str))
 

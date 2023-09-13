@@ -35,7 +35,7 @@ class PriceStatus(str, Enum):
     INVALID = 'invalid'
 
     @classmethod
-    def from_json(cls, json_str: str) -> PriceStatus:
+    def from_json(cls, json_str: str) -> "PriceStatus":
         """Create an instance of PriceStatus from a JSON string"""
         return PriceStatus(json.loads(json_str))
 

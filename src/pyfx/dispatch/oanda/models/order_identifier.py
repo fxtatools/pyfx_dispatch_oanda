@@ -45,7 +45,7 @@ class OrderIdentifier(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> OrderIdentifier:
+    def from_json(cls, json_str: str) -> "OrderIdentifier":
         """Create an instance of OrderIdentifier from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

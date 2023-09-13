@@ -102,7 +102,7 @@ class TakeProfitOrderTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> TakeProfitOrderTransaction:
+    def from_json(cls, json_str: str) -> "TakeProfitOrderTransaction":
         """Create an instance of TakeProfitOrderTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

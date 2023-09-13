@@ -60,7 +60,7 @@ class CloseTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> CloseTransaction:
+    def from_json(cls, json_str: str) -> "CloseTransaction":
         """Create an instance of CloseTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

@@ -125,7 +125,7 @@ class MarketOrderRejectTransaction(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarketOrderRejectTransaction:
+    def from_json(cls, json_str: str) -> "MarketOrderRejectTransaction":
         """Create an instance of MarketOrderRejectTransaction from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

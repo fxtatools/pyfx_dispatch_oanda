@@ -36,7 +36,7 @@ class TradeStateFilter(str, Enum):
     ALL = 'ALL'
 
     @classmethod
-    def from_json(cls, json_str: str) -> TradeStateFilter:
+    def from_json(cls, json_str: str) -> "TradeStateFilter":
         """Create an instance of TradeStateFilter from a JSON string"""
         return TradeStateFilter(json.loads(json_str))
 

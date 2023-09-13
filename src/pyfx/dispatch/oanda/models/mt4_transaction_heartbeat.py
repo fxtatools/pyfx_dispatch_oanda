@@ -45,7 +45,7 @@ class MT4TransactionHeartbeat(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> MT4TransactionHeartbeat:
+    def from_json(cls, json_str: str) -> "MT4TransactionHeartbeat":
         """Create an instance of MT4TransactionHeartbeat from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

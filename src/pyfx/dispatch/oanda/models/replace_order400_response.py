@@ -49,7 +49,7 @@ class ReplaceOrder400Response(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> ReplaceOrder400Response:
+    def from_json(cls, json_str: str) -> "ReplaceOrder400Response":
         """Create an instance of ReplaceOrder400Response from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 

@@ -47,7 +47,7 @@ class StreamPricing200Response(BaseModel):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_json(cls, json_str: str) -> StreamPricing200Response:
+    def from_json(cls, json_str: str) -> "StreamPricing200Response":
         """Create an instance of StreamPricing200Response from a JSON string"""
         return cls.from_dict(json.loads(json_str))
 
