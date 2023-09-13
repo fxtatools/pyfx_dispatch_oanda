@@ -49,7 +49,7 @@ class CloseTransaction(BaseModel):
     class Config:
         """Pydantic configuration"""
         allow_population_by_field_name = True
-        validate_assignment = True
+        validate_assignment = __debug__
 
     def to_str(self) -> str:
         """Returns the string representation of the model using alias"""
