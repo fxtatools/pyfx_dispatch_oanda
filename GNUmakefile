@@ -23,7 +23,7 @@ PROJECT_PY?=		project.py
 PIP_CACHE?=		$(if ${OSKIND} == "NT",${LOCALAPPDATA}\\pip\\cache,${HOME}/.cache/pip)
 
 ## values that may contain spaces within PIP_ARGS should be double quoted, generally
-PIP_ARGS?=		${PIP_PROXY_ARGS} --no-build-isolation -v --cache-dir="${PIP_CACHE}"
+PIP_ARGS?=		${PIP_PROXY_ARGS} -v --cache-dir="${PIP_CACHE}"
 
 ifndef PYVENV_SUBDIR
 PYVENV_SUBDIR:=		$(shell if [ "$$(${PYTHON} -c 'import sys; print(sys.platform)')" = "win32" ]; then echo "Scripts"; else echo "bin"; fi)
