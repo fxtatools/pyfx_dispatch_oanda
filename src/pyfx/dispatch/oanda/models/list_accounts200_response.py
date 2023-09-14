@@ -33,7 +33,6 @@ class ListAccounts200Response(BaseModel):
 
     class Config:
         """Pydantic configuration"""
-        ## FIXME how on earth to disable this?
         allow_population_by_field_name = True
         validate_assignment = __debug__
 

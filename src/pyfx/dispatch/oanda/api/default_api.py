@@ -64,16 +64,8 @@ class DefaultApi(object):
     def __init__(self, api_client: ApiClient):
         self.api_client = api_client
 
-    @overload
-    async def cancel_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> CancelOrder200Response:  # noqa: E501
-        ...
-
-    @overload
-    def cancel_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> CancelOrder200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def cancel_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> Union[CancelOrder200Response, Awaitable[CancelOrder200Response]]:  # noqa: E501
+    async def cancel_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> Union[CancelOrder200Response, Awaitable[CancelOrder200Response]]:  # noqa: E501
         """Cancel Order  # noqa: E501
 
         Cancel a pending Order in an Account  # noqa: E501
@@ -100,10 +92,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the cancel_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.cancel_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, client_request_id, **kwargs)  # noqa: E501
+        return await self.cancel_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, client_request_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def cancel_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def cancel_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Cancel Order  # noqa: E501
 
         Cancel a pending Order in an Account  # noqa: E501
@@ -220,7 +212,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}/cancel', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -236,16 +228,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def close_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ClosePosition200Response:  # noqa: E501
-        ...
-
-    @overload
-    def close_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ClosePosition200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def close_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ClosePosition200Response, Awaitable[ClosePosition200Response]]:  # noqa: E501
+    async def close_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ClosePosition200Response, Awaitable[ClosePosition200Response]]:  # noqa: E501
         """Close Position  # noqa: E501
 
         Closeout the open Position for a specific instrument in an Account.  # noqa: E501
@@ -272,10 +256,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the close_position_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.close_position_with_http_info(authorization, account_id, instrument, close_position_body, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.close_position_with_http_info(authorization, account_id, instrument, close_position_body, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def close_position_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def close_position_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Close Position  # noqa: E501
 
         Closeout the open Position for a specific instrument in an Account.  # noqa: E501
@@ -400,7 +384,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/positions/{instrument}/close', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -416,16 +400,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def close_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> CloseTrade200Response:  # noqa: E501
-        ...
-
-    @overload
-    def close_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> CloseTrade200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def close_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[CloseTrade200Response, Awaitable[CloseTrade200Response]]:  # noqa: E501
+    async def close_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[CloseTrade200Response, Awaitable[CloseTrade200Response]]:  # noqa: E501
         """Close Trade  # noqa: E501
 
         Close (partially or fully) a specific open Trade in an Account  # noqa: E501
@@ -452,10 +428,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the close_trade_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.close_trade_with_http_info(authorization, account_id, trade_specifier, close_trade_body, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.close_trade_with_http_info(authorization, account_id, trade_specifier, close_trade_body, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def close_trade_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def close_trade_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Close Trade  # noqa: E501
 
         Close (partially or fully) a specific open Trade in an Account  # noqa: E501
@@ -580,7 +556,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}/close', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -596,16 +572,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def configure_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> ConfigureAccount200Response:  # noqa: E501
-        ...
-
-    @overload
-    def configure_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> ConfigureAccount200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def configure_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> Union[ConfigureAccount200Response, Awaitable[ConfigureAccount200Response]]:  # noqa: E501
+    async def configure_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> Union[ConfigureAccount200Response, Awaitable[ConfigureAccount200Response]]:  # noqa: E501
         """Configure Account  # noqa: E501
 
         Set the client-configurable portions of an Account.  # noqa: E501
@@ -630,10 +598,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the configure_account_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.configure_account_with_http_info(authorization, account_id, accept_datetime_format, configure_account_body, **kwargs)  # noqa: E501
+        return await self.configure_account_with_http_info(authorization, account_id, accept_datetime_format, configure_account_body, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def configure_account_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def configure_account_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Configure Account  # noqa: E501
 
         Set the client-configurable portions of an Account.  # noqa: E501
@@ -753,7 +721,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/configuration', RequestMethod.PATCH,
             _path_params,
             _query_params,
@@ -769,16 +737,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def create_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> CreateOrder201Response:  # noqa: E501
-        ...
-
-    @overload
-    def create_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> CreateOrder201Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def create_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[CreateOrder201Response, Awaitable[CreateOrder201Response]]:  # noqa: E501
+    async def create_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[CreateOrder201Response, Awaitable[CreateOrder201Response]]:  # noqa: E501
         """Create Order  # noqa: E501
 
         Create an Order for an Account  # noqa: E501
@@ -803,10 +763,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the create_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.create_order_with_http_info(authorization, account_id, create_order_body, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.create_order_with_http_info(authorization, account_id, create_order_body, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def create_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def create_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Create Order  # noqa: E501
 
         Create an Order for an Account  # noqa: E501
@@ -926,7 +886,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/orders', RequestMethod.POST,
             _path_params,
             _query_params,
@@ -942,16 +902,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetAccount200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetAccount200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetAccount200Response, Awaitable[GetAccount200Response]]:  # noqa: E501
+    async def get_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetAccount200Response, Awaitable[GetAccount200Response]]:  # noqa: E501
         """Account Details  # noqa: E501
 
         Get the full details for a single Account that a client has access to. Full pending Order, open Trade and open Position representations are provided.  # noqa: E501
@@ -974,10 +926,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_account_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_account_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.get_account_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_account_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_account_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Account Details  # noqa: E501
 
         Get the full details for a single Account that a client has access to. Full pending Order, open Trade and open Position representations are provided.  # noqa: E501
@@ -1082,7 +1034,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -1098,16 +1050,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_account_changes(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> GetAccountChanges200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_account_changes(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> GetAccountChanges200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_account_changes(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> Union[GetAccountChanges200Response, Awaitable[GetAccountChanges200Response]]:  # noqa: E501
+    async def get_account_changes(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> Union[GetAccountChanges200Response, Awaitable[GetAccountChanges200Response]]:  # noqa: E501
         """Poll Account Updates  # noqa: E501
 
         Endpoint used to poll an Account for its current state and changes since a specified TransactionID.  # noqa: E501
@@ -1132,10 +1076,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_account_changes_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_account_changes_with_http_info(authorization, account_id, accept_datetime_format, since_transaction_id, **kwargs)  # noqa: E501
+        return await self.get_account_changes_with_http_info(authorization, account_id, accept_datetime_format, since_transaction_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_account_changes_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_account_changes_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Poll Account Updates  # noqa: E501
 
         Endpoint used to poll an Account for its current state and changes since a specified TransactionID.  # noqa: E501
@@ -1247,7 +1191,7 @@ class DefaultApi(object):
             '416': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/changes', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -1263,16 +1207,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_account_instruments(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> GetAccountInstruments200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_account_instruments(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> GetAccountInstruments200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_account_instruments(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> Union[GetAccountInstruments200Response, Awaitable[GetAccountInstruments200Response]]:  # noqa: E501
+    async def get_account_instruments(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> Union[GetAccountInstruments200Response, Awaitable[GetAccountInstruments200Response]]:  # noqa: E501
         """Account Instruments  # noqa: E501
 
         Get the list of tradeable instruments for the given Account. The list of tradeable instruments is dependent on the regulatory division that the Account is located in, thus should be the same for all Accounts owned by a single user.  # noqa: E501
@@ -1295,10 +1231,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_account_instruments_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_account_instruments_with_http_info(authorization, account_id, instruments, **kwargs)  # noqa: E501
+        return await self.get_account_instruments_with_http_info(authorization, account_id, instruments, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_account_instruments_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_account_instruments_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Account Instruments  # noqa: E501
 
         Get the list of tradeable instruments for the given Account. The list of tradeable instruments is dependent on the regulatory division that the Account is located in, thus should be the same for all Accounts owned by a single user.  # noqa: E501
@@ -1404,7 +1340,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/instruments', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -1419,16 +1355,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_account_summary(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetAccountSummary200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_account_summary(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetAccountSummary200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_account_summary(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetAccountSummary200Response, Awaitable[GetAccountSummary200Response]]:  # noqa: E501
+    async def get_account_summary(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetAccountSummary200Response, Awaitable[GetAccountSummary200Response]]:  # noqa: E501
         """Account Summary  # noqa: E501
 
         Get a summary for a single Account that a client has access to.  # noqa: E501
@@ -1451,10 +1379,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_account_summary_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_account_summary_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.get_account_summary_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_account_summary_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_account_summary_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Account Summary  # noqa: E501
 
         Get a summary for a single Account that a client has access to.  # noqa: E501
@@ -1559,7 +1487,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/summary', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -1575,16 +1503,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_base_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> GetInstrumentPriceRange200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_base_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> GetInstrumentPriceRange200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_base_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
+    async def get_base_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
         """Get Base Prices  # noqa: E501
 
         Get pricing information for a specified instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -1607,10 +1527,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_base_prices_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_base_prices_with_http_info(authorization, accept_datetime_format, time, **kwargs)  # noqa: E501
+        return await self.get_base_prices_with_http_info(authorization, accept_datetime_format, time, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_base_prices_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_base_prices_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Base Prices  # noqa: E501
 
         Get pricing information for a specified instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -1716,7 +1636,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/pricing', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -1732,16 +1652,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_external_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> GetExternalUserInfo200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_external_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> GetExternalUserInfo200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_external_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> Union[GetExternalUserInfo200Response, Awaitable[GetExternalUserInfo200Response]]:  # noqa: E501
+    async def get_external_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> Union[GetExternalUserInfo200Response, Awaitable[GetExternalUserInfo200Response]]:  # noqa: E501
         """External User Info  # noqa: E501
 
         Fetch the externally-available user information for the specified user. This endpoint is intended to be used by 3rd parties that have been authorized by a user to view their personal information.  # noqa: E501
@@ -1762,10 +1674,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_external_user_info_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_external_user_info_with_http_info(authorization, user_specifier, **kwargs)  # noqa: E501
+        return await self.get_external_user_info_with_http_info(authorization, user_specifier, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_external_user_info_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_external_user_info_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> ApiResponse:  # noqa: E501
         """External User Info  # noqa: E501
 
         Fetch the externally-available user information for the specified user. This endpoint is intended to be used by 3rd parties that have been authorized by a user to view their personal information.  # noqa: E501
@@ -1864,7 +1776,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/users/{userSpecifier}/externalInfo', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -1880,16 +1792,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_instrument_candles(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> GetInstrumentCandles200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_instrument_candles(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> GetInstrumentCandles200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_instrument_candles(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> Union[GetInstrumentCandles200Response, Awaitable[GetInstrumentCandles200Response]]:  # noqa: E501
+    async def get_instrument_candles(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> Union[GetInstrumentCandles200Response, Awaitable[GetInstrumentCandles200Response]]:  # noqa: E501
         """Get Candlesticks  # noqa: E501
 
         Fetch candlestick data for an instrument.  # noqa: E501
@@ -1932,10 +1836,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_instrument_candles_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_instrument_candles_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, **kwargs)  # noqa: E501
+        return await self.get_instrument_candles_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_instrument_candles_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_instrument_candles_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Candlesticks  # noqa: E501
 
         Fetch candlestick data for an instrument.  # noqa: E501
@@ -2101,7 +2005,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/instruments/{instrument}/candles', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -2117,16 +2021,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_instrument_candles_0(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> GetInstrumentCandles200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_instrument_candles_0(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> GetInstrumentCandles200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_instrument_candles_0(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> Union[GetInstrumentCandles200Response, Awaitable[GetInstrumentCandles200Response]]:  # noqa: E501
+    async def get_instrument_candles_0(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> Union[GetInstrumentCandles200Response, Awaitable[GetInstrumentCandles200Response]]:  # noqa: E501
         """Get Candlesticks  # noqa: E501
 
         Fetch candlestick data for an instrument.  # noqa: E501
@@ -2171,10 +2067,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_instrument_candles_0_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_instrument_candles_0_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, units, **kwargs)  # noqa: E501
+        return await self.get_instrument_candles_0_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, units, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_instrument_candles_0_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_instrument_candles_0_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Candlesticks  # noqa: E501
 
         Fetch candlestick data for an instrument.  # noqa: E501
@@ -2346,7 +2242,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/instruments/{instrument}/candles', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -2362,16 +2258,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_instrument_price(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> GetInstrumentPrice200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_instrument_price(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> GetInstrumentPrice200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_instrument_price(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> Union[GetInstrumentPrice200Response, Awaitable[GetInstrumentPrice200Response]]:  # noqa: E501
+    async def get_instrument_price(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> Union[GetInstrumentPrice200Response, Awaitable[GetInstrumentPrice200Response]]:  # noqa: E501
         """Price  # noqa: E501
 
         Fetch a price for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -2396,10 +2284,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_instrument_price_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_instrument_price_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
+        return await self.get_instrument_price_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_instrument_price_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_instrument_price_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Price  # noqa: E501
 
         Fetch a price for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -2511,7 +2399,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/instruments/{instrument}/price', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -2527,16 +2415,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_instrument_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> GetInstrumentPriceRange200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_instrument_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> GetInstrumentPriceRange200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_instrument_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
+    async def get_instrument_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
         """Get Prices  # noqa: E501
 
         Fetch a range of prices for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -2563,10 +2443,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_instrument_price_range_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_instrument_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to, **kwargs)  # noqa: E501
+        return await self.get_instrument_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_instrument_price_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_instrument_price_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Prices  # noqa: E501
 
         Fetch a range of prices for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -2684,7 +2564,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/instruments/{instrument}/price/range', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -2700,16 +2580,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetOrder200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetOrder200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetOrder200Response, Awaitable[GetOrder200Response]]:  # noqa: E501
+    async def get_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetOrder200Response, Awaitable[GetOrder200Response]]:  # noqa: E501
         """Get Order  # noqa: E501
 
         Get details for a single Order in an Account  # noqa: E501
@@ -2734,10 +2606,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.get_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Order  # noqa: E501
 
         Get details for a single Order in an Account  # noqa: E501
@@ -2848,7 +2720,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -2864,16 +2736,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> GetPosition200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> GetPosition200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> Union[GetPosition200Response, Awaitable[GetPosition200Response]]:  # noqa: E501
+    async def get_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> Union[GetPosition200Response, Awaitable[GetPosition200Response]]:  # noqa: E501
         """Instrument Position  # noqa: E501
 
         Get the details of a single Instrument's Position in an Account. The Position may by open or not.  # noqa: E501
@@ -2896,10 +2760,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_position_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_position_with_http_info(authorization, account_id, instrument, **kwargs)  # noqa: E501
+        return await self.get_position_with_http_info(authorization, account_id, instrument, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_position_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_position_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> ApiResponse:  # noqa: E501
         """Instrument Position  # noqa: E501
 
         Get the details of a single Instrument's Position in an Account. The Position may by open or not.  # noqa: E501
@@ -3004,7 +2868,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/positions/{instrument}', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -3020,16 +2884,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> GetInstrumentPriceRange200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> GetInstrumentPriceRange200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
+    async def get_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
         """Get Price Range  # noqa: E501
 
         Get pricing information for a specified range of prices. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -3056,10 +2912,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_price_range_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to, **kwargs)  # noqa: E501
+        return await self.get_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_price_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_price_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Price Range  # noqa: E501
 
         Get pricing information for a specified range of prices. Accounts are not associated in any way with this endpoint.  # noqa: E501
@@ -3177,7 +3033,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/pricing/range', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -3193,16 +3049,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> GetPrices200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> GetPrices200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> Union[GetPrices200Response, Awaitable[GetPrices200Response]]:  # noqa: E501
+    async def get_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> Union[GetPrices200Response, Awaitable[GetPrices200Response]]:  # noqa: E501
         """Current Account Prices  # noqa: E501
 
         Get pricing information for a specified list of Instruments within an Account.  # noqa: E501
@@ -3233,10 +3081,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_prices_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_prices_with_http_info(authorization, account_id, instruments, accept_datetime_format, since, include_units_available, include_home_conversions, **kwargs)  # noqa: E501
+        return await self.get_prices_with_http_info(authorization, account_id, instruments, accept_datetime_format, since, include_units_available, include_home_conversions, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_prices_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_prices_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Current Account Prices  # noqa: E501
 
         Get pricing information for a specified list of Instruments within an Account.  # noqa: E501
@@ -3367,7 +3215,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/pricing', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -3383,16 +3231,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetTrade200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetTrade200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTrade200Response, Awaitable[GetTrade200Response]]:  # noqa: E501
+    async def get_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTrade200Response, Awaitable[GetTrade200Response]]:  # noqa: E501
         """Trade Details  # noqa: E501
 
         Get the details of a specific Trade in an Account  # noqa: E501
@@ -3417,10 +3257,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_trade_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_trade_with_http_info(authorization, account_id, trade_specifier, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.get_trade_with_http_info(authorization, account_id, trade_specifier, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_trade_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_trade_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Trade Details  # noqa: E501
 
         Get the details of a specific Trade in an Account  # noqa: E501
@@ -3531,7 +3371,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -3547,16 +3387,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_transaction(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetTransaction200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_transaction(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetTransaction200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_transaction(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTransaction200Response, Awaitable[GetTransaction200Response]]:  # noqa: E501
+    async def get_transaction(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTransaction200Response, Awaitable[GetTransaction200Response]]:  # noqa: E501
         """Transaction Details  # noqa: E501
 
         Get the details of a single Account Transaction.  # noqa: E501
@@ -3581,10 +3413,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_transaction_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_transaction_with_http_info(authorization, account_id, transaction_id, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.get_transaction_with_http_info(authorization, account_id, transaction_id, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_transaction_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_transaction_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Transaction Details  # noqa: E501
 
         Get the details of a single Account Transaction.  # noqa: E501
@@ -3695,7 +3527,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/{transactionID}', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -3711,16 +3543,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_transaction_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> GetTransactionRange200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_transaction_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> GetTransactionRange200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_transaction_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> Union[GetTransactionRange200Response, Awaitable[GetTransactionRange200Response]]:  # noqa: E501
+    async def get_transaction_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> Union[GetTransactionRange200Response, Awaitable[GetTransactionRange200Response]]:  # noqa: E501
         """Transaction ID Range  # noqa: E501
 
         Get a range of Transactions for an Account based on the Transaction IDs.  # noqa: E501
@@ -3749,10 +3573,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_transaction_range_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_transaction_range_with_http_info(authorization, account_id, var_from, to, accept_datetime_format, type, **kwargs)  # noqa: E501
+        return await self.get_transaction_range_with_http_info(authorization, account_id, var_from, to, accept_datetime_format, type, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_transaction_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_transaction_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Transaction ID Range  # noqa: E501
 
         Get a range of Transactions for an Account based on the Transaction IDs.  # noqa: E501
@@ -3878,7 +3702,7 @@ class DefaultApi(object):
             '416': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/idrange', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -3894,16 +3718,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_transactions_since_id(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetTransactionRange200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_transactions_since_id(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> GetTransactionRange200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_transactions_since_id(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTransactionRange200Response, Awaitable[GetTransactionRange200Response]]:  # noqa: E501
+    async def get_transactions_since_id(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTransactionRange200Response, Awaitable[GetTransactionRange200Response]]:  # noqa: E501
         """Transactions Since ID  # noqa: E501
 
         Get a range of Transactions for an Account starting at (but not including) a provided Transaction ID.  # noqa: E501
@@ -3928,10 +3744,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_transactions_since_id_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_transactions_since_id_with_http_info(authorization, account_id, id, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.get_transactions_since_id_with_http_info(authorization, account_id, id, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_transactions_since_id_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_transactions_since_id_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Transactions Since ID  # noqa: E501
 
         Get a range of Transactions for an Account starting at (but not including) a provided Transaction ID.  # noqa: E501
@@ -4044,7 +3860,7 @@ class DefaultApi(object):
             '416': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/sinceid', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4060,16 +3876,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def get_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> GetUserInfo200Response:  # noqa: E501
-        ...
-
-    @overload
-    def get_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> GetUserInfo200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def get_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> Union[GetUserInfo200Response, Awaitable[GetUserInfo200Response]]:  # noqa: E501
+    async def get_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> Union[GetUserInfo200Response, Awaitable[GetUserInfo200Response]]:  # noqa: E501
         """User Info  # noqa: E501
 
         Fetch the user information for the specified user. This endpoint is intended to be used by the user themself to obtain their own information.  # noqa: E501
@@ -4090,10 +3898,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the get_user_info_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.get_user_info_with_http_info(authorization, user_specifier, **kwargs)  # noqa: E501
+        return await self.get_user_info_with_http_info(authorization, user_specifier, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def get_user_info_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def get_user_info_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> ApiResponse:  # noqa: E501
         """User Info  # noqa: E501
 
         Fetch the user information for the specified user. This endpoint is intended to be used by the user themself to obtain their own information.  # noqa: E501
@@ -4192,7 +4000,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/users/{userSpecifier}', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4208,16 +4016,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def instruments_instrument_order_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> InstrumentsInstrumentOrderBookGet200Response:  # noqa: E501
-        ...
-
-    @overload
-    def instruments_instrument_order_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> InstrumentsInstrumentOrderBookGet200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def instruments_instrument_order_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> Union[InstrumentsInstrumentOrderBookGet200Response, Awaitable[InstrumentsInstrumentOrderBookGet200Response]]:  # noqa: E501
+    async def instruments_instrument_order_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> Union[InstrumentsInstrumentOrderBookGet200Response, Awaitable[InstrumentsInstrumentOrderBookGet200Response]]:  # noqa: E501
         """Get Order Book  # noqa: E501
 
         Fetch an order book for an instrument.  # noqa: E501
@@ -4242,10 +4042,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the instruments_instrument_order_book_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.instruments_instrument_order_book_get_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
+        return await self.instruments_instrument_order_book_get_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def instruments_instrument_order_book_get_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def instruments_instrument_order_book_get_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Order Book  # noqa: E501
 
         Fetch an order book for an instrument.  # noqa: E501
@@ -4357,7 +4157,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/instruments/{instrument}/orderBook', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4373,16 +4173,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def instruments_instrument_position_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> InstrumentsInstrumentPositionBookGet200Response:  # noqa: E501
-        ...
-
-    @overload
-    def instruments_instrument_position_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> InstrumentsInstrumentPositionBookGet200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def instruments_instrument_position_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> Union[InstrumentsInstrumentPositionBookGet200Response, Awaitable[InstrumentsInstrumentPositionBookGet200Response]]:  # noqa: E501
+    async def instruments_instrument_position_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> Union[InstrumentsInstrumentPositionBookGet200Response, Awaitable[InstrumentsInstrumentPositionBookGet200Response]]:  # noqa: E501
         """Get Position Book  # noqa: E501
 
         Fetch a position book for an instrument.  # noqa: E501
@@ -4407,10 +4199,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the instruments_instrument_position_book_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.instruments_instrument_position_book_get_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
+        return await self.instruments_instrument_position_book_get_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def instruments_instrument_position_book_get_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def instruments_instrument_position_book_get_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Get Position Book  # noqa: E501
 
         Fetch a position book for an instrument.  # noqa: E501
@@ -4522,7 +4314,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/instruments/{instrument}/positionBook', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4538,16 +4330,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_accounts(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> ListAccounts200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_accounts(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> ListAccounts200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_accounts(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> Union[ListAccounts200Response, Awaitable[ListAccounts200Response]]:  # noqa: E501
+    async def list_accounts(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> Union[ListAccounts200Response, Awaitable[ListAccounts200Response]]:  # noqa: E501
         """List Accounts  # noqa: E501
 
         Get a list of all Accounts authorized for the provided token.  # noqa: E501
@@ -4566,10 +4350,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_accounts_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_accounts_with_http_info(authorization, **kwargs)  # noqa: E501
+        return await self.list_accounts_with_http_info(authorization, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_accounts_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_accounts_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> ApiResponse:  # noqa: E501
         """List Accounts  # noqa: E501
 
         Get a list of all Accounts authorized for the provided token.  # noqa: E501
@@ -4661,7 +4445,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4677,16 +4461,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_open_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ListOpenPositions200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_open_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ListOpenPositions200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_open_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[ListOpenPositions200Response, Awaitable[ListOpenPositions200Response]]:  # noqa: E501
+    async def list_open_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[ListOpenPositions200Response, Awaitable[ListOpenPositions200Response]]:  # noqa: E501
         """Open Positions  # noqa: E501
 
         List all open Positions for an Account. An open Position is a Position in an Account that currently has a Trade opened for it.  # noqa: E501
@@ -4707,10 +4483,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_open_positions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_open_positions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
+        return await self.list_open_positions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_open_positions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_open_positions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
         """Open Positions  # noqa: E501
 
         List all open Positions for an Account. An open Position is a Position in an Account that currently has a Trade opened for it.  # noqa: E501
@@ -4809,7 +4585,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/openPositions', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4825,16 +4601,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_open_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ListOpenTrades200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_open_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ListOpenTrades200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_open_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ListOpenTrades200Response, Awaitable[ListOpenTrades200Response]]:  # noqa: E501
+    async def list_open_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ListOpenTrades200Response, Awaitable[ListOpenTrades200Response]]:  # noqa: E501
         """List Open Trades  # noqa: E501
 
         Get the list of open Trades for an Account  # noqa: E501
@@ -4857,10 +4625,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_open_trades_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_open_trades_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.list_open_trades_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_open_trades_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_open_trades_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """List Open Trades  # noqa: E501
 
         Get the list of open Trades for an Account  # noqa: E501
@@ -4965,7 +4733,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/openTrades', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -4981,16 +4749,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> ListOrders200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> ListOrders200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> Union[ListOrders200Response, Awaitable[ListOrders200Response]]:  # noqa: E501
+    async def list_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> Union[ListOrders200Response, Awaitable[ListOrders200Response]]:  # noqa: E501
         """List Orders  # noqa: E501
 
         Get a list of Orders for an Account  # noqa: E501
@@ -5023,10 +4783,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_orders_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_orders_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id, **kwargs)  # noqa: E501
+        return await self.list_orders_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """List Orders  # noqa: E501
 
         Get a list of Orders for an Account  # noqa: E501
@@ -5162,7 +4922,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/orders', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -5178,16 +4938,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_pending_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ListPendingOrders200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_pending_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ListPendingOrders200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_pending_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ListPendingOrders200Response, Awaitable[ListPendingOrders200Response]]:  # noqa: E501
+    async def list_pending_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ListPendingOrders200Response, Awaitable[ListPendingOrders200Response]]:  # noqa: E501
         """Pending Orders  # noqa: E501
 
         List all pending Orders in an Account  # noqa: E501
@@ -5210,10 +4962,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_pending_orders_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_pending_orders_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.list_pending_orders_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_pending_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_pending_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Pending Orders  # noqa: E501
 
         List all pending Orders in an Account  # noqa: E501
@@ -5318,7 +5070,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/pendingOrders', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -5334,16 +5086,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ListPositions200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ListPositions200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[ListPositions200Response, Awaitable[ListPositions200Response]]:  # noqa: E501
+    async def list_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[ListPositions200Response, Awaitable[ListPositions200Response]]:  # noqa: E501
         """List Positions  # noqa: E501
 
         List all Positions for an Account. The Positions returned are for every instrument that has had a position during the lifetime of an the Account.  # noqa: E501
@@ -5364,10 +5108,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_positions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_positions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
+        return await self.list_positions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_positions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_positions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
         """List Positions  # noqa: E501
 
         List all Positions for an Account. The Positions returned are for every instrument that has had a position during the lifetime of an the Account.  # noqa: E501
@@ -5466,7 +5210,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/positions', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -5482,16 +5226,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> ListTrades200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> ListTrades200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> Union[ListTrades200Response, Awaitable[ListTrades200Response]]:  # noqa: E501
+    async def list_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> Union[ListTrades200Response, Awaitable[ListTrades200Response]]:  # noqa: E501
         """List Trades  # noqa: E501
 
         Get a list of Trades for an Account  # noqa: E501
@@ -5524,10 +5260,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_trades_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_trades_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id, **kwargs)  # noqa: E501
+        return await self.list_trades_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_trades_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_trades_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """List Trades  # noqa: E501
 
         Get a list of Trades for an Account  # noqa: E501
@@ -5663,7 +5399,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/trades', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -5679,16 +5415,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def list_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> ListTransactions200Response:  # noqa: E501
-        ...
-
-    @overload
-    def list_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> ListTransactions200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def list_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> Union[ListTransactions200Response, Awaitable[ListTransactions200Response]]:  # noqa: E501
+    async def list_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> Union[ListTransactions200Response, Awaitable[ListTransactions200Response]]:  # noqa: E501
         """List Transactions  # noqa: E501
 
         Get a list of Transactions pages that satisfy a time-based Transaction query.  # noqa: E501
@@ -5719,10 +5447,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the list_transactions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.list_transactions_with_http_info(authorization, account_id, accept_datetime_format, var_from, to, page_size, type, **kwargs)  # noqa: E501
+        return await self.list_transactions_with_http_info(authorization, account_id, accept_datetime_format, var_from, to, page_size, type, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def list_transactions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def list_transactions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """List Transactions  # noqa: E501
 
         Get a list of Transactions pages that satisfy a time-based Transaction query.  # noqa: E501
@@ -5855,7 +5583,7 @@ class DefaultApi(object):
             '416': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/transactions', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -5871,16 +5599,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def replace_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ReplaceOrder201Response:  # noqa: E501
-        ...
-
-    @overload
-    def replace_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ReplaceOrder201Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def replace_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> Union[ReplaceOrder201Response, Awaitable[ReplaceOrder201Response]]:  # noqa: E501
+    async def replace_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> Union[ReplaceOrder201Response, Awaitable[ReplaceOrder201Response]]:  # noqa: E501
         """Replace Order  # noqa: E501
 
         Replace an Order in an Account by simultaneously cancelling it and creating a replacement Order  # noqa: E501
@@ -5909,10 +5629,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the replace_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.replace_order_with_http_info(authorization, account_id, order_specifier, replace_order_body, accept_datetime_format, client_request_id, **kwargs)  # noqa: E501
+        return await self.replace_order_with_http_info(authorization, account_id, order_specifier, replace_order_body, accept_datetime_format, client_request_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def replace_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def replace_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Replace Order  # noqa: E501
 
         Replace an Order in an Account by simultaneously cancelling it and creating a replacement Order  # noqa: E501
@@ -6043,7 +5763,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -6059,16 +5779,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def set_order_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> SetOrderClientExtensions200Response:  # noqa: E501
-        ...
-
-    @overload
-    def set_order_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> SetOrderClientExtensions200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def set_order_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetOrderClientExtensions200Response, Awaitable[SetOrderClientExtensions200Response]]:  # noqa: E501
+    async def set_order_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetOrderClientExtensions200Response, Awaitable[SetOrderClientExtensions200Response]]:  # noqa: E501
         """Set Order Extensions  # noqa: E501
 
         Update the Client Extensions for an Order in an Account. Do not set, modify, or delete clientExtensions if your account is associated with MT4.  # noqa: E501
@@ -6095,10 +5807,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the set_order_client_extensions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.set_order_client_extensions_with_http_info(authorization, account_id, order_specifier, set_order_client_extensions_body, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.set_order_client_extensions_with_http_info(authorization, account_id, order_specifier, set_order_client_extensions_body, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def set_order_client_extensions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def set_order_client_extensions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Set Order Extensions  # noqa: E501
 
         Update the Client Extensions for an Order in an Account. Do not set, modify, or delete clientExtensions if your account is associated with MT4.  # noqa: E501
@@ -6223,7 +5935,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}/clientExtensions', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -6239,16 +5951,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def set_trade_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> SetTradeClientExtensions200Response:  # noqa: E501
-        ...
-
-    @overload
-    def set_trade_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> SetTradeClientExtensions200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def set_trade_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetTradeClientExtensions200Response, Awaitable[SetTradeClientExtensions200Response]]:  # noqa: E501
+    async def set_trade_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetTradeClientExtensions200Response, Awaitable[SetTradeClientExtensions200Response]]:  # noqa: E501
         """Set Trade Client Extensions  # noqa: E501
 
         Update the Client Extensions for a Trade. Do not add, update, or delete the Client Extensions if your account is associated with MT4.  # noqa: E501
@@ -6275,10 +5979,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the set_trade_client_extensions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.set_trade_client_extensions_with_http_info(authorization, account_id, trade_specifier, set_trade_client_extensions_body, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.set_trade_client_extensions_with_http_info(authorization, account_id, trade_specifier, set_trade_client_extensions_body, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def set_trade_client_extensions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def set_trade_client_extensions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Set Trade Client Extensions  # noqa: E501
 
         Update the Client Extensions for a Trade. Do not add, update, or delete the Client Extensions if your account is associated with MT4.  # noqa: E501
@@ -6403,7 +6107,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}/clientExtensions', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -6419,16 +6123,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def set_trade_dependent_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> SetTradeDependentOrders200Response:  # noqa: E501
-        ...
-
-    @overload
-    def set_trade_dependent_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> SetTradeDependentOrders200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def set_trade_dependent_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetTradeDependentOrders200Response, Awaitable[SetTradeDependentOrders200Response]]:  # noqa: E501
+    async def set_trade_dependent_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetTradeDependentOrders200Response, Awaitable[SetTradeDependentOrders200Response]]:  # noqa: E501
         """Set Dependent Orders  # noqa: E501
 
         Create, replace and cancel a Trade's dependent Orders (Take Profit, Stop Loss and Trailing Stop Loss) through the Trade itself  # noqa: E501
@@ -6455,10 +6151,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the set_trade_dependent_orders_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.set_trade_dependent_orders_with_http_info(authorization, account_id, trade_specifier, set_trade_dependent_orders_body, accept_datetime_format, **kwargs)  # noqa: E501
+        return await self.set_trade_dependent_orders_with_http_info(authorization, account_id, trade_specifier, set_trade_dependent_orders_body, accept_datetime_format, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def set_trade_dependent_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def set_trade_dependent_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Set Dependent Orders  # noqa: E501
 
         Create, replace and cancel a Trade's dependent Orders (Take Profit, Stop Loss and Trailing Stop Loss) through the Trade itself  # noqa: E501
@@ -6583,7 +6279,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}/orders', RequestMethod.PUT,
             _path_params,
             _query_params,
@@ -6599,16 +6295,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def stream_pricing(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> StreamPricing200Response:  # noqa: E501
-        ...
-
-    @overload
-    def stream_pricing(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> StreamPricing200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def stream_pricing(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> Union[StreamPricing200Response, Awaitable[StreamPricing200Response]]:  # noqa: E501
+    async def stream_pricing(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> Union[StreamPricing200Response, Awaitable[StreamPricing200Response]]:  # noqa: E501
         """Price Stream  # noqa: E501
 
         Get a stream of Account Prices starting from when the request is made. This pricing stream does not include every single price created for the Account, but instead will provide at most 4 prices per second (every 250 milliseconds) for each instrument being requested. If more than one price is created for an instrument during the 250 millisecond window, only the price in effect at the end of the window is sent. This means that during periods of rapid price movement, subscribers to this stream will not be sent every price. Pricing windows for different connections to the price stream are not all aligned in the same way (i.e. they are not all aligned to the top of the second). This means that during periods of rapid price movement, different subscribers may observe different prices depending on their alignment.  # noqa: E501
@@ -6635,10 +6323,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the stream_pricing_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.stream_pricing_with_http_info(authorization, account_id, instruments, accept_datetime_format, snapshot, **kwargs)  # noqa: E501
+        return await self.stream_pricing_with_http_info(authorization, account_id, instruments, accept_datetime_format, snapshot, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def stream_pricing_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
+    async def stream_pricing_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
         """Price Stream  # noqa: E501
 
         Get a stream of Account Prices starting from when the request is made. This pricing stream does not include every single price created for the Account, but instead will provide at most 4 prices per second (every 250 milliseconds) for each instrument being requested. If more than one price is created for an instrument during the 250 millisecond window, only the price in effect at the end of the window is sent. This means that during periods of rapid price movement, subscribers to this stream will not be sent every price. Pricing windows for different connections to the price stream are not all aligned in the same way (i.e. they are not all aligned to the top of the second). This means that during periods of rapid price movement, different subscribers may observe different prices depending on their alignment.  # noqa: E501
@@ -6757,7 +6445,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/pricing/stream', RequestMethod.GET,
             _path_params,
             _query_params,
@@ -6773,16 +6461,8 @@ class DefaultApi(object):
             collection_formats=_collection_formats,
             _request_auth=_params.get('_request_auth'))
 
-    @overload
-    async def stream_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> StreamTransactions200Response:  # noqa: E501
-        ...
-
-    @overload
-    def stream_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> StreamTransactions200Response:  # noqa: E501
-        ...
-
     @validate_arguments
-    def stream_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[StreamTransactions200Response, Awaitable[StreamTransactions200Response]]:  # noqa: E501
+    async def stream_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[StreamTransactions200Response, Awaitable[StreamTransactions200Response]]:  # noqa: E501
         """Transaction Stream  # noqa: E501
 
         Get a stream of Transactions for an Account starting from when the request is made.  # noqa: E501
@@ -6803,10 +6483,10 @@ class DefaultApi(object):
         kwargs['_return_http_data_only'] = True
         if '_preload_content' in kwargs:
             raise ValueError("Error! Please call the stream_transactions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return self.stream_transactions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
+        return await self.stream_transactions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
 
     @validate_arguments
-    def stream_transactions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
+    async def stream_transactions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
         """Transaction Stream  # noqa: E501
 
         Get a stream of Transactions for an Account starting from when the request is made.  # noqa: E501
@@ -6906,7 +6586,7 @@ class DefaultApi(object):
             '405': "GetInstrumentCandles400Response",
         }
 
-        return self.api_client.call_api(
+        return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/stream', RequestMethod.GET,
             _path_params,
             _query_params,
