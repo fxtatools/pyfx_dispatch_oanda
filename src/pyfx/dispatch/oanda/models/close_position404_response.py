@@ -1,39 +1,28 @@
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-
-
+"""ClosePosition404Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Optional
 
+from ..transport import TransportField
 
+from .response_mixins import TransactionErrorResponse
 from .market_order_reject_transaction import MarketOrderRejectTransaction
 
 
-from ..transport import ApiObject, TransportField
-from ..util import exporting
-
-
-
-class ClosePosition404Response(ApiObject):
+class ClosePosition404Response(TransactionErrorResponse):
     """
-    ClosePosition404Response
+    ClosePosition404Response: The Account or one or more of the Positions specified does not exist.
     """
+
     long_order_reject_transaction: Optional[MarketOrderRejectTransaction] = TransportField(None, alias="longOrderRejectTransaction")
+    """
+    The Transaction created that rejects the creation of a MarketOrder to close the long Position. Only present if the Account exists and a long Position was specified.
+    """
+
     short_order_reject_transaction: Optional[MarketOrderRejectTransaction] = TransportField(None, alias="shortOrderRejectTransaction")
-    related_transaction_ids: Optional[list[str]] = TransportField(None, alias="relatedTransactionIDs")
-    """The IDs of all Transactions that were created while satisfying the request. Only present if the Account exists.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
-    """The ID of the most recent Transaction created for the Account. Only present if the Account exists.
-    """
-    error_code: Optional[str] = TransportField(None, alias="errorCode")
-    """The code of the error that has occurred. This field may not be returned for some errors.
-    """
-    error_message: Optional[str] = TransportField(None, alias="errorMessage")
-    """The human-readable description of the error that has occurred.
+    The Transaction created that rejects the creation of a MarketOrder to close the short Position. Only present if the Account exists and a short Position was specified.
     """
 
 
-__all__ = exporting(__name__, ...)
-
+__all__ = ("ClosePosition404Response",)

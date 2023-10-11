@@ -10,7 +10,7 @@ import os
 
 
 import yaml
-from typing import Any, Mapping, Optional, Union, Self, Type
+from typing import Mapping, Optional, Union, Self
 from typing_extensions import TypeAlias
 
 from .configuration import Configuration
@@ -78,10 +78,10 @@ limiting all file operations to the creating user.
 # unified type definitions for YAML loaders, Dmpers
 
 YAMLLoader: TypeAlias = Union[yaml.Loader, yaml.FullLoader, yaml.SafeLoader, yaml.UnsafeLoader]
-YAMLLoaderType: TypeAlias = Union[Type[yaml.Loader], Type[yaml.FullLoader], Type[yaml.SafeLoader], Type[yaml.UnsafeLoader]]
+YAMLLoaderType: TypeAlias = Union[type[yaml.Loader], type[yaml.FullLoader], type[yaml.SafeLoader], type[yaml.UnsafeLoader]]
 
 YAMLDumper: TypeAlias = Union[yaml.BaseDumper, yaml.SafeDumper, yaml.Dumper]
-YAMLDumperType: TypeAlias = Union[Type[yaml.BaseDumper], Type[yaml.SafeDumper], Type[yaml.Dumper]]
+YAMLDumperType: TypeAlias = Union[type[yaml.BaseDumper], type[yaml.SafeDumper], type[yaml.Dumper]]
 
 
 class YamlConfig(Configuration):

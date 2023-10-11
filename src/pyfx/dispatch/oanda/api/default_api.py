@@ -1,26 +1,22 @@
 # DefaultApi definition, based on code generated with OpenAPI Generator
 
 from ..exec_controller import ExecController
-import os
 from ..transport.data import ApiObject
-from concurrent.futures import ThreadPoolExecutor
-from typing_extensions import TypeVar
 from types import CoroutineType, FunctionType
 from typing import Literal
 import asyncio as aio
 from enum import StrEnum
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, AsyncGenerator, Awaitable, Self
+from typing import Any, AsyncIterator, AsyncGenerator, Awaitable
 
-from pydantic import validate_call
-from typing import Awaitable, Callable, Optional, Union, Mapping, Sequence, Type
-from typing_extensions import Annotated, TypeAlias
+from typing import Awaitable, Callable, Optional, Union, Mapping, Sequence
+from typing_extensions import Annotated
 
 from pydantic import Field
 
 from ..util import exporting
-from ..transport import ApiObject, JsonTypesRepository
+from ..transport import ApiObject
 from .. import models
 from ..models import (
     AccountId,
@@ -104,14 +100,59 @@ DT_ORDINAL_ONE: datetime = datetime.fromordinal(1)
 
 @dataclass(eq=False, order=False)
 class DispatchController(ExecController):
+    """
+    API integration for ExecController
+
+    ## Usage
+
+    As an extension to the abstract ExecController
+    class, DispatchController provides additional
+    support for initializing an API client to the
+    controller.
+
+    Given a subclass implementing `run_async()`,
+    the subclass can be used with the ExecController
+    `run_context()` context manager, as illustrated
+    in the `ExecController.run_context()` documentation
+    string.
+
+    Example are provided in `quotes_app.py` and
+    `quotes_async.py` within the `examples`
+    source directory
+    """
 
     api_client: ApiClient
     api: "DefaultApi"
 
     def initialize_defaults(self):
+        """
+        Initialize all defaults for the base class, then creating
+        the ApiClient and DefaultApi for this controller.
+
+        ## Usage
+
+        It's assumed that the configuration property will have been
+        set, before this method is called.
+
+        The generalized constructor `from_config_ini()` will provide
+        a configuration object to the initialized controller.
+
+        This configuration object is required for normal API client
+        initialization.
+        """
         super().initialize_defaults()
         self.api_client = ApiClient(self)
         self.api = DefaultApi(self)
+
+    def close(self):
+        """
+        Close this controller
+
+        close() will close the REST client for this controller,
+        then dispatching to `ExecController.close()`
+        """
+        self.main_loop.run_until_complete(self.api_client.rest_client.aclose())
+        super().close()
 
 
 ##
@@ -119,21 +160,33 @@ class DispatchController(ExecController):
 ##
 
 class DefaultApi(object):
-    '''API dispatch for the OANDA fxTrade v20 REST API'''
+    """
+    API manager for the fxTrade v20 REST API
+    """
 
     api_client: ApiClient
+    """
+    API Client for this API manager
+    """
+
     # types_repository: TransportTypesRepository = JsonTypesRepository
 
     controller: DispatchController
+    """
+    Thread dispatch controller for this API manager
+    """
 
     def __init__(self, controller: DispatchController):
+        """
+        Initialize the controller and API Client for this API manager
+        """
         self.controller = controller
         self.api_client = controller.api_client
 
     @classmethod
-    def get_streaming_type_callback(self, response_map: Mapping[int, Type[ApiObject]],
+    def get_streaming_type_callback(self, response_map: Mapping[int, type[ApiObject]],
                                     callback_heartbeat: bool = False
-                                    ) -> Callable[[ResponseInfo, str], Optional[Type[ApiObject]]]:
+                                    ) -> Callable[[ResponseInfo, str], Optional[type[ApiObject]]]:
         heartbeat_cls = response_map[0]
         primary_cls = response_map[200]
         initial_chunk = True
@@ -164,7 +217,7 @@ class DefaultApi(object):
         ##   from an intermediate proxy server, the ModelBuilder generator
         ##   will have handled this internal to the generator routine
 
-        def streaming_type_callback(info: ResponseInfo, chunk: bytes) -> Optional[Type[ApiObject]]:
+        def streaming_type_callback(info: ResponseInfo, chunk: bytes) -> Optional[type[ApiObject]]:
             nonlocal response_map, heartbeat_cls, primary_cls, initial_chunk, callback_heartbeat
             status = info.status
             if initial_chunk:
@@ -183,11 +236,11 @@ class DefaultApi(object):
         return streaming_type_callback
 
     @classmethod
-    def get_rest_type_callback(self, response_map: Mapping[int, Type[ApiObject]]
-                               ) -> Callable[[ResponseInfo, str], Optional[Type[ApiObject]]]:
+    def get_rest_type_callback(self, response_map: Mapping[int, type[ApiObject]]
+                               ) -> Callable[[ResponseInfo, str], Optional[type[ApiObject]]]:
 
         def rest_type_callback(info: ResponseInfo, chunk: bytes
-                               ) -> Optional[Type[ApiObject]]:
+                               ) -> Optional[type[ApiObject]]:
             nonlocal response_map
             status = info.status
             if status in response_map:
@@ -225,9 +278,7 @@ class DefaultApi(object):
         _header_params = {'ClientRequestID': client_request_id} if client_request_id else None
         _response_types_map = {
             200: models.CancelOrder200Response,
-            401: models.FxTrade400Response,
-            404: models.CancelOrder404Response,
-            405: models.FxTrade400Response,
+            404: models.CancelOrder404Response
         }
 
         return await self.api_client.call_api(
@@ -269,9 +320,7 @@ class DefaultApi(object):
         _response_types_map = {
             200: models.ClosePosition200Response,
             400: models.ClosePosition400Response,
-            401: models.FxTrade400Response,
             404: models.ClosePosition404Response,
-            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
@@ -312,9 +361,7 @@ class DefaultApi(object):
         _response_types_map = {
             200: models.CloseTrade200Response,
             400: models.CloseTrade400Response,
-            401: models.FxTrade400Response,
             404: models.CloseTrade404Response,
-            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
@@ -350,10 +397,7 @@ class DefaultApi(object):
         _response_types_map = {
             200: models.ConfigureAccount200Response,
             400: models.ConfigureAccount400Response,
-            403: models.ConfigureAccount400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            403: models.ConfigureAccount400Response
         }
 
         return await self.api_client.call_api(
@@ -365,8 +409,7 @@ class DefaultApi(object):
     @validate_request
     async def create_order(self,
                            account_id: AccountId,
-                           create_order_body: CreateOrderRequest
-                           ,
+                           create_order_body: CreateOrderRequest,
                            future: Optional[aio.Future[CreateOrder201Response]] = None
                            ) -> Awaitable[CreateOrder201Response]:
         """Create Order
@@ -390,10 +433,7 @@ class DefaultApi(object):
         _response_types_map = {
             201: models.CreateOrder201Response,
             400: models.CreateOrder400Response,
-            401: models.FxTrade400Response,
-            403: models.FxTrade400Response,
-            404: models.CreateOrder404Response,
-            405: models.FxTrade400Response,
+            404: models.CreateOrder404Response
         }
 
         return await self.api_client.call_api(
@@ -422,10 +462,7 @@ class DefaultApi(object):
         _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            200: models.GetAccount200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetAccount200Response
         }
 
         return await self.api_client.call_api(
@@ -458,11 +495,7 @@ class DefaultApi(object):
         _query_params = (('sinceTransactionID', since_transaction_id),) if since_transaction_id else None
 
         _response_types_map = {
-            200: models.GetAccountChanges200Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
-            416: models.FxTrade400Response,
+            200: models.GetAccountChanges200Response
         }
 
         return await self.api_client.call_api(
@@ -497,10 +530,7 @@ class DefaultApi(object):
         _collection_formats = {'instruments': 'csv'} if instruments else None
 
         _response_types_map = {
-            200: models.GetAccountInstruments200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetAccountInstruments200Response
         }
 
         return await self.api_client.call_api(
@@ -539,10 +569,7 @@ class DefaultApi(object):
         _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            200: models.GetAccountSummary200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetAccountSummary200Response
         }
 
         return await self.api_client.call_api(
@@ -570,11 +597,7 @@ class DefaultApi(object):
         _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            200: models.GetInstrumentPriceRange200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetInstrumentPriceRange200Response
         }
 
         return await self.api_client.call_api(
@@ -602,10 +625,7 @@ class DefaultApi(object):
         _path_params = {'userSpecifier': user_specifier}
 
         _response_types_map = {
-            200: models.GetExternalUserInfo200Response,
-            401: models.FxTrade400Response,
-            403: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetExternalUserInfo200Response
         }
 
         return await self.api_client.call_api(
@@ -694,11 +714,7 @@ class DefaultApi(object):
             _query_params.append(('weeklyAlignment', weekly_alignment))
 
         _response_types_map = {
-            200: models.GetInstrumentCandles200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetInstrumentCandles200Response
         }
 
         return await self.api_client.call_api(
@@ -821,11 +837,7 @@ class DefaultApi(object):
             _query_params.append(('units', units))
 
         _response_types_map = {
-            200: models.GetInstrumentCandles200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetInstrumentCandles200Response
         }
 
         return await self.api_client.call_api(
@@ -881,11 +893,7 @@ class DefaultApi(object):
         _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            200: models.GetInstrumentPrice200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetInstrumentPrice200Response
         }
 
         return await self.api_client.call_api(
@@ -925,11 +933,7 @@ class DefaultApi(object):
             _query_params.append(('to', to))
 
         _response_types_map = {
-            200: models.GetInstrumentPriceRange200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetInstrumentPriceRange200Response
         }
 
         return await self.api_client.call_api(
@@ -963,10 +967,7 @@ class DefaultApi(object):
                         }
 
         _response_types_map = {
-            200: models.GetOrder200Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetOrder200Response
         }
 
         return await self.api_client.call_api(
@@ -1000,10 +1001,7 @@ class DefaultApi(object):
             _path_params['instrument'] = instrument
 
         _response_types_map = {
-            200: models.GetPosition200Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetPosition200Response
         }
 
         return await self.api_client.call_api(
@@ -1045,11 +1043,7 @@ class DefaultApi(object):
             _query_params.append(('to', to))
 
         _response_types_map = {
-            200: models.GetInstrumentPriceRange200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetInstrumentPriceRange200Response
         }
 
         return await self.api_client.call_api(
@@ -1103,11 +1097,7 @@ class DefaultApi(object):
             _query_params.append(('includeHomeConversions', include_home_conversions))
 
         _response_types_map = {
-            200: models.GetPrices200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetPrices200Response
         }
 
         return await self.api_client.call_api(
@@ -1143,10 +1133,7 @@ class DefaultApi(object):
             _path_params['tradeSpecifier'] = trade_specifier
 
         _response_types_map = {
-            200: models.GetTrade200Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetTrade200Response
         }
 
         return await self.api_client.call_api(
@@ -1180,10 +1167,7 @@ class DefaultApi(object):
             _path_params['transactionID'] = transaction_id
 
         _response_types_map = {
-            200: models.GetTransaction200Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetTransaction200Response
         }
 
         return await self.api_client.call_api(
@@ -1232,12 +1216,7 @@ class DefaultApi(object):
         _collection_formats = {'type': 'csv'} if type_filter else None
 
         _response_types_map = {
-            200: models.GetTransactionRange200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
-            416: models.FxTrade400Response,
+            200: models.GetTransactionRange200Response
         }
 
         return await self.api_client.call_api(
@@ -1272,12 +1251,7 @@ class DefaultApi(object):
         _query_params = (('id', txn_id),)
 
         _response_types_map = {
-            200: models.GetTransactionRange200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
-            416: models.FxTrade400Response,
+            200: models.GetTransactionRange200Response
         }
 
         return await self.api_client.call_api(
@@ -1306,10 +1280,7 @@ class DefaultApi(object):
         _path_params = {'userSpecifier': user_specifier}
 
         _response_types_map = {
-            200: models.GetUserInfo200Response,
-            401: models.FxTrade400Response,
-            403: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.GetUserInfo200Response
         }
 
         return await self.api_client.call_api(
@@ -1344,11 +1315,7 @@ class DefaultApi(object):
         _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            200: models.InstrumentsInstrumentOrderBookGet200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.InstrumentsInstrumentOrderBookGet200Response
         }
 
         return await self.api_client.call_api(
@@ -1371,9 +1338,7 @@ class DefaultApi(object):
         """
 
         _response_types_map = {
-            200: models.ListAccounts200Response,
-            401: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.ListAccounts200Response
         }
 
         return await self.api_client.call_api(
@@ -1420,11 +1385,7 @@ class DefaultApi(object):
         _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            200: models.InstrumentsInstrumentPositionBookGet200Response,
-            400: models.FxTrade400Response,
-            401: models.FxTrade400Response,
-            404: models.FxTrade400Response,
-            405: models.FxTrade400Response,
+            200: models.InstrumentsInstrumentPositionBookGet200Response
         }
 
         return await self.api_client.call_api(
@@ -1453,10 +1414,7 @@ class DefaultApi(object):
         _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            200: models.ListOpenPositions200Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.ListOpenPositions200Response
         }
 
         return await self.api_client.call_api(
@@ -1492,10 +1450,7 @@ class DefaultApi(object):
         _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            200: models.ListOpenTrades200Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.ListOpenTrades200Response
         }
 
         return await self.api_client.call_api(
@@ -1563,10 +1518,7 @@ class DefaultApi(object):
             _query_params.append(('beforeID', before_id))
 
         _response_types_map = {
-            200: models.ListOrders200Response,
-            400: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.ListOrders200Response
         }
 
         return await self.api_client.call_api(
@@ -1609,10 +1561,7 @@ class DefaultApi(object):
         _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            200: models.ListPendingOrders200Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.ListPendingOrders200Response
         }
 
         return await self.api_client.call_api(
@@ -1648,10 +1597,7 @@ class DefaultApi(object):
         _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            200: models.ListPositions200Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.ListPositions200Response
         }
 
         return await self.api_client.call_api(
@@ -1718,10 +1664,7 @@ class DefaultApi(object):
             _query_params.append(('beforeID', before_id))
 
         _response_types_map = {
-            200: models.ListTrades200Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.ListTrades200Response
         }
 
         return await self.api_client.call_api(
@@ -1777,7 +1720,6 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-
         _query_params = []
         if var_from:
             _query_params.append(('from', var_from))
@@ -1794,13 +1736,7 @@ class DefaultApi(object):
         _collection_formats = {'type': 'csv'} if type_filter else None
 
         _response_types_map = {
-            200: models.ListTransactions200Response,
-            400: models.GetInstrumentCandles400Response,
-            401: models.GetInstrumentCandles400Response,
-            403: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
-            416: models.GetInstrumentCandles400Response,
+            200: models.ListTransactions200Response
         }
 
         return await self.api_client.call_api(
@@ -1875,9 +1811,7 @@ class DefaultApi(object):
         _response_types_map = {
             201: models.ReplaceOrder201Response,
             400: models.ReplaceOrder400Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.ReplaceOrder404Response,
-            405: models.GetInstrumentCandles400Response,
+            404: models.ReplaceOrder404Response
         }
 
         return await self.api_client.call_api(
@@ -1920,9 +1854,7 @@ class DefaultApi(object):
         _response_types_map = {
             200: models.SetOrderClientExtensions200Response,
             400: models.SetOrderClientExtensions400Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.SetOrderClientExtensions404Response,
-            405: models.GetInstrumentCandles400Response,
+            404: models.SetOrderClientExtensions404Response
         }
 
         return await self.api_client.call_api(
@@ -1964,9 +1896,7 @@ class DefaultApi(object):
         _response_types_map = {
             200: models.SetTradeClientExtensions200Response,
             400: models.SetTradeClientExtensions400Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.SetTradeClientExtensions404Response,
-            405: models.GetInstrumentCandles400Response,
+            404: models.SetTradeClientExtensions404Response
         }
 
         return await self.api_client.call_api(
@@ -2007,10 +1937,7 @@ class DefaultApi(object):
 
         _response_types_map = {
             200: models.SetTradeDependentOrders200Response,
-            400: models.SetTradeDependentOrders400Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            400: models.SetTradeDependentOrders400Response
         }
 
         return await self.api_client.call_api(
@@ -2075,17 +2002,9 @@ class DefaultApi(object):
         if snapshot:
             _query_params.append(('snapshot', snapshot))
 
-        ## TBD note one Heartbeat type not used in any method of DefaultApi,
-        ## presumably "Deprecated"
-        ## - models.MT4TransactionHeartbeat
-
         _response_types_map = {
             0: models.PricingHeartbeat,
-            200: models.StreamPricing200Response,
-            400: models.GetInstrumentCandles400Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.StreamPricing200Response
         }
 
         types_callback = self.__class__.get_streaming_type_callback(_response_types_map, callback_heartbeat)
@@ -2121,11 +2040,7 @@ class DefaultApi(object):
 
         _response_types_map = {
             0: models.TransactionHeartbeat,
-            200: models.StreamTransactions200Response,
-            400: models.GetInstrumentCandles400Response,
-            401: models.GetInstrumentCandles400Response,
-            404: models.GetInstrumentCandles400Response,
-            405: models.GetInstrumentCandles400Response,
+            200: models.StreamTransactions200Response
         }
 
         types_callback = self.__class__.get_streaming_type_callback(_response_types_map)

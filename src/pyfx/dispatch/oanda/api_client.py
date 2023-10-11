@@ -6,7 +6,7 @@ import atexit
 import datetime
 from numbers import Real
 import logging
-from typing import Any, Awaitable, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Awaitable, Mapping, Optional, Sequence, Union
 from typing_extensions import AsyncGenerator, TypeAlias
 
 from urllib.parse import quote
@@ -77,7 +77,7 @@ class ApiClient(object):
             self, resource_path: str, method: RequestMethod, *,
             path_params=None, query_params=None, header_params=None,
             body: Optional[ApiObject] = None,
-            response_types_map: Optional[Mapping[int, Type[ApiObject]]] = None,
+            response_types_map: Optional[Mapping[int, type[ApiObject]]] = None,
             collection_formats: Optional[Mapping[str, str]] = None,
             streaming: bool = False,
             receiver: Optional[AsyncGenerator[Any, bytes]] = None,

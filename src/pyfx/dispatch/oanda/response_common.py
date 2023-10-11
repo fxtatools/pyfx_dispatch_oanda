@@ -5,13 +5,13 @@ from .util.naming import exporting
 from .transport.data import ApiObject
 
 from dataclasses import dataclass
-from typing import Mapping, Optional, Type
+from typing import Mapping, Optional
 
 
 @dataclass
 class ResponseInfo:
     ## intermediate dataclass for the generator-based response workflow
-    response_types_map: Mapping[int, Type[ApiObject]]
+    response_types_map: Mapping[int, type[ApiObject]]
     status: int
     reason: str
     headers: Mapping[str, str]

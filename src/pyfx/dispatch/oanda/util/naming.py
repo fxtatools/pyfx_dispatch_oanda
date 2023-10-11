@@ -4,12 +4,13 @@ from abc import abstractmethod
 import enum
 import sys
 from types import ModuleType
-from typing import Any, Callable, Generator, Iterable, Iterator, Optional, Type, Union
+from typing import Any, Callable, Generator, Iterable, Iterator, Optional, Union
 import typing
 from typing_extensions import final, Protocol, runtime_checkable, TypeAlias, TypeVar
 import typing_extensions
 
 Tname = TypeVar("Tname", bound=str)
+
 
 @final
 @runtime_checkable
@@ -79,7 +80,7 @@ def get_module(qual: Union[str, ModuleType]) -> ModuleType:
 def module_defines_iter(module: Union[str, ModuleType], *,
                         predicate: Optional[Callable[[Any], bool]] = None,
                         exclude: Optional[Union[Iterable[Any], Any]] = None,
-                        exclude_types: Optional[Union[Type, Iterable[Type]]] = None,
+                        exclude_types: Optional[Union[type, Iterable[type]]] = None,
                         annotations: Optional[bool] = True,
                         typevars=False,
                         enum_members=False
@@ -125,7 +126,7 @@ def module_defines_iter(module: Union[str, ModuleType], *,
 def exporting(whence, first, *rest,
               predicate: Optional[Callable[[Any], bool]] = None,
               exclude: Optional[Union[Iterable[Any], Any]] = None,
-              exclude_types: Optional[Union[Type, Iterable[Type]]] = None,
+              exclude_types: Optional[Union[type, Iterable[type]]] = None,
               annotations: bool = True,
               typevars: bool = False, enum_members: bool = False
               ) -> list[str]:

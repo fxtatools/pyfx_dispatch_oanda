@@ -1,12 +1,10 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
+"""GetInstrumentPrice200Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Optional
 
-from .price import Price
-
 from ..transport import ApiObject, TransportField
-from ..util import exporting
+
+from .price import Price
 
 
 class GetInstrumentPrice200Response(ApiObject):
@@ -16,4 +14,4 @@ class GetInstrumentPrice200Response(ApiObject):
     price: Optional[Price] = TransportField(None)
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("GetInstrumentPrice200Response",)

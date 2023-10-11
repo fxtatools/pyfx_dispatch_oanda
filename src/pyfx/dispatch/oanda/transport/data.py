@@ -9,7 +9,7 @@ from pydantic.fields import PydanticUndefined
 from pydantic._internal._model_construction import ModelMetaclass
 import sys
 from types import MappingProxyType
-from typing import Any, Generic, List, Optional, Tuple, Type, TypeAlias, Union
+from typing import Any, Generic, Optional, Tuple, TypeAlias, Union
 from typing_extensions import ClassVar, Self, TypeVar, TypeAlias, Union, get_type_hints
 
 from ..util.typeref import get_type_class, get_literal_value
@@ -48,7 +48,7 @@ class ApiClass(ModelMetaclass):
                           )
 
     @staticmethod
-    def __new__(cls, cls_name: str, bases: Tuple[Type[Any]], namespace: Mapping[str, Any]):
+    def __new__(cls, cls_name: str, bases: Tuple[type[Any]], namespace: Mapping[str, Any]):
         overrides = dict()
 
         if "model_config" not in namespace:
@@ -360,7 +360,7 @@ class ApiObject(BaseModel, metaclass=ApiClass):
         else:
             raise KeyError("Model field not found", key)
 
-    def __repr__(self, cache: Optional[List] = None):
+    def __repr__(self, cache: Optional[list] = None):
         return self.__class__.__qualname__ + "(" + ", ".join({field + "=" + repr(getattr(self, field)) for field in self.model_fields_set}) + ")"
 
     def __str__(self):
@@ -400,7 +400,7 @@ TypesMap: TypeAlias = Mapping[Td, type[Self]]
 
 class AbstractApiClass(ApiClass):
     @staticmethod
-    def __new__(cls, cls_name: str, bases: Tuple[Type[Any]], namespace: Mapping[str, Any],
+    def __new__(cls, cls_name: str, bases: Tuple[type[Any]], namespace: Mapping[str, Any],
                 designator_key: Optional[str] = None,
                 designator_type: Optional[type[ApiObject]] = None):
 

@@ -1,14 +1,11 @@
-
 """CancelOrder200Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Optional
 
-from .response_mixins import TransactionResponse
-
 from ..transport import TransportField
 
-from .order_cancel_transaction import OrderCancelTransaction
 from .response_mixins import TransactionResponse
+from .order_cancel_transaction import OrderCancelTransaction
 
 
 class CancelOrder200Response(TransactionResponse):
@@ -18,7 +15,8 @@ class CancelOrder200Response(TransactionResponse):
 
     order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(
         None, alias="orderCancelTransaction")
-    """The Transaction that cancelled the Order
+    """
+    The Transaction that cancelled the Order
     """
 
 

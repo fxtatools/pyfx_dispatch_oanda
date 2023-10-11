@@ -15,7 +15,8 @@ class CancelOrder404Response(TransactionErrorResponse):
 
     order_cancel_reject_transaction: Optional[OrderCancelRejectTransaction] = TransportField(
         None, alias="orderCancelRejectTransaction")
-    """The Transaction that rejected the cancellation of the Order. Only present if the Account exists.
+    """
+    The Transaction that rejected the cancellation of the Order. Only present if the Account exists.
     """
 
 

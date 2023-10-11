@@ -61,7 +61,7 @@ import traceback
 from urllib.error import HTTPError
 import urllib.request
 
-from typing import Any, Callable, Generator, List, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Generator, Sequence, TypeVar, Union
 
 if sys.version_info >= (3, 10):
     ## TypeAlias is declared for the Yields alias, if >= 3.10
@@ -256,7 +256,7 @@ def ensure_env(options: ap.Namespace) -> int:
                 notify("Removing bootstrap venv %s", tmpenv_dir)
 
 
-def ensure_list(val: Union[Tuple, List]):
+def ensure_list(val: Union[tuple, list]):
     if isinstance(val, list):
         return val
     else:
@@ -372,7 +372,7 @@ def show_help_func(parser: ap.ArgumentParser, stream=sys.stdout) -> OptionsFunc:
 @contextmanager
 def argparser(
     prog,
-    formatter_class: "Type[ap.HelpFormatter]" = ap.ArgumentDefaultsHelpFormatter,
+    formatter_class: "type[ap.HelpFormatter]" = ap.ArgumentDefaultsHelpFormatter,
     **kwargs,
 ) -> Yields[ap.ArgumentParser]:
     parser = ap.ArgumentParser(prog=prog, formatter_class=formatter_class, **kwargs)
@@ -385,7 +385,7 @@ def command_parser(
     name: str,
     func: OptionsFunc,
     description: str,
-    formatter_class: "Type[ap.HelpFormatter]" = ap.ArgumentDefaultsHelpFormatter,
+    formatter_class: "type[ap.HelpFormatter]" = ap.ArgumentDefaultsHelpFormatter,
     **parser_args,
 ) -> "Yields[ap.ArgumentParser]":
     helper_args = {}

@@ -6,19 +6,15 @@ import logging
 import os
 import re
 import ssl
-from typing import Any, Awaitable, Mapping, Optional, Union, Type
+from typing import Any, Awaitable, Mapping, Optional
 from types import MappingProxyType
 from typing_extensions import AsyncGenerator
 
 from .io import AsyncSegmentChannel
 from .exec_controller import ExecController, thread_loop
-
 from .response_common import ResponseInfo, REST_CONTENT_TYPE, REST_CONTENT_TYPE_BYTES
-
 from .transport.data import ApiObject
-
 from .exceptions import ApiException
-from .configuration import Configuration
 from .request_constants import RequestMethod
 from .parser import ModelBuilder
 
@@ -32,8 +28,10 @@ def set_future_exception(future: aio.Future, exception: Exception):
     future.get_loop().call_soon_threadsafe(future.set_exception, exception)
 
 
-class RESTClientObject(object):
+class RESTClientObject():
     ## per-request generalization for ApiClient
+
+    __slots__ = ("transport", "client", "controller",)
 
     transport: httpx.AsyncHTTPTransport
     client: httpx.AsyncClient
@@ -112,9 +110,8 @@ class RESTClientObject(object):
         await self.transport.aclose()
         await self.client.aclose()
 
-
     async def request(self, method: RequestMethod, url: str,
-                      response_types_map: Mapping[int, Type[ApiObject]], *,
+                      response_types_map: Mapping[int, type[ApiObject]], *,
                       headers: Optional[Mapping[str, str]] = None,
                       body: Optional[str] = None,
                       receiver: Optional[AsyncGenerator[Any, bytes]] = None,
@@ -234,7 +231,7 @@ class RESTClientObject(object):
                 return None if future else response_future.result()
 
     async def process_response(self, response_future: aio.Future, client_response: httpx.Response,
-                               response_types_map: Mapping[int, Type[ApiObject]],
+                               response_types_map: Mapping[int, type[ApiObject]],
                                content_type: str):
 
         try:
@@ -258,7 +255,7 @@ class RESTClientObject(object):
 
     def parse_response(self, response_future: aio.Future,
                        stream: AsyncSegmentChannel,
-                       content_type: str, response_type: Type[ApiObject],
+                       content_type: str, response_type: type[ApiObject],
                        client_response: httpx.Response):
         loop = thread_loop.get()
         if __debug__:
@@ -274,7 +271,7 @@ class RESTClientObject(object):
 
     async def parse_response_async(self, response_future: aio.Future,
                                    stream: AsyncSegmentChannel,
-                                   content_type: str, response_type: Type[ApiObject],
+                                   content_type: str, response_type: type[ApiObject],
                                    client_response: httpx.Response):
         ## parse a server response asynchronously
         response = ''

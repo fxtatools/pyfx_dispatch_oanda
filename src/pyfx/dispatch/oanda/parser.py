@@ -7,7 +7,7 @@ import ijson
 import logging
 import os
 
-from typing import Any, AsyncGenerator, Callable, Generic, Mapping, Optional, Self, Sequence, Type, Union
+from typing import Any, AsyncGenerator, Callable, Generic, Mapping, Optional, Self, Sequence, Union
 from typing_extensions import Generic, TypeVar
 
 from .io import AsyncSegmentChannel, DataError
@@ -80,7 +80,7 @@ class InstanceBuilder(Generic[T], ABC):
             self.instance = model_cls.finalize_prototype(proto)
         self.finalized = True
 
-    def __init__(self, cls: Type, origin: "Optional[InstanceBuilder]" = None):
+    def __init__(self, cls: type, origin: "Optional[InstanceBuilder]" = None):
         super().__init__()
         self.builder = self
         self.origin = origin  # the containing builder, if any
@@ -136,7 +136,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
     value for the designator key.
     """
 
-    def __init__(self, cls: Optional[Type[ApiObject]], origin: Optional[InstanceBuilder] = None):
+    def __init__(self, cls: Optional[type[ApiObject]], origin: Optional[InstanceBuilder] = None):
         ## the model class `cls` should be provided at a top level. The value may be None
         ## when parsing a mapping under an unrealized abstract type
         self.realize_abstract = False
@@ -318,7 +318,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                     if __debug__:
                         # the transport type may not be known when parsing a mapping
                         # under an unrealized abstract type
-                        if transport and not isinstance(transport, Type):
+                        if transport and not isinstance(transport, type):
                             raise AssertionError("Not a class", transport, self.key, self.instance_class, self.instance)
                     if transport is None:
                         # deferring deserialization
@@ -344,7 +344,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                             self.builder = self
 
     @classmethod
-    async def from_text_async(cls, model_cls: Type[Tmodel], data: Union[bytes, str]) -> Tmodel:
+    async def from_text_async(cls, model_cls: type[Tmodel], data: Union[bytes, str]) -> Tmodel:
         async with AsyncSegmentChannel() as stream:
             await stream.feed(data, True)
             builder = cls[model_cls](model_cls)
@@ -353,14 +353,14 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
             return builder.instance
 
     @classmethod
-    def from_text(cls, model_cls: Type[Tmodel], data: Union[bytes, str]) -> Tmodel:
+    def from_text(cls, model_cls: type[Tmodel], data: Union[bytes, str]) -> Tmodel:
         loop = aio.get_event_loop_policy().get_event_loop()
         return loop.run_until_complete(cls.from_text_async(model_cls, data))
 
     @classmethod
     async def from_response_async(cls, response_info: ResponseInfo,
                                   stream: AsyncSegmentChannel,
-                                  model_cls_callback: Callable[[ResponseInfo, bytes], Optional[Type[ApiObject]]],
+                                  model_cls_callback: Callable[[ResponseInfo, bytes], Optional[type[ApiObject]]],
                                   model_callback: Callable[[ApiObject], Any]
                                   ):
 
@@ -471,7 +471,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
 
     @classmethod
     async def from_receiver_gen(cls, controller: ExecController,
-                                model_cls_callback: Callable[[ResponseInfo, bytes], Optional[Type[ApiObject]]],
+                                model_cls_callback: Callable[[ResponseInfo, bytes], Optional[type[ApiObject]]],
                                 model_callback: Callable[[ApiObject], Any]
                                 ) -> AsyncGenerator[ApiObject, Union[ResponseInfo, bytes, None]]:
         ## read a server response from an fxTrade v20 streaming endpoint,

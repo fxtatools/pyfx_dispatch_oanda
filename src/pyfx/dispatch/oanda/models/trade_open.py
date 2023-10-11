@@ -34,13 +34,16 @@ class TradeOpen(ApiObject):
     """
 
     client_extensions: Optional[ClientExtensions] = TransportField(None, alias="clientExtensions")
+    """
+    The client extensions for the newly opened Trade
+    """
 
-    half_spread_cost: Optional[str] = TransportField(None, alias="halfSpreadCost")
+    half_spread_cost: Optional[AccountUnits] = TransportField(None, alias="halfSpreadCost")
     """
     The half spread cost for the trade open. This can be a positive or negative value and is represented in the home currency of the Account.
     """
 
-    initial_margin_required: Optional[str] = TransportField(None, alias="initialMarginRequired")
+    initial_margin_required: Optional[AccountUnits] = TransportField(None, alias="initialMarginRequired")
     """
     The margin required at the time the Trade was created. Note, this is the 'pure' margin required, it is not the 'effective' margin used that factors in the trade risk if a GSLO is attached to the trade.
     """

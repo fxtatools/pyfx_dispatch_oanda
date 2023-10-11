@@ -1,34 +1,28 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-
-
+"""ConfigureAccount400Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Optional
 
-
+from ..transport import TransportField
+from .response_mixins import ErrorResponse
 from .client_configure_reject_transaction import ClientConfigureRejectTransaction
-
-from ..transport import ApiObject, TransportField
-from ..util import exporting
+from .common_types import TransactionId
 
 
-
-class ConfigureAccount400Response(ApiObject):
+class ConfigureAccount400Response(ErrorResponse):
     """
-    ConfigureAccount400Response
+    Response status codes under ConfigureAccount400Response:
+    400: The configuration specification was invalid.
+    403: The configuration operation was forbidden on the Account.
     """
+
     client_configure_reject_transaction: Optional[ClientConfigureRejectTransaction] = TransportField(None, alias="clientConfigureRejectTransaction")
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    """
+    The transaction that rejects the configuration of the Account.
+    """
+
+    last_transaction_id: Optional[TransactionId] = TransportField(None, alias="lastTransactionID")
     """The ID of the last Transaction created for the Account.
     """
-    error_code: Optional[str] = TransportField(None, alias="errorCode")
-    """The code of the error that has occurred. This field may not be returned for some errors.
-    """
-    error_message: Optional[str] = TransportField(None, alias="errorMessage")
-    """The human-readable description of the error that has occurred.
-    """
 
 
-__all__ = exporting(__name__, ...)
-
+__all__ = ("ConfigureAccount400Response",)

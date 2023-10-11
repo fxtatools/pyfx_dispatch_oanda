@@ -1,39 +1,50 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-
-
+"""ClosePosition200Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Optional
 
+from ..transport import TransportField
 
 from .market_order_transaction import MarketOrderTransaction
 from .order_cancel_transaction import OrderCancelTransaction
 from .order_fill_transaction import OrderFillTransaction
 
-
-from ..transport import ApiObject, TransportField
-from ..util import exporting
+from .response_mixins import TransactionResponse
 
 
-
-class ClosePosition200Response(ApiObject):
+class ClosePosition200Response(TransactionResponse):
     """
-    ClosePosition200Response
+    ClosePosition200Response: The Position closeout request has been successfully processed.
     """
+
     long_order_create_transaction: Optional[MarketOrderTransaction] = TransportField(None, alias="longOrderCreateTransaction")
+    """
+    The MarketOrderTransaction created to close the long Position.
+    """
+
     long_order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="longOrderFillTransaction")
+    """
+    OrderFill Transaction that closes the long Position
+    """
+
     long_order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="longOrderCancelTransaction")
+    """
+    OrderCancel Transaction that cancels the MarketOrder created to close the long Position
+    """
+
     short_order_create_transaction: Optional[MarketOrderTransaction] = TransportField(None, alias="shortOrderCreateTransaction")
+    """
+    The MarketOrderTransaction created to close the short Position.
+    """
+
     short_order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="shortOrderFillTransaction")
+    """
+    OrderFill Transaction that closes the short Position
+    """
+
     short_order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="shortOrderCancelTransaction")
-    related_transaction_ids: Optional[list[str]] = TransportField(None, alias="relatedTransactionIDs")
-    """The IDs of all Transactions that were created while satisfying the request.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
-    """The ID of the most recent Transaction created for the Account
+    OrderCancel Transaction that cancels the MarketOrder created to close the short Position
     """
 
 
-__all__ = exporting(__name__, ...)
-
+__all__ = ("ClosePosition200Response",)

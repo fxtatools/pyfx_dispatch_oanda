@@ -16,7 +16,7 @@ from pytest import mark
 import string
 import sys
 from typing_extensions import ClassVar, TypeVar, get_args, get_origin, get_original_bases
-from typing import Any, Generic, Literal, Optional, Sequence, Type, Tuple, Union, Mapping
+from typing import Any, Generic, Literal, Optional, Sequence, Union, Mapping
 from unittest import TestCase
 
 from .credential import Credential
@@ -38,12 +38,12 @@ __all__ = (
     "ModelTest",
 )
 
-Timpl = TypeVar("Timpl", bound=Union[Type[ApiObject], Type[DefaultApi]])
+Timpl = TypeVar("Timpl", bound=Union[type[ApiObject], type[DefaultApi]])
 
 
 class MockFactoryClass(ABCMeta):
     @staticmethod
-    def __new__(cls, name: str, bases: Tuple[str], dct: Mapping[str, Any]):
+    def __new__(cls, name: str, bases: tuple[str], dct: Mapping[str, Any]):
         overrides = None
         if "__model__" not in dct and "__orig_bases__" in dct:
             ## set the polyfactory.*.pydantic_factory __model__ for the derived class,
@@ -108,7 +108,7 @@ class MockFactory(pydantic_factory.ModelFactory[Timpl], Generic[Timpl], metaclas
         return np.random.rand()
 
     @classmethod
-    def get_provider_map(cls) -> Mapping[Type, Any]:
+    def get_provider_map(cls) -> Mapping[type, Any]:
         map = super().get_provider_map()
         ## add custom type callbacks for the polyfactory mock provider map
         map[Configuration] = cls.gen_config
@@ -140,7 +140,7 @@ class ComponentTest(TestCase):
 
 
 class ModelTest(ComponentTest, Generic[Timpl]):
-    __factory__: ClassVar[Type[MockFactory[Timpl]]]  # = MockFactory[ApiObject]
+    __factory__: ClassVar[type[MockFactory[Timpl]]]  # = MockFactory[ApiObject]
 
     json_encoder: ApiJsonEncoder
 
@@ -189,7 +189,7 @@ class ModelTest(ComponentTest, Generic[Timpl]):
             assert_that(inst_a).is_equal_to(inst_b)
 
     @classmethod
-    def get_model_class(cls) -> Type[ApiObject]:
+    def get_model_class(cls) -> type[ApiObject]:
         factory_cls: MockFactory = cls.__factory__
         # using generic type parameters, determine the model class
         # applied for the test class' mock factory

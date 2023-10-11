@@ -223,10 +223,6 @@ from . import get_instrument_candles200_response  # noqa: E402
 __all__.extend(exporting(get_instrument_candles200_response, ...))
 from .get_instrument_candles200_response import *  # noqa: F403, E402
 
-from . import get_instrument_candles400_response  # noqa: E402
-__all__.extend(exporting(get_instrument_candles400_response, ...))
-from .get_instrument_candles400_response import *  # noqa: F403, E402
-
 from . import get_instrument_price200_response  # noqa: E402
 __all__.extend(exporting(get_instrument_price200_response, ...))
 from .get_instrument_price200_response import *  # noqa: F403, E402
