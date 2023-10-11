@@ -31,13 +31,10 @@ def set_future_exception(future: aio.Future, exception: Exception):
 class RESTClientObject():
     ## per-request generalization for ApiClient
 
-    __slots__ = ("transport", "client", "controller",)
-
     transport: httpx.AsyncHTTPTransport
     client: httpx.AsyncClient
     controller: ExecController
 
-    # def __init__(self, loop: aio.AbstractEventLoop, configuration: Configuration):
     def __init__(self, controller: ExecController):
         self._loop = controller.main_loop
         config = controller.config
