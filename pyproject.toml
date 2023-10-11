@@ -25,6 +25,8 @@ dependencies = [
     "httpx[http2] >= 0.24.1",
     "ijson",
     "isocodes",
+    "numpy",
+    "pandas",
     "pydantic >2, <3",
     "python-dateutil >=2.8.2",
     "pyyaml",
