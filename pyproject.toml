@@ -22,7 +22,7 @@ dependencies = [
     "aioconsole",
     "certifi",
     "httpcore[http2]",
-    "httpx[http2]",
+    "httpx[http2] >= 0.24.1",
     "ijson",
     "isocodes",
     "pydantic >2, <3",
