@@ -31,7 +31,7 @@ of their associated institutions.
 
 ## Requirements
 
-Python 3.11+
+Python 3.11
 
 ## Installation & Usage
 
