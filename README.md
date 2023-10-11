@@ -232,19 +232,6 @@ host = https://api-fxpractice.oanda.com/v3
 The `examples/account.ini` file should be created with filesystem permissions
 limiting all file operations to the creating user.
 
-
-<a id="documentation-for-authorization"></a>
-## Documentation For Authorization
-
-See example, above
-
-## Documentation for API and Models
-
-The following documentation resources were created with OpenAPI Generator
-
-* [API Endpoints](./README.api.md)
-* [Models](./README.models.md)
-
 ## Author
 
 The [OANDA v20 OpenAPI spec](https://github.com/oanda/v20-openapi) is
