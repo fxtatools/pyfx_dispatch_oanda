@@ -84,7 +84,7 @@ class ConfigurationModel(BaseModel):
     The default value will be initialized from `TZ` if `TZ` is set
     in `os.environ`, else using UTC'''
 
-    max_read_workers: Optional[int] = None
+    max_thread_workers: Optional[int] = None
     '''Maximum number of workers for response processing
 
     `None` implies to use the system default.
