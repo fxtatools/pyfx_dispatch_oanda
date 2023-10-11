@@ -50,6 +50,8 @@ dev = [
     "pytest-dependency",
     "flake8 >=4.0.0",
     "polyfactory",
+    # attr: implicit dependency for polyfactory (19.6.2)
+    "attr",
     "autopep8",
     "pip-tools",
 ]
