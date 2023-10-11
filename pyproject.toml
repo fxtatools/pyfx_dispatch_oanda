@@ -49,6 +49,7 @@ dev = [
     "assertpy",
     "pytest-dependency",
     "flake8 >=4.0.0",
+    "polyfactory",
     "autopep8",
     "pip-tools",
 ]
