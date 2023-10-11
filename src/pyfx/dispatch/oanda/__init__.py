@@ -38,10 +38,6 @@ from . import exec_controller
 __all__.extend(exporting(exec_controller, ...))
 from .exec_controller import *  #  noqa: F403, E402
 
-from . import dispatch  #  noqa: E402
-__all__.extend(exporting(dispatch, ...))
-from .dispatch import *  #  noqa: F403, E402
-
 from . import response_common #  noqa: E402
 __all__.extend(exporting(response_common, ...))
 from .response_common import *  #  noqa: F403, E402

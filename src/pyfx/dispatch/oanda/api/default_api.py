@@ -2,7 +2,6 @@
 
 from ..exec_controller import ExecController
 import os
-from ..futures import FutureIter, FutureIterProcess, Ti, To
 from ..transport.data import ApiObject
 from concurrent.futures import ThreadPoolExecutor
 from typing_extensions import TypeVar
@@ -2137,46 +2136,6 @@ class DefaultApi(object):
             '/accounts/{accountID}/transactions/stream', RequestMethod.GET,
             path_params=_path_params, streaming=True, receiver=receiver,
             future=future)
-
-
-Tmodel = TypeVar('Tmodel', bound=ApiObject)
-
-# from ..data_futures import DataFuture, FutureProcess, Ti, To
-
-
-class ApiFuture(FutureIter[Tmodel, Literal[True]]):
-    client: DefaultApi
-
-    def __init__(self, client: DefaultApi):
-        super().__init__(loop=client.api_client.loop)
-        self.client = client
-
-    def get_done_flag(self) -> Awaitable[Literal[True]]:
-        return True
-
-
-class Acccounts(ApiFuture[models.AccountProperties]):
-    async def iterator(self) -> AsyncIterator[models.AccountProperties]:
-        async for account in self.client.accounts():
-            yield account
-
-
-class Instruments(ApiFuture[models.Instrument]):
-    account_id: AccountId
-
-    def __init__(self, account_id: AccountId, client: DefaultApi):
-        super().__init__(client=client)
-        self.account_id = account_id
-
-    async def iterator(self) -> AsyncIterator[models.Instrument]:
-        async for account in self.client.instruments(self.account_id):
-            yield account
-
-
-class Candles(ApiFuture[models.Candlestick]):
-    async def iterator(self) -> AsyncIterator[models.Candlestick]:
-        async for candlestick in self.client.candles(...):
-            yield candlestick
 
 
 __all__ = exporting(__name__, ...)
