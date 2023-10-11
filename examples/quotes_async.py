@@ -45,7 +45,6 @@ class ScriptController(DispatchController):
         loop = aio.get_running_loop()
         config = controller.config
         api_instance = controller.api
-        acct_future = aio.Future()
 
         async for account_props in api_instance.accounts(controller):
             account_id = account_props.id

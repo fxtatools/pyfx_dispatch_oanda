@@ -23,7 +23,6 @@ from typing import Awaitable, Mapping, Set
 
 logger = logging.getLogger("pyfx.dispatch.oanda.examples")
 
-
 ##
 ## Application Example for Console - async dispatch via future callbacks
 ##
@@ -34,11 +33,14 @@ class ExampleController(DispatchController):
     instruments: Mapping[str, Instrument] = field(default_factory=dict, repr=False, hash=False)
     instruments_to_process: Set[str] = field(init=False, hash=False)
 
+    exit_future: aio.Future
+
     def initialize_defaults(self):
         super().initialize_defaults()
         self.active_accounts = []
         self.instruments = {}
         self.instruments_to_process = set()
+        self.exit_future = aio.Future()
 
     async def dispatch_candles_display(self, future: aio.Future[GetInstrumentCandles200Response]):
         # Print OHLC data and timestamps from the instrument candles response
@@ -70,6 +72,8 @@ class ExampleController(DispatchController):
                         ),
                         file=out
                     )
+        if len(self.instruments_to_process) is int(0):
+            self.exit_future.set_result(True)
 
     async def dispatch_instrument_candles(self, future: aio.Future[GetAccountInstruments200Response]):
         # for each instrument, create a task to request instrument candles
@@ -115,25 +119,25 @@ class ExampleController(DispatchController):
             self.add_task(coro)
 
     async def run_async(self):
-        async with self.task_context():
-            async with console_io(self.main_loop):
-                # Fetch a list of fxTrade accounts for the requesting client.
-                #
-                # via future callback: For each account, process each account
-                # instrument, to produce each set of candlesticks for display
-                # in the script application
-                #
-                # Known Limitations
-                #
-                # - This stateless shell script will request the full account
-                #   list and instrument details, on each call.
-                #
-                accounts_future: aio.Future[ListAccounts200Response] = aio.Future()
-                accounts_future.add_done_callback(
-                    self.get_future_callback(self.dispatch_accounts_instruments)
-                )
-                coro: Awaitable = self.api.list_accounts(accounts_future)
-                await self.add_task(coro)
+        async with console_io(self.main_loop):
+            # Fetch a list of fxTrade accounts for the requesting client.
+            #
+            # via future callback: For each account, process each account
+            # instrument, to produce each set of candlesticks for display
+            # in the script application
+            #
+            # Known Limitations
+            #
+            # - This stateless shell script will request the full account
+            #   list and instrument details, on each call.
+            #
+            accounts_future: aio.Future[ListAccounts200Response] = aio.Future()
+            accounts_future.add_done_callback(
+                self.get_future_callback(self.dispatch_accounts_instruments)
+            )
+            coro: Awaitable = self.api.list_accounts(accounts_future)
+            self.add_task(coro)
+            await self.exit_future
 
 
 if __name__ == "__main__":

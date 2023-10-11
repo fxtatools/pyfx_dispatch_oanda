@@ -186,6 +186,7 @@ class ExecController(ABC):
         self.main_loop.set_default_executor(exc)
         self.executor = exc
         self.managed_loops = SimpleQueue[aio.AbstractEventLoop]()
+        self.task_group = aio.TaskGroup()
 
     @classmethod
     def from_config_ini(cls, path: os.PathLike = "account.ini",
@@ -270,21 +271,24 @@ class ExecController(ABC):
     async def run_async(self):
         raise NotImplementedError(self.run_async)
 
-    def __enter__(self) -> Self:
-        """Context manager entry function
+    async def run_trampoline(self):
+        """dispatch to run_async() within the contoller's task group context
 
-        - Initializes the `ExecController.task_context()` for this
-          ExecController
-        - returns `self` after exit from `run_async()`
+        ### Synopsis
 
-        See also: `ExecController.run_context()`
+        This function provides the top-level entry point for dispatch from
+        the ExecController's synchronous `run_context()` context manager to
+        the implementing class' `run_async()` method.
+
+        In application, `run_trampoline()` will call `run_async()`  within
+        an asynchronous `exec_context()` context for the  ExecController.
+
+        In effect, this will ensure that all tasks in the ExecController's
+        task group will be awaited before return from `run_trampline()`,
+        correspondingly before return from `run_context()`.
         """
-        self.main_loop.run_until_complete(self.run_async())
-        return self
-
-    def __exit__(self, *_):
-        """Calls `self.close()` before context manager exit"""
-        self.close()
+        async with self.task_context():
+            await self.run_async()
 
     @contextmanager
     def run_context(self):
@@ -320,7 +324,7 @@ class ExecController(ABC):
         """
         try:
             yield self
-            self.main_loop.run_until_complete(self.run_async())
+            self.main_loop.run_until_complete(self.run_trampoline())
         finally:
             self.close()
 
@@ -358,29 +362,22 @@ class ExecController(ABC):
 
     @asynccontextmanager
     async def task_context(self):
-        """Async context manager for ExecController
+        """Async context manager for ExecController.task_group handling
 
-        ### Usage
+        ## Usage
 
-        ExecController provides a synchronous context
-        manager at the class scope. This context manager
-        creates a future to run `ContextManager.run_async()`
-        before yielding control to the implementing context.
+        This context manager is applied under ExecController.run_trampoline()
+        while dispatching to
 
-        The asynchronous `task_context()` context manager
-        may applied in `run_async()` implementations
+        ## Synopsis
 
-        An example application is avaialble in `quotes_app.py`
-        within the `examples` directory
-
-        ### Procedureal Overview
-
-        - Initialize the task group for this controller
         - Bind the current thread's `thread_loop` context variable
-        to the main loop for this controller
+        to the main loop for this controller, within the calling
+        context
+        - Await all tasks within the ExecController's task group,
+        before return
         """
-        async with aio.TaskGroup() as tg:
-            self.task_group = tg
+        async with self.task_group:
             loop_pre = thread_loop.set(self.main_loop)
             try:
                 yield self
