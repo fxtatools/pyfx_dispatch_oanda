@@ -7,7 +7,7 @@ Home = "https://github.com/fxtatools/pyfx_dispatch_oanda"
 
 [project]
 name = "pyfx.dispatch.oanda"
-version = "1.0.0"
+version = "1.0.1"
 description = "aio support for OANDA v20 REST API (Unofficial)"
 authors = [{ name = "Sean Champ", email = "spchamp@users.noreply.github.com" }]
 license = { file = "COPYING" }
@@ -32,7 +32,7 @@ dependencies = [
     "pyyaml",
     "typing_extensions",
 ]
-requires-python = ">= 3.9"
+requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 socks = ["httpx[socks]", "socksio"]
