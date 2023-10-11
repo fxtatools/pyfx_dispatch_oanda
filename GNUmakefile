@@ -1,5 +1,7 @@
 ## GNU Makefile for PyFX::Dispatch::Oanda
 
+sinclude .env
+
 ifndef OSKIND
 UNAME_O:=		$(shell uname -o)
 ## _OSKIND_ defines the effective default
@@ -19,6 +21,7 @@ REQUIREMENTS_DEPS?=	pyproject.toml ${REQUIREMENTS_IN} $(wildcard requirements.lo
 PYVENV_DEPS?=		${PYVENV_DIR}/pyvenv.cfg
 PROJECT_PY?=		project.py
 
+
 ## goal: configure pip-compile to use the same cache dir as pip
 PIP_CACHE?=		$(if ${OSKIND} == "NT",${LOCALAPPDATA}\\pip\\cache,${HOME}/.cache/pip)
 
@@ -33,11 +36,14 @@ PYVENV_BINDIR?=		${PYVENV_DIR}/${PYVENV_SUBDIR}
 FETCH?=			${PYTHON} ${PROJECT_PY} fetch
 FETCH_DEPS?=		${PROJECT_PY}
 
+
 FLAKE8_LINT_SELECT?=	E9,F63,F7,F82
 FLAKE8_LINT_IGNORE?=	E117,E127,E128,E203,E251,E252,E266,W291,E302,E303,E501
 FLAKE8_LINT_IGNORE_PER_FILE?=	__init__.py:F401
 
-all: sync
+
+all: checks
+
 
 check-vars:
 	@echo OSKIND: ${OSKIND}
@@ -87,3 +93,8 @@ lint: ${PYVENV_BINDIR}/flake8
 
 tests: ${PYVENV_BINDIR}/pytest
 	${PYVENV_BINDIR}/pytest test
+
+check-tests: ${PYVENV_BINDIR}/pytest
+	${PYVENV_BINDIR}/pytest --collect-only test
+
+checks: tests lint

@@ -2,7 +2,7 @@
 
 import os
 from typing_extensions import Optional
-
+from .naming import exporting
 
 def expand_path(path: os.PathLike, basedir: Optional[os.PathLike] = None) -> os.PathLike:
     '''Return an absolute pathname for `path`
@@ -15,7 +15,7 @@ The provided `path` and `basedir` components will be processed as follows:
   per `os.path.expanduser()`. If the resulting path is an absolute
   pathname, that pathname will be returned.
 
-- If `basedir` is provided, then any user homedir prefix in `basedir` 
+- If `basedir` is provided, then any user homedir prefix in `basedir`
   will be expanded as for `path`. An absolute pathname will be returned,
   representing `path` as relative to the expanded `basedir`.
 
@@ -30,3 +30,6 @@ The provided `path` and `basedir` components will be processed as follows:
         return path_exp
     dir_exp = os.path.expanduser(basedir) if basedir else os.getcwd()
     return os.path.abspath(os.path.join(dir_exp, path_exp))
+
+__all__ = exporting(__name__, ...)
+

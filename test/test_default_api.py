@@ -1,303 +1,303 @@
-# coding: utf-8
+## DefaultApi tests
 
 import asyncio as aio
 import unittest
 
-import pyfx.dispatch.oanda as context
+from polyfactory.factories.attrs_factory import AttrsFactory
 
+import pyfx.dispatch.oanda as subject
+
+from pyfx.dispatch.oanda.test import run_tests
 
 class TestDefaultApi(unittest.TestCase):
     """DefaultApi unit test stubs"""
 
+    ## example = TestClientPrice.Factory
+    ## obj = example.build()
+
+
     def setUp(self):
-        loop = aio.get_event_loop_policy().get_event_loop()
-        config = context.Configuration("https://beta.example.com")
-        client = context.ApiClient(loop, config)
-        self.api = context.DefaultApi(client)  # noqa: E501
+        self.loop = aio.get_event_loop_policy().get_event_loop()
+        self.config = subject.Configuration(False, access_token="none")
+        self.client = subject.ApiClient(self.loop, self.config)
+        self.api = subject.DefaultApi(self.client)
 
     def tearDown(self):
-        pass
+        self.loop.run_until_complete(self.client.close)
 
-    def test_cancel_order(self):
-        """Test case for cancel_order
+    # def test_cancel_order(self):
+    #     """Test case for cancel_order
 
-        Cancel Order  # noqa: E501
-        """
-        pass
+    #     Cancel Order
+    #     """
+    #     pass
 
-    def test_close_position(self):
-        """Test case for close_position
+    # def test_close_trade(self):
+    #     """Test case for close_trade
 
-        Close Position  # noqa: E501
-        """
-        pass
+    #     Close Trade
+    #     """
+    #     pass
 
-    def test_close_trade(self):
-        """Test case for close_trade
+    # def test_configure_account(self):
+    #     """Test case for configure_account
 
-        Close Trade  # noqa: E501
-        """
-        pass
+    #     Configure Account
+    #     """
+    #     pass
 
-    def test_configure_account(self):
-        """Test case for configure_account
+    # def test_create_order(self):
+    #     """Test case for create_order
 
-        Configure Account  # noqa: E501
-        """
-        pass
+    #     Create Order
+    #     """
+    #     pass
 
-    def test_create_order(self):
-        """Test case for create_order
+    # def test_get_account(self):
+    #     """Test case for get_account
 
-        Create Order  # noqa: E501
-        """
-        pass
+    #     Account Details
+    #     """
+    #     pass
 
-    def test_get_account(self):
-        """Test case for get_account
+    # def test_get_account_changes(self):
+    #     """Test case for get_account_changes
 
-        Account Details  # noqa: E501
-        """
-        pass
+    #     Poll Account Updates
+    #     """
+    #     pass
 
-    def test_get_account_changes(self):
-        """Test case for get_account_changes
+    # def test_get_account_instruments(self):
+    #     """Test case for get_account_instruments
 
-        Poll Account Updates  # noqa: E501
-        """
-        pass
+    #     Account Instruments
+    #     """
+    #     pass
 
-    def test_get_account_instruments(self):
-        """Test case for get_account_instruments
+    # def test_get_account_summary(self):
+    #     """Test case for get_account_summary
 
-        Account Instruments  # noqa: E501
-        """
-        pass
+    #     Account Summary
+    #     """
+    #     pass
 
-    def test_get_account_summary(self):
-        """Test case for get_account_summary
+    # def test_get_base_prices(self):
+    #     """Test case for get_base_prices
 
-        Account Summary  # noqa: E501
-        """
-        pass
+    #     Get Base Prices
+    #     """
+    #     pass
 
-    def test_get_base_prices(self):
-        """Test case for get_base_prices
+    # def test_get_external_user_info(self):
+    #     """Test case for get_external_user_info
 
-        Get Base Prices  # noqa: E501
-        """
-        pass
+    #     External User Info
+    #     """
+    #     pass
 
-    def test_get_external_user_info(self):
-        """Test case for get_external_user_info
+    # def test_get_instrument_candles(self):
+    #     """Test case for get_instrument_candles
 
-        External User Info  # noqa: E501
-        """
-        pass
+    #     Get Candlesticks
+    #     """
+    #     pass
 
-    def test_get_instrument_candles(self):
-        """Test case for get_instrument_candles
+    # def test_get_instrument_candles_0(self):
+    #     """Test case for get_instrument_candles_0
 
-        Get Candlesticks  # noqa: E501
-        """
-        pass
+    #     Get Candlesticks
+    #     """
+    #     pass
 
-    def test_get_instrument_candles_0(self):
-        """Test case for get_instrument_candles_0
+    # def test_get_instrument_price(self):
+    #     """Test case for get_instrument_price
 
-        Get Candlesticks  # noqa: E501
-        """
-        pass
+    #     Price
+    #     """
+    #     pass
 
-    def test_get_instrument_price(self):
-        """Test case for get_instrument_price
+    # def test_get_instrument_price_range(self):
+    #     """Test case for get_instrument_price_range
 
-        Price  # noqa: E501
-        """
-        pass
+    #     Get Prices
+    #     """
+    #     pass
 
-    def test_get_instrument_price_range(self):
-        """Test case for get_instrument_price_range
+    # def test_get_order(self):
+    #     """Test case for get_order
 
-        Get Prices  # noqa: E501
-        """
-        pass
+    #     Get Order
+    #     """
+    #     pass
 
-    def test_get_order(self):
-        """Test case for get_order
+    # def test_get_position(self):
+    #     """Test case for get_position
 
-        Get Order  # noqa: E501
-        """
-        pass
+    #     Instrument Position
+    #     """
+    #     pass
 
-    def test_get_position(self):
-        """Test case for get_position
+    # def test_get_price_range(self):
+    #     """Test case for get_price_range
 
-        Instrument Position  # noqa: E501
-        """
-        pass
+    #     Get Price Range
+    #     """
+    #     pass
 
-    def test_get_price_range(self):
-        """Test case for get_price_range
+    # def test_get_prices(self):
+    #     """Test case for get_prices
 
-        Get Price Range  # noqa: E501
-        """
-        pass
+    #     Current Account Prices
+    #     """
+    #     pass
 
-    def test_get_prices(self):
-        """Test case for get_prices
+    # def test_get_trade(self):
+    #     """Test case for get_trade
 
-        Current Account Prices  # noqa: E501
-        """
-        pass
+    #     Trade Details
+    #     """
+    #     pass
 
-    def test_get_trade(self):
-        """Test case for get_trade
+    # def test_get_transaction(self):
+    #     """Test case for get_transaction
 
-        Trade Details  # noqa: E501
-        """
-        pass
+    #     Transaction Details
+    #     """
+    #     pass
 
-    def test_get_transaction(self):
-        """Test case for get_transaction
+    # def test_get_transaction_range(self):
+    #     """Test case for get_transaction_range
 
-        Transaction Details  # noqa: E501
-        """
-        pass
+    #     Transaction ID Range
+    #     """
+    #     pass
 
-    def test_get_transaction_range(self):
-        """Test case for get_transaction_range
+    # def test_get_transactions_since_id(self):
+    #     """Test case for get_transactions_since_id
 
-        Transaction ID Range  # noqa: E501
-        """
-        pass
+    #     Transactions Since ID
+    #     """
+    #     pass
 
-    def test_get_transactions_since_id(self):
-        """Test case for get_transactions_since_id
+    # def test_get_user_info(self):
+    #     """Test case for get_user_info
 
-        Transactions Since ID  # noqa: E501
-        """
-        pass
+    #     User Info
+    #     """
+    #     pass
 
-    def test_get_user_info(self):
-        """Test case for get_user_info
+    # def test_instruments_instrument_order_book_get(self):
+    #     """Test case for instruments_instrument_order_book_get
 
-        User Info  # noqa: E501
-        """
-        pass
+    #     Get Order Book
+    #     """
+    #     pass
 
-    def test_instruments_instrument_order_book_get(self):
-        """Test case for instruments_instrument_order_book_get
+    # def test_instruments_instrument_position_book_get(self):
+    #     """Test case for instruments_instrument_position_book_get
 
-        Get Order Book  # noqa: E501
-        """
-        pass
+    #     Get Position Book
+    #     """
+    #     pass
 
-    def test_instruments_instrument_position_book_get(self):
-        """Test case for instruments_instrument_position_book_get
+    # def test_list_accounts(self):
+    #     """Test case for list_accounts
 
-        Get Position Book  # noqa: E501
-        """
-        pass
+    #     List Accounts
+    #     """
+    #     pass
 
-    def test_list_accounts(self):
-        """Test case for list_accounts
+    # def test_list_open_positions(self):
+    #     """Test case for list_open_positions
 
-        List Accounts  # noqa: E501
-        """
-        pass
+    #     Open Positions
+    #     """
+    #     pass
 
-    def test_list_open_positions(self):
-        """Test case for list_open_positions
+    # def test_list_open_trades(self):
+    #     """Test case for list_open_trades
 
-        Open Positions  # noqa: E501
-        """
-        pass
+    #     List Open Trades
+    #     """
+    #     pass
 
-    def test_list_open_trades(self):
-        """Test case for list_open_trades
+    # def test_list_orders(self):
+    #     """Test case for list_orders
 
-        List Open Trades  # noqa: E501
-        """
-        pass
+    #     List Orders
+    #     """
+    #     pass
 
-    def test_list_orders(self):
-        """Test case for list_orders
+    # def test_list_pending_orders(self):
+    #     """Test case for list_pending_orders
 
-        List Orders  # noqa: E501
-        """
-        pass
+    #     Pending Orders
+    #     """
+    #     pass
 
-    def test_list_pending_orders(self):
-        """Test case for list_pending_orders
+    # def test_list_positions(self):
+    #     """Test case for list_positions
 
-        Pending Orders  # noqa: E501
-        """
-        pass
+    #     List Positions
+    #     """
+    #     pass
 
-    def test_list_positions(self):
-        """Test case for list_positions
+    # def test_list_trades(self):
+    #     """Test case for list_trades
 
-        List Positions  # noqa: E501
-        """
-        pass
+    #     List Trades
+    #     """
+    #     pass
 
-    def test_list_trades(self):
-        """Test case for list_trades
+    # def test_list_transactions(self):
+    #     """Test case for list_transactions
 
-        List Trades  # noqa: E501
-        """
-        pass
+    #     List Transactions
+    #     """
+    #     pass
 
-    def test_list_transactions(self):
-        """Test case for list_transactions
+    # def test_replace_order(self):
+    #     """Test case for replace_order
 
-        List Transactions  # noqa: E501
-        """
-        pass
+    #     Replace Order
+    #     """
+    #     pass
 
-    def test_replace_order(self):
-        """Test case for replace_order
+    # def test_set_order_client_extensions(self):
+    #     """Test case for set_order_client_extensions
 
-        Replace Order  # noqa: E501
-        """
-        pass
+    #     Set Order Extensions
+    #     """
+    #     pass
 
-    def test_set_order_client_extensions(self):
-        """Test case for set_order_client_extensions
+    # def test_set_trade_client_extensions(self):
+    #     """Test case for set_trade_client_extensions
 
-        Set Order Extensions  # noqa: E501
-        """
-        pass
+    #     Set Trade Client Extensions
+    #     """
+    #     pass
 
-    def test_set_trade_client_extensions(self):
-        """Test case for set_trade_client_extensions
+    # def test_set_trade_dependent_orders(self):
+    #     """Test case for set_trade_dependent_orders
 
-        Set Trade Client Extensions  # noqa: E501
-        """
-        pass
+    #     Set Dependent Orders
+    #     """
+    #     pass
 
-    def test_set_trade_dependent_orders(self):
-        """Test case for set_trade_dependent_orders
+    # def test_stream_pricing(self):
+    #     """Test case for stream_pricing
 
-        Set Dependent Orders  # noqa: E501
-        """
-        pass
+    #     Price Stream
+    #     """
+    #     pass
 
-    def test_stream_pricing(self):
-        """Test case for stream_pricing
+    # def test_stream_transactions(self):
+    #     """Test case for stream_transactions
 
-        Price Stream  # noqa: E501
-        """
-        pass
-
-    def test_stream_transactions(self):
-        """Test case for stream_transactions
-
-        Transaction Stream  # noqa: E501
-        """
-        pass
+    #     Transaction Stream
+    #     """
+    #     pass
 
 
 if __name__ == '__main__':
-    unittest.main()
+    run_tests(__file__)

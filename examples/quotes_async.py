@@ -1,31 +1,58 @@
 # Example API application: Print latest quote information
+#
+# requires Python 3.11+
+#
+# see also: ./quotes_app.py
 
 import asyncio as aio
 
+from abc import abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
+from io import IOBase
 import logging
 import os
 import pyfx.dispatch.oanda as dispatch
+import pyfx.dispatch.oanda.api.default_api
 import pyfx.dispatch.oanda.logging as dispatch_logging
 from pyfx.dispatch.oanda.util import console_io, ConsoleStreamWriter
+import pytz
 import re
-from typing_extensions import List
+import sys
+import time
+from typing_extensions import List, Protocol, TypeVar
+
+T = TypeVar("T", bound=dispatch.ApiObject)
+
+
+class ConsoleContext(Protocol[T]):
+    instream: IOBase
+    outstream: IOBase
+    errstream: IOBase
+    config: dispatch.Configuration
+    response: T
+
+    @abstractmethod
+    def callback(self, response: T):
+        raise NotImplementedError(self.callback)
 
 
 ##
 ## Async Console Example
 ##
 
-async def run_example(config: dispatch.Configuration) -> List:
+async def run_example(controller: pyfx.dispatch.oanda.api.default_api.DispatchController) -> List:
     '''print latest quotes for each available instrument in each Account'''
-    loop = aio.get_event_loop()
-    async with dispatch.ApiClient(loop, config) as api_client:
-        api_instance = dispatch.DefaultApi(api_client)
-        auth = 'Bearer %s' % config.access_token
-        api_response = await api_instance.list_accounts(auth)
-        dt_format = config.datetime_format
+    loop = aio.get_running_loop()
+    config = controller.config
+    api_instance = controller.api
+    acct_future = aio.Future()
 
-        accts = api_response.accounts
+    async for account_props in api_instance.accounts(controller):
+        account_id = account_props.id
+        dt_format = config.datetime_format
+        tz_str = os.environ['TZ'] if 'TZ' in os.environ else config.timezone
+        tz = pytz.timezone(tz_str)
         tasks = []
 
         async with console_io(loop) as pipe:
@@ -38,7 +65,7 @@ async def run_example(config: dispatch.Configuration) -> List:
                 ##
 
                 def candles_cb(reqftr: aio.Future):
-                    nonlocal dt_format, out
+                    nonlocal dt_format, tz, out
                     if reqftr.cancelled():
                         return
                     exc = reqftr.exception()
@@ -46,42 +73,61 @@ async def run_example(config: dispatch.Configuration) -> List:
                         raise exc
                     api_response: dispatch.GetInstrumentCandles200Response = reqftr.result()
                     out.write(re.sub("_", "/", api_response.instrument, count=1))
-                    out.write(" ")
-                    quote = api_response.candles[0]
-                    dt = datetime.fromisoformat(quote.time)
-                    ohlc = quote.mid
-                    print("\to: {0:8s}\th: {0:8s}\tl: {0:8s}\tc: {0:8s}".format(
-                        ohlc.o, ohlc.h, ohlc.l, ohlc.c
-                    ) + "\t" + dt.strftime(dt_format), file=out)
+                    print(file=out)
+                    for quote in api_response.candles:
+                        loc_dt = quote.time.astimezone(tz)
+                        dt_str = loc_dt.strftime(dt_format)
+                        print("    " + dt_str, file=out)
+                        for name, ohlc in (("A", quote.ask), ("M", quote.mid), ("B", quote.bid)):
+                            if ohlc:
+                                o = ohlc.o
+                                h = ohlc.h
+                                l = ohlc.l
+                                c = ohlc.c
+                                print(
+                                    "\t  [{0:s}]   o: {1:^9g}\th: {2:^9g}\tl: {3:^9g}\tc: {4:^9g}".format(
+                                        name, o, h, l, c
+                                    ),
+                                    file=out
+                                )
 
-                def inst_cb(reqftr: aio.Future):
-                    nonlocal req_grp, api_instance, auth, tasks
+                def acct_instrument_cb(reqftr: aio.Future):
+                    nonlocal req_grp, api_instance, tasks, account_id
                     if reqftr.cancelled():
                         return
                     exc = reqftr.exception()
                     if exc:
                         raise exc
                     api_response: dispatch.GetAccountInstruments200Response = reqftr.result()
-                    instruments = api_response.data.instruments
-                    instruments.sort(key=lambda inst: inst.name)
+
+                    logger.info("response class: %r", api_response.__class__)
+
+                    instruments = api_response.instruments
                     for inst in instruments:
-                        task = req_grp.create_task(api_instance.get_instrument_candles(auth, inst.name, count=1, smooth=False))
+                        task = req_grp.create_task(
+                            ## Fractions of a second may not be present in the input, with this endpint
+                            api_instance.get_instrument_candles_by_account(account_id,
+                                                                           inst.name,
+                                                                           count=5,
+                                                                           smooth=False,
+                                                                           price="ABM"
+                                                                           ))
                         task.add_done_callback(candles_cb)
                         tasks.append(task)
 
                 ##
                 ## Initial Task creation, beginning with each account
                 ##
-                for acctinfo in accts:
-                    id = acctinfo.id
-                    task = req_grp.create_task(api_instance.get_account_instruments(auth, id))
-                    task.add_done_callback(inst_cb)
-                    tasks.append(task)
-                    print("[%s]" % id)
+                task = req_grp.create_task(api_instance.get_account_instruments(account_id))
+                task.add_done_callback(acct_instrument_cb)
+                tasks.append(task)
+                print("[%s]" % account_id)
 
                 ## Return a Future object, such that the future's result value
                 ## will represent the set of results for tasks created here
-                return await aio.gather(*tasks, return_exceptions=True)
+                rslts = await aio.gather(*tasks, return_exceptions=True)
+                return rslts
+
 
 if __name__ == "__main__":
     ## debug logging will be enabled if DEBUG is set in the environment
@@ -91,24 +137,13 @@ if __name__ == "__main__":
     logger = logging.getLogger("pyfx.dispatch.oanda")
     logger.info("Loading configuration")
 
-    ## initialize the configuration object
-    examples_cfg = dispatch.util.paths.expand_path("account.ini", os.path.dirname(__file__))
-    config = dispatch.config_manager.load_config(examples_cfg)
-    dispatch.Configuration.set_default(config)
+    examples_path = dispatch.util.paths.expand_path("account.ini", os.path.dirname(__file__))
+    with pyfx.dispatch.oanda.api.default_api.DispatchController.from_config_ini(examples_path) as controller:
 
-    ## set a custom datetime format, used in the example
-    config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
-    logger.info("Running example")
+        ## set a custom datetime format, used in the example
+        controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
+        logger.info("Running example")
 
-    if "TRACE" in os.environ:
-        ## optional feature - installing a fault handler for segfaults
-        ##
-        ## e.g with the IOCP proactor, Python on Windows, a segfault may
-        ## occur if the asyncio loop exits abnormally
-        logger.info("Loading faulthandler")
-        import faulthandler
-        faulthandler.enable()
-
-    loop = aio.get_event_loop_policy().get_event_loop()
-    loop.run_until_complete(run_example(config))
-    loop.close()
+        # loop = aio.get_event_loop_policy().get_event_loop()
+        loop = controller.main_loop
+        loop.run_until_complete(run_example(controller))

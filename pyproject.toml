@@ -23,8 +23,11 @@ dependencies = [
     "certifi",
     "httpcore[http2]",
     "httpx[http2]",
-    "pydantic >1.10.5, <2",
+    "ijson",
+    "isocodes",
+    "pydantic >2, <3",
     "python-dateutil >=2.8.2",
+    "pyyaml",
     "typing_extensions",
 ]
 requires-python = ">= 3.9"
@@ -39,9 +42,10 @@ app-pyqt6 = ["pyfx.dispatch.oanda[app-common]", "PyQt6"]
 app-pyside2 = ["pyfx.dispatch.oanda[app-common]", "PySide2"]
 app-pyside6 = ["pyfx.dispatch.oanda[app-common]", "PySide6"]
 dev = [
-    "pytest >=7.2.1",
-    "pytest-cov>=2.8.1",
-    "pytest-randomly>=3.12.0",
+    "line_profiler",
+    "pytest >= 7.2.1",
+    "assertpy",
+    "pytest-dependency",
     "flake8 >=4.0.0",
     "autopep8",
     "pip-tools",
@@ -49,6 +53,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+exclude = ["pyfx.dispatch.oanda.test"]
 namespaces = true
 
 [tool.pytest.ini_options]

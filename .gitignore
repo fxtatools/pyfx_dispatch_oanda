@@ -8,7 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
+/*env*/
 build/
 develop-eggs/
 dist/
@@ -74,3 +74,6 @@ target/
 *.rej
 requirements.local
 requirements.txt
+*.tmp
+/.pdm-python
+/pdm.lock

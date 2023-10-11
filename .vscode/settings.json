@@ -7,5 +7,16 @@
         "--ignore",
         "E266,E226,E24,W50,W690,E501"
     ],
-    "editor.tabSize": 8
+    "editor.tabSize": 8,
+    "files.exclude": {
+        "**/env": true
+    },
+    "explorer.excludeGitIgnore": true,
+    "python.testing.pytestArgs": [
+        "test"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "terminal.integrated.customGlyphs": false,
+    "makefile.makefilePath": "${workspaceFolder}/GNUmakefile",
 }

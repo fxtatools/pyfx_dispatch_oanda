@@ -1,7 +1,24 @@
 ## pyfx.dispatch.oanda.util
 
-from .console_io import console_io, ConsoleStreamReader, ConsoleStreamWriter
-from .paths import expand_path
+from .naming import exporting
 
-# autopep8: off
-__all__ = tuple([meta.__name__ for meta in (console_io, expand_path,)] + ["ConsoleStreamReader", "ConsoleStreamWriter"])
+__all__ = []
+
+from . import naming  # noqa: E402
+__all__.extend(exporting(naming, ...))
+from .naming import *  # noqa: F403, E402
+
+from . import console_io  # noqa: E402
+__all__.extend(exporting(console_io, ...))
+from .console_io import *  # noqa: F403, E402
+
+from . import paths  # noqa: E402
+__all__.extend(exporting(paths, ...))
+from .paths import *  # noqa: F403, E402
+
+from . import typeref  # noqa: E402
+__all__.extend(exporting(typeref, ...))
+from .typeref import *  # noqa: F403, E402
+
+
+__all__ = tuple(__all__)

@@ -1,1815 +1,646 @@
-# coding: utf-8
+# DefaultApi definition, based on code generated with OpenAPI Generator
 
-from pydantic import validate_arguments
-from typing_extensions import Annotated
-from typing import overload, Optional, Union, Awaitable
+from ..exec_controller import ExecController
+import os
+from ..futures import FutureIter, FutureIterProcess, Ti, To
+from ..transport.data import ApiObject
+from concurrent.futures import ThreadPoolExecutor
+from typing_extensions import TypeVar
+from types import CoroutineType, FunctionType
+from typing import Literal
+import asyncio as aio
+from enum import StrEnum
+from datetime import datetime
+from dataclasses import dataclass
+from typing import Any, AsyncIterator, AsyncGenerator, Awaitable, Self
 
-from pydantic import Field, StrictBool, StrictInt, StrictStr, conlist
+from pydantic import validate_call
+from typing import Awaitable, Callable, Optional, Union, Mapping, Sequence, Type
+from typing_extensions import Annotated, TypeAlias
 
-from ..models.cancel_order200_response import CancelOrder200Response
-from ..models.close_position200_response import ClosePosition200Response
-from ..models.close_position_request import ClosePositionRequest
-from ..models.close_trade200_response import CloseTrade200Response
-from ..models.close_trade_request import CloseTradeRequest
-from ..models.configure_account200_response import ConfigureAccount200Response
-from ..models.configure_account_request import ConfigureAccountRequest
-from ..models.create_order201_response import CreateOrder201Response
-from ..models.create_order_request import CreateOrderRequest
-from ..models.get_account200_response import GetAccount200Response
-from ..models.get_account_changes200_response import GetAccountChanges200Response
-from ..models.get_account_instruments200_response import GetAccountInstruments200Response
-from ..models.get_account_summary200_response import GetAccountSummary200Response
-from ..models.get_external_user_info200_response import GetExternalUserInfo200Response
-from ..models.get_instrument_candles200_response import GetInstrumentCandles200Response
-from ..models.get_instrument_price200_response import GetInstrumentPrice200Response
-from ..models.get_instrument_price_range200_response import GetInstrumentPriceRange200Response
-from ..models.get_order200_response import GetOrder200Response
-from ..models.get_position200_response import GetPosition200Response
-from ..models.get_prices200_response import GetPrices200Response
-from ..models.get_trade200_response import GetTrade200Response
-from ..models.get_transaction200_response import GetTransaction200Response
-from ..models.get_transaction_range200_response import GetTransactionRange200Response
-from ..models.get_user_info200_response import GetUserInfo200Response
-from ..models.instruments_instrument_order_book_get200_response import InstrumentsInstrumentOrderBookGet200Response
-from ..models.instruments_instrument_position_book_get200_response import InstrumentsInstrumentPositionBookGet200Response
-from ..models.list_accounts200_response import ListAccounts200Response
-from ..models.list_open_positions200_response import ListOpenPositions200Response
-from ..models.list_open_trades200_response import ListOpenTrades200Response
-from ..models.list_orders200_response import ListOrders200Response
-from ..models.list_pending_orders200_response import ListPendingOrders200Response
-from ..models.list_positions200_response import ListPositions200Response
-from ..models.list_trades200_response import ListTrades200Response
-from ..models.list_transactions200_response import ListTransactions200Response
-from ..models.replace_order201_response import ReplaceOrder201Response
-from ..models.set_order_client_extensions200_response import SetOrderClientExtensions200Response
-from ..models.set_order_client_extensions_request import SetOrderClientExtensionsRequest
-from ..models.set_trade_client_extensions200_response import SetTradeClientExtensions200Response
-from ..models.set_trade_client_extensions_request import SetTradeClientExtensionsRequest
-from ..models.set_trade_dependent_orders200_response import SetTradeDependentOrders200Response
-from ..models.set_trade_dependent_orders_request import SetTradeDependentOrdersRequest
-from ..models.stream_pricing200_response import StreamPricing200Response
-from ..models.stream_transactions200_response import StreamTransactions200Response
+from pydantic import Field
+
+from ..util import exporting
+from ..transport import ApiObject, JsonTypesRepository
+from .. import models
+from ..models import (
+    AccountId,
+    InstrumentName,
+    CancelOrder200Response,
+    ClosePosition200Response,
+    ClosePositionRequest,
+    CloseTrade200Response,
+    CloseTradeRequest,
+    ConfigureAccount200Response,
+    ConfigureAccountRequest,
+    CreateOrder201Response,
+    CreateOrderRequest,
+    GetAccount200Response,
+    GetAccountChanges200Response,
+    GetAccountInstruments200Response,
+    GetAccountSummary200Response,
+    GetExternalUserInfo200Response,
+    GetInstrumentCandles200Response,
+    GetInstrumentPrice200Response,
+    GetInstrumentPriceRange200Response,
+    GetOrder200Response,
+    GetPosition200Response,
+    GetPrices200Response,
+    GetTrade200Response,
+    GetTransaction200Response,
+    GetTransactionRange200Response,
+    GetUserInfo200Response,
+    InstrumentsInstrumentOrderBookGet200Response,
+    InstrumentsInstrumentPositionBookGet200Response,
+    ListAccounts200Response,
+    ListOpenPositions200Response,
+    ListOpenTrades200Response,
+    ListOrders200Response,
+    ListPendingOrders200Response,
+    ListPositions200Response,
+    ListTrades200Response,
+    ListTransactions200Response,
+    ReplaceOrder201Response,
+    SetOrderClientExtensions200Response,
+    SetOrderClientExtensionsRequest,
+    SetTradeClientExtensions200Response,
+    SetTradeClientExtensionsRequest,
+    SetTradeDependentOrders200Response,
+    SetTradeDependentOrdersRequest,
+    StreamPricing200Response,
+    StreamTransactions200Response)
+
 
 from ..api_client import ApiClient
-from ..api_response import ApiResponse
-from ..exceptions import ApiTypeError
 from ..request_constants import RequestMethod
+from ..response_common import ResponseInfo
+from ..parser import ModelBuilder
 
+
+def validate_request(func: Callable):
+    ## conditional dispatch for enabling validation in
+    ## each request method call with pydantic v2
+    if __debug__:
+        ## pydantic may not be able to parse AsyncGenerator types in args
+        # return validate_call(func)
+        return func
+    else:
+        return func
+
+
+##
+## additional base types, constants
+##
+
+
+class PriceComponent(StrEnum):
+    ## enum for candlestick requests.
+    Ask = "A"  # ask price
+    Bid = "B"  # bid price
+    Median = "M"  # median of ask and bid
+
+
+DT_ORDINAL_ONE: datetime = datetime.fromordinal(1)
+
+
+@dataclass(eq=False, order=False)
+class DispatchController(ExecController):
+
+    api_client: ApiClient
+    api: "DefaultApi"
+
+    def initialize_defaults(self):
+        super().initialize_defaults()
+        self.api_client = ApiClient(self)
+        self.api = DefaultApi(self)
+
+
+##
+## Main Code
+##
 
 class DefaultApi(object):
-    """NOTE: This class is auto generated by OpenAPI Generator
-    Ref: https://openapi-generator.tech
-    """
+    '''API dispatch for the OANDA fxTrade v20 REST API'''
 
-    def __init__(self, api_client: ApiClient):
-        self.api_client = api_client
+    api_client: ApiClient
+    # types_repository: TransportTypesRepository = JsonTypesRepository
 
-    @validate_arguments
-    async def cancel_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> Union[CancelOrder200Response, Awaitable[CancelOrder200Response]]:  # noqa: E501
-        """Cancel Order  # noqa: E501
+    controller: DispatchController
 
-        Cancel a pending Order in an Account  # noqa: E501
+    def __init__(self, controller: DispatchController):
+        self.controller = controller
+        self.api_client = controller.api_client
 
-        >>> response = api.cancel_order(authorization, account_id, order_specifier, accept_datetime_format, client_request_id)
+    @classmethod
+    def get_streaming_type_callback(self, response_map: Mapping[int, Type[ApiObject]],
+                                    callback_heartbeat: bool = False
+                                    ) -> Callable[[ResponseInfo, str], Optional[Type[ApiObject]]]:
+        heartbeat_cls = response_map[0]
+        primary_cls = response_map[200]
+        initial_chunk = True
+        ## return a callback for ..parser.ModelBuilder.from_receiver_gen()
+        ## under the case of a streaming endpoint
+        ##
+        ## Caveats:
+        ## - Under a succesful response, the streaming endpoint will feed
+        ##   a series of JSON-encoded objects, terminating once the stream
+        ##   is closed. Each object will either have type: "HEARTBEAT"
+        ##   or type:<primary> for <primary> denoting the primary class
+        ##   of the streaming endpoint
+        ##
+        ## - The heartbeat class and primary class can be generalized
+        ##   across both of the available streaming endpoints. Here,
+        ##   index [0] is used for indicating the heartbeat class,
+        ##   with index [200] as the primary class in the response
+        ##   types map
+        ##
+        ## - Under an unsuccesful response, the response code will not be 200.
+        ##   The status code may or may not match a non-200, non-zero value
+        ##   in the response types map. If the response code does not match,
+        ##   the callback can return None. The ModelBuilder generator would
+        ##   then use a generic JSON decoding to represent the response object
+        ##   as an exception under the generator
+        ##
+        ## - If the request resulted in a non-JSON value in response, e.g
+        ##   from an intermediate proxy server, the ModelBuilder generator
+        ##   will have handled this internal to the generator routine
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        def streaming_type_callback(info: ResponseInfo, chunk: bytes) -> Optional[Type[ApiObject]]:
+            nonlocal response_map, heartbeat_cls, primary_cls, initial_chunk, callback_heartbeat
+            status = info.status
+            if initial_chunk:
+                initial_chunk = False
+                if status is int(200):
+                    return primary_cls
+                elif status in response_map:
+                    return response_map[status]
+                else:
+                    return None
+            elif b'HEARTBEAT' in chunk:
+                return heartbeat_cls if callback_heartbeat else None
+            else:
+                return primary_cls
+
+        return streaming_type_callback
+
+    @classmethod
+    def get_rest_type_callback(self, response_map: Mapping[int, Type[ApiObject]]
+                               ) -> Callable[[ResponseInfo, str], Optional[Type[ApiObject]]]:
+
+        def rest_type_callback(info: ResponseInfo, chunk: bytes
+                               ) -> Optional[Type[ApiObject]]:
+            nonlocal response_map
+            status = info.status
+            if status in response_map:
+                return response_map[status]
+
+        return rest_type_callback
+
+    @validate_request
+    async def cancel_order(self,
+                           account_id: AccountId,
+                           order_specifier: str,
+                           client_request_id: Optional[str] = None,
+                           future: Optional[aio.Future[CancelOrder200Response]] = None
+                           ) -> Awaitable[CancelOrder200Response]:
+        """Cancel Order
+
+        Cancel a pending Order in an Account
+
+        >>> response = api.cancel_order(account_id, order_specifier, client_request_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param order_specifier: The Order Specifier (required)
         :type order_specifier: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param client_request_id: Client specified RequestID to be sent with request.
         :type client_request_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: CancelOrder200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the cancel_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.cancel_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, client_request_id, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def cancel_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Cancel Order  # noqa: E501
-
-        Cancel a pending Order in an Account  # noqa: E501
-
-        >>> response = api.cancel_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, client_request_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param order_specifier: The Order Specifier (required)
-        :type order_specifier: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param client_request_id: Client specified RequestID to be sent with request.
-        :type client_request_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(CancelOrder200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id,
+                        'orderSpecifier': order_specifier
+                        }
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'order_specifier',
-            'accept_datetime_format',
-            'client_request_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method cancel_order" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['order_specifier']:
-            _path_params['orderSpecifier'] = _params['order_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        if _params['client_request_id']:
-            _header_params['ClientRequestID'] = _params['client_request_id']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
-
+        _header_params = {'ClientRequestID': client_request_id} if client_request_id else None
         _response_types_map = {
-            '200': "CancelOrder200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "CancelOrder404Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.CancelOrder200Response,
+            401: models.FxTrade400Response,
+            404: models.CancelOrder404Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}/cancel', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            RequestMethod.PUT,
+            path_params=_path_params,
+            header_params=_header_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def close_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ClosePosition200Response, Awaitable[ClosePosition200Response]]:  # noqa: E501
-        """Close Position  # noqa: E501
+    @validate_request
+    async def close_position(self,
+                             account_id: AccountId,
+                             instrument: InstrumentName,
+                             close_position_body: ClosePositionRequest,
+                             future: Optional[aio.Future[ClosePosition200Response]] = None
+                             ) -> Awaitable[ClosePosition200Response]:
+        """Close Position
 
-        Closeout the open Position for a specific instrument in an Account.  # noqa: E501
+        Closeout the open Position for a specific instrument in an Account.
 
-        >>> response = api.close_position(authorization, account_id, instrument, close_position_body, accept_datetime_format)
+        >>> response = api.close_position(account_id, instrument, close_position_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
+        :type instrument: InstrumentName
         :param close_position_body: Representation of how to close the position (required)
         :type close_position_body: ClosePositionRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ClosePosition200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the close_position_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.close_position_with_http_info(authorization, account_id, instrument, close_position_body, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def close_position_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], close_position_body : Annotated[ClosePositionRequest, Field(..., description="Representation of how to close the position")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Close Position  # noqa: E501
-
-        Closeout the open Position for a specific instrument in an Account.  # noqa: E501
-
-        >>> response = api.close_position_with_http_info(authorization, account_id, instrument, close_position_body, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param close_position_body: Representation of how to close the position (required)
-        :type close_position_body: ClosePositionRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(ClosePosition200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id,
+                        'instrument': instrument
+                        }
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'instrument',
-            'close_position_body',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method close_position" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['close_position_body'] is not None:
-            _body_params = _params['close_position_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = close_position_body
 
         _response_types_map = {
-            '200': "ClosePosition200Response",
-            '400': "ClosePosition400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "ClosePosition404Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ClosePosition200Response,
+            400: models.ClosePosition400Response,
+            401: models.FxTrade400Response,
+            404: models.ClosePosition404Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/positions/{instrument}/close', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def close_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[CloseTrade200Response, Awaitable[CloseTrade200Response]]:  # noqa: E501
-        """Close Trade  # noqa: E501
+    @validate_request
+    async def close_trade(self,
+                          account_id: AccountId,
+                          trade_specifier: str,
+                          close_trade_body: CloseTradeRequest,
+                          future: Optional[aio.Future[CloseTrade200Response]] = None
+                          ) -> Awaitable[CloseTrade200Response]:
+        """Close Trade
 
-        Close (partially or fully) a specific open Trade in an Account  # noqa: E501
+        Close (partially or fully) a specific open Trade in an Account
 
-        >>> response = api.close_trade(authorization, account_id, trade_specifier, close_trade_body, accept_datetime_format)
+        >>> response = api.close_trade(account_id, trade_specifier, close_trade_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param trade_specifier: Specifier for the Trade (required)
         :type trade_specifier: str
         :param close_trade_body: Details of how much of the open Trade to close. (required)
         :type close_trade_body: CloseTradeRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: CloseTrade200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the close_trade_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.close_trade_with_http_info(authorization, account_id, trade_specifier, close_trade_body, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def close_trade_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], close_trade_body : Annotated[CloseTradeRequest, Field(..., description="Details of how much of the open Trade to close.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Close Trade  # noqa: E501
-
-        Close (partially or fully) a specific open Trade in an Account  # noqa: E501
-
-        >>> response = api.close_trade_with_http_info(authorization, account_id, trade_specifier, close_trade_body, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param trade_specifier: Specifier for the Trade (required)
-        :type trade_specifier: str
-        :param close_trade_body: Details of how much of the open Trade to close. (required)
-        :type close_trade_body: CloseTradeRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(CloseTrade200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id,
+                        'tradeSpecifier': trade_specifier
+                        }
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'trade_specifier',
-            'close_trade_body',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method close_trade" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['trade_specifier']:
-            _path_params['tradeSpecifier'] = _params['trade_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['close_trade_body'] is not None:
-            _body_params = _params['close_trade_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = close_trade_body
 
         _response_types_map = {
-            '200': "CloseTrade200Response",
-            '400': "CloseTrade400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "CloseTrade404Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.CloseTrade200Response,
+            400: models.CloseTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.CloseTrade404Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}/close', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def configure_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> Union[ConfigureAccount200Response, Awaitable[ConfigureAccount200Response]]:  # noqa: E501
-        """Configure Account  # noqa: E501
+    @validate_request
+    async def configure_account(self,
+                                account_id: AccountId,
+                                configure_account_body: ConfigureAccountRequest,
+                                future: Optional[aio.Future[ConfigureAccount200Response]] = None
+                                ) -> Awaitable[ConfigureAccount200Response]:
+        """Configure Account
 
-        Set the client-configurable portions of an Account.  # noqa: E501
+        Set the client-configurable portions of an Account.
 
-        >>> response = api.configure_account(authorization, account_id, accept_datetime_format, configure_account_body)
+        >>> response = api.configure_account(account_id, configure_account_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type account_id: AccountId
         :param configure_account_body: Representation of the Account configuration to set
         :type configure_account_body: ConfigureAccountRequest
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ConfigureAccount200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the configure_account_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.configure_account_with_http_info(authorization, account_id, accept_datetime_format, configure_account_body, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def configure_account_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, configure_account_body : Annotated[Optional[ConfigureAccountRequest], Field(description="Representation of the Account configuration to set")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Configure Account  # noqa: E501
-
-        Set the client-configurable portions of an Account.  # noqa: E501
-
-        >>> response = api.configure_account_with_http_info(authorization, account_id, accept_datetime_format, configure_account_body)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param configure_account_body: Representation of the Account configuration to set
-        :type configure_account_body: ConfigureAccountRequest
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(ConfigureAccount200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format',
-            'configure_account_body'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method configure_account" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['configure_account_body'] is not None:
-            _body_params = _params['configure_account_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = configure_account_body
 
         _response_types_map = {
-            '200': "ConfigureAccount200Response",
-            '400': "ConfigureAccount400Response",
-            '403': "ConfigureAccount400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ConfigureAccount200Response,
+            400: models.ConfigureAccount400Response,
+            403: models.ConfigureAccount400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/configuration', RequestMethod.PATCH,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def create_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[CreateOrder201Response, Awaitable[CreateOrder201Response]]:  # noqa: E501
-        """Create Order  # noqa: E501
+    @validate_request
+    async def create_order(self,
+                           account_id: AccountId,
+                           create_order_body: CreateOrderRequest
+                           ,
+                           future: Optional[aio.Future[CreateOrder201Response]] = None
+                           ) -> Awaitable[CreateOrder201Response]:
+        """Create Order
 
-        Create an Order for an Account  # noqa: E501
+        Create an Order for an Account
 
-        >>> response = api.create_order(authorization, account_id, create_order_body, accept_datetime_format)
+        >>> response = api.create_order(account_id, create_order_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param create_order_body: (required)
         :type create_order_body: CreateOrderRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: CreateOrder201Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the create_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.create_order_with_http_info(authorization, account_id, create_order_body, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def create_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], create_order_body : CreateOrderRequest, accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Create Order  # noqa: E501
-
-        Create an Order for an Account  # noqa: E501
-
-        >>> response = api.create_order_with_http_info(authorization, account_id, create_order_body, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param create_order_body: (required)
-        :type create_order_body: CreateOrderRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(CreateOrder201Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'create_order_body',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method create_order" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['create_order_body'] is not None:
-            _body_params = _params['create_order_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = create_order_body
 
         _response_types_map = {
-            '201': "CreateOrder201Response",
-            '400': "CreateOrder400Response",
-            '401': "GetInstrumentCandles400Response",
-            '403': "GetInstrumentCandles400Response",
-            '404': "CreateOrder404Response",
-            '405': "GetInstrumentCandles400Response",
+            201: models.CreateOrder201Response,
+            400: models.CreateOrder400Response,
+            401: models.FxTrade400Response,
+            403: models.FxTrade400Response,
+            404: models.CreateOrder404Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders', RequestMethod.POST,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_account(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetAccount200Response, Awaitable[GetAccount200Response]]:  # noqa: E501
-        """Account Details  # noqa: E501
+    @validate_request
+    async def get_account(self,
+                          account_id: AccountId,
+                          future: Optional[aio.Future[GetAccount200Response]] = None
+                          ) -> Awaitable[GetAccount200Response]:
+        """Account Details
 
-        Get the full details for a single Account that a client has access to. Full pending Order, open Trade and open Position representations are provided.  # noqa: E501
+        Get the full details for a single Account that a client has access to. Full pending Order, open Trade and open Position representations are provided.
 
-        >>> response = api.get_account(authorization, account_id, accept_datetime_format)
+        >>> response = api.get_account(account_id)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetAccount200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_account_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_account_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_account_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Account Details  # noqa: E501
-
-        Get the full details for a single Account that a client has access to. Full pending Order, open Trade and open Position representations are provided.  # noqa: E501
-
-        >>> response = api.get_account_with_http_info(authorization, account_id, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(GetAccount200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_account" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "GetAccount200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetAccount200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_account_changes(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> Union[GetAccountChanges200Response, Awaitable[GetAccountChanges200Response]]:  # noqa: E501
-        """Poll Account Updates  # noqa: E501
+    @validate_request
+    async def get_account_changes(self,
+                                  account_id: AccountId,
+                                  since_transaction_id: Optional[str] = None,
+                                  future: Optional[aio.Future[GetAccountChanges200Response]] = None
+                                  ) -> Awaitable[GetAccountChanges200Response]:
+        """Poll Account Updates
 
-        Endpoint used to poll an Account for its current state and changes since a specified TransactionID.  # noqa: E501
+        Endpoint used to poll an Account for its current state and changes since a specified TransactionID.
 
-        >>> response = api.get_account_changes(authorization, account_id, accept_datetime_format, since_transaction_id)
+        >>> response = api.get_account_changes(account_id, since_transaction_id)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type account_id: AccountId
         :param since_transaction_id: ID of the Transaction to get Account changes since.
         :type since_transaction_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetAccountChanges200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_account_changes_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_account_changes_with_http_info(authorization, account_id, accept_datetime_format, since_transaction_id, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_account_changes_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since_transaction_id : Annotated[Optional[StrictStr], Field(description="ID of the Transaction to get Account changes since.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Poll Account Updates  # noqa: E501
-
-        Endpoint used to poll an Account for its current state and changes since a specified TransactionID.  # noqa: E501
-
-        >>> response = api.get_account_changes_with_http_info(authorization, account_id, accept_datetime_format, since_transaction_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param since_transaction_id: ID of the Transaction to get Account changes since.
-        :type since_transaction_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetAccountChanges200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format',
-            'since_transaction_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_account_changes" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('since_transaction_id') is not None:  # noqa: E501
-            _query_params.append(('sinceTransactionID', _params['since_transaction_id']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _query_params = (('sinceTransactionID', since_transaction_id),) if since_transaction_id else None
 
         _response_types_map = {
-            '200': "GetAccountChanges200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
-            '416': "GetInstrumentCandles400Response",
+            200: models.GetAccountChanges200Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
+            416: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/changes', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_account_instruments(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> Union[GetAccountInstruments200Response, Awaitable[GetAccountInstruments200Response]]:  # noqa: E501
-        """Account Instruments  # noqa: E501
+    @validate_request
+    async def get_account_instruments(self,
+                                      account_id: AccountId,
+                                      instruments: Optional[Sequence[str]] = None,
+                                      future: Optional[aio.Future[GetAccountInstruments200Response]] = None
+                                      ) -> Awaitable[GetAccountInstruments200Response]:
+        """Account Instruments
 
-        Get the list of tradeable instruments for the given Account. The list of tradeable instruments is dependent on the regulatory division that the Account is located in, thus should be the same for all Accounts owned by a single user.  # noqa: E501
+        Get the list of tradeable instruments for the given Account. The list of tradeable instruments is dependent on the regulatory division that the Account is located in, thus should be the same for all Accounts owned by a single user.
 
-        >>> response = api.get_account_instruments(authorization, account_id, instruments)
+        >>> response = api.get_account_instruments(account_id, instruments)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param instruments: List of instruments to query specifically.
         :type instruments: List[str]
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetAccountInstruments200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_account_instruments_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_account_instruments_with_http_info(authorization, account_id, instruments, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_account_instruments_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[Optional[conlist(StrictStr)], Field(description="List of instruments to query specifically.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Account Instruments  # noqa: E501
-
-        Get the list of tradeable instruments for the given Account. The list of tradeable instruments is dependent on the regulatory division that the Account is located in, thus should be the same for all Accounts owned by a single user.  # noqa: E501
-
-        >>> response = api.get_account_instruments_with_http_info(authorization, account_id, instruments)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param instruments: List of instruments to query specifically.
-        :type instruments: List[str]
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetAccountInstruments200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'instruments'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_account_instruments" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('instruments') is not None:  # noqa: E501
-            _query_params.append(('instruments', _params['instruments']))
-            _collection_formats['instruments'] = 'csv'
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _query_params = (('instruments', instruments),) if instruments else None
+        _collection_formats = {'instruments': 'csv'} if instruments else None
 
         _response_types_map = {
-            '200': "GetAccountInstruments200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetAccountInstruments200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/instruments', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
+            path_params=_path_params,
+            query_params=_query_params,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            collection_formats=_collection_formats, future=future)
 
-    @validate_arguments
-    async def get_account_summary(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetAccountSummary200Response, Awaitable[GetAccountSummary200Response]]:  # noqa: E501
-        """Account Summary  # noqa: E501
+    @validate_request
+    async def instruments(self, account_id: AccountId
+                          ) -> AsyncIterator[models.Instrument]:
+        api_response = await self.get_account_instruments(account_id)
+        instruments = api_response.instruments
+        if instruments:
+            for instrument in instruments:
+                yield instrument
 
-        Get a summary for a single Account that a client has access to.  # noqa: E501
+    @validate_request
+    async def get_account_summary(self,
+                                  account_id: AccountId,
+                                  future: Optional[aio.Future[GetAccountSummary200Response]] = None
+                                  ) -> Awaitable[GetAccountSummary200Response]:
+        """Account Summary
 
-        >>> response = api.get_account_summary(authorization, account_id, accept_datetime_format)
+        Get a summary for a single Account that a client has access to.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.get_account_summary(account_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetAccountSummary200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_account_summary_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_account_summary_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_account_summary_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Account Summary  # noqa: E501
-
-        Get a summary for a single Account that a client has access to.  # noqa: E501
-
-        >>> response = api.get_account_summary_with_http_info(authorization, account_id, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(GetAccountSummary200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_account_summary" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "GetAccountSummary200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetAccountSummary200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/summary', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_base_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
-        """Get Base Prices  # noqa: E501
+    @validate_request
+    async def get_base_prices(self,
+                              time: Optional[str] = None,
+                              future: Optional[aio.Future[GetInstrumentPriceRange200Response]] = None
+                              ) -> Awaitable[GetInstrumentPriceRange200Response]:
+        """Get Base Prices
 
-        Get pricing information for a specified instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
+        Get pricing information for a specified instrument. Accounts are not associated in any way with this endpoint.
 
-        >>> response = api.get_base_prices(authorization, accept_datetime_format, time)
+        >>> response = api.get_base_prices(accept_datetime_format, time)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param time: The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.
         :type time: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetInstrumentPriceRange200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_base_prices_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_base_prices_with_http_info(authorization, accept_datetime_format, time, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_base_prices_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Base Prices  # noqa: E501
-
-        Get pricing information for a specified instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
-
-        >>> response = api.get_base_prices_with_http_info(authorization, accept_datetime_format, time)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param time: The time at which the desired price for each instrument is in effect. The current price for each instrument is returned if no time is provided.
-        :type time: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetInstrumentPriceRange200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'accept_datetime_format',
-            'time'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_base_prices" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('time') is not None:  # noqa: E501
-            _query_params.append(('time', _params['time']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            '200': "GetInstrumentPriceRange200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetInstrumentPriceRange200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/pricing', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_external_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> Union[GetExternalUserInfo200Response, Awaitable[GetExternalUserInfo200Response]]:  # noqa: E501
-        """External User Info  # noqa: E501
+    @validate_request
+    async def get_external_user_info(self,
+                                     user_specifier: str,
+                                     future: Optional[aio.Future[GetExternalUserInfo200Response]] = None
+                                     ) -> Awaitable[GetExternalUserInfo200Response]:
+        """External User Info
 
-        Fetch the externally-available user information for the specified user. This endpoint is intended to be used by 3rd parties that have been authorized by a user to view their personal information.  # noqa: E501
+        Fetch the externally-available user information for the specified user. This endpoint is intended to be used by 3rd parties that have been authorized by a user to view their personal information.
 
-        >>> response = api.get_external_user_info(authorization, user_specifier)
+        >>> response = api.get_external_user_info(user_specifier)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param user_specifier: The User Specifier (required)
         :type user_specifier: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetExternalUserInfo200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_external_user_info_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_external_user_info_with_http_info(authorization, user_specifier, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_external_user_info_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> ApiResponse:  # noqa: E501
-        """External User Info  # noqa: E501
-
-        Fetch the externally-available user information for the specified user. This endpoint is intended to be used by 3rd parties that have been authorized by a user to view their personal information.  # noqa: E501
-
-        >>> response = api.get_external_user_info_with_http_info(authorization, user_specifier)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param user_specifier: The User Specifier (required)
-        :type user_specifier: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetExternalUserInfo200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'user_specifier'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_external_user_info" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['user_specifier']:
-            _path_params['userSpecifier'] = _params['user_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'userSpecifier': user_specifier}
 
         _response_types_map = {
-            '200': "GetExternalUserInfo200Response",
-            '401': "GetInstrumentCandles400Response",
-            '403': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetExternalUserInfo200Response,
+            401: models.FxTrade400Response,
+            403: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/users/{userSpecifier}/externalInfo', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_instrument_candles(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> Union[GetInstrumentCandles200Response, Awaitable[GetInstrumentCandles200Response]]:  # noqa: E501
-        """Get Candlesticks  # noqa: E501
+    @validate_request
+    async def get_instrument_candles(self,
+                                     instrument: InstrumentName,
+                                     price: Optional[Union[PriceComponent, str]] = None,
+                                     granularity: Optional[models.CandlestickGranularity] = None,
+                                     count: Optional[int] = None,
+                                     var_from: Optional[str] = None,
+                                     to: Optional[str] = None,
+                                     smooth: Optional[bool] = None,
+                                     include_first: Optional[bool] = None,
+                                     daily_alignment: Optional[int] = None,
+                                     alignment_timezone: Optional[str] = None,
+                                     weekly_alignment: Optional[str] = None,
+                                     future: Optional[aio.Future[GetInstrumentCandles200Response]] = None
+                                     ) -> Awaitable[GetInstrumentCandles200Response]:
+        """Get Candlesticks
 
-        Fetch candlestick data for an instrument.  # noqa: E501
+        Fetch candlestick data for an instrument.
 
-        >>> response = api.get_instrument_candles(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment)
+        >>> response = api.get_instrument_candles(instrument, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param price: The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).
-        :type price: str
+        :type instrument: InstrumentName
+        :param price: The Price component(s) for the candlestick data request. May be one of PriceComponent.Median (default), PriceComponent.Ask, PriceComponent.Bid, or a sequence of similar PriceComponent
+        :type price: PriceComponent
         :param granularity: The granularity of the candlesticks to fetch
-        :type granularity: str
+        :type models.CandlestickGranularity: str
         :param count: The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.
         :type count: int
         :param var_from: The start of the time range to fetch candlesticks for.
@@ -1826,217 +657,107 @@ class DefaultApi(object):
         :type alignment_timezone: str
         :param weekly_alignment: The day of the week used for granularities that have weekly alignment.
         :type weekly_alignment: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetInstrumentCandles200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_instrument_candles_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_instrument_candles_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_instrument_candles_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Candlesticks  # noqa: E501
-
-        Fetch candlestick data for an instrument.  # noqa: E501
-
-        >>> response = api.get_instrument_candles_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param price: The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).
-        :type price: str
-        :param granularity: The granularity of the candlesticks to fetch
-        :type granularity: str
-        :param count: The number of candlesticks to return in the reponse. Count should not be specified if both the start and end parameters are provided, as the time range combined with the graularity will determine the number of candlesticks to return.
-        :type count: int
-        :param var_from: The start of the time range to fetch candlesticks for.
-        :type var_from: str
-        :param to: The end of the time range to fetch candlesticks for.
-        :type to: str
-        :param smooth: A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.
-        :type smooth: bool
-        :param include_first: A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.
-        :type include_first: bool
-        :param daily_alignment: The hour of the day (in the specified timezone) to use for granularities that have daily alignments.
-        :type daily_alignment: int
-        :param alignment_timezone: The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.
-        :type alignment_timezone: str
-        :param weekly_alignment: The day of the week used for granularities that have weekly alignment.
-        :type weekly_alignment: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetInstrumentCandles200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'instrument': instrument}
 
-        _all_params = [
-            'authorization',
-            'instrument',
-            'accept_datetime_format',
-            'price',
-            'granularity',
-            'count',
-            'var_from',
-            'to',
-            'smooth',
-            'include_first',
-            'daily_alignment',
-            'alignment_timezone',
-            'weekly_alignment'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_instrument_candles" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
         _query_params = []
-        if _params.get('price') is not None:  # noqa: E501
-            _query_params.append(('price', _params['price']))
+        if price:
+            _query_params.append(('price', price))
 
-        if _params.get('granularity') is not None:  # noqa: E501
-            _query_params.append(('granularity', _params['granularity']))
+        if granularity:
+            _query_params.append(('granularity', granularity))
 
-        if _params.get('count') is not None:  # noqa: E501
-            _query_params.append(('count', _params['count']))
+        if count:
+            _query_params.append(('count', count))
 
-        if _params.get('var_from') is not None:  # noqa: E501
-            _query_params.append(('from', _params['var_from']))
+        if var_from:
+            _query_params.append(('from', var_from))
 
-        if _params.get('to') is not None:  # noqa: E501
-            _query_params.append(('to', _params['to']))
+        if to:
+            _query_params.append(('to', to))
 
-        if _params.get('smooth') is not None:  # noqa: E501
-            _query_params.append(('smooth', _params['smooth']))
+        if smooth:
+            _query_params.append(('smooth', smooth))
 
-        if _params.get('include_first') is not None:  # noqa: E501
-            _query_params.append(('includeFirst', _params['include_first']))
+        if include_first:
+            _query_params.append(('includeFirst', include_first))
 
-        if _params.get('daily_alignment') is not None:  # noqa: E501
-            _query_params.append(('dailyAlignment', _params['daily_alignment']))
+        if daily_alignment:
+            _query_params.append(('dailyAlignment', daily_alignment))
 
-        if _params.get('alignment_timezone') is not None:  # noqa: E501
-            _query_params.append(('alignmentTimezone', _params['alignment_timezone']))
+        if alignment_timezone:
+            _query_params.append(('alignmentTimezone', alignment_timezone))
 
-        if _params.get('weekly_alignment') is not None:  # noqa: E501
-            _query_params.append(('weeklyAlignment', _params['weekly_alignment']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if weekly_alignment:
+            _query_params.append(('weeklyAlignment', weekly_alignment))
 
         _response_types_map = {
-            '200': "GetInstrumentCandles200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetInstrumentCandles200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/instruments/{instrument}/candles', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_instrument_candles_0(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> Union[GetInstrumentCandles200Response, Awaitable[GetInstrumentCandles200Response]]:  # noqa: E501
-        """Get Candlesticks  # noqa: E501
+    @validate_request
+    async def candles(self,
+                      instrument: InstrumentName,
+                      price: Optional[Union[PriceComponent, str]] = None,
+                      granularity: Optional[models.CandlestickGranularity] = None,
+                      count: Optional[int] = None,
+                      var_from: Optional[str] = None,
+                      to: Optional[str] = None,
+                      smooth: Optional[bool] = None,
+                      include_first: Optional[bool] = None,
+                      daily_alignment: Optional[int] = None,
+                      alignment_timezone: Optional[str] = None,
+                      weekly_alignment: Optional[str] = None
+                      ) -> AsyncIterator[models.Candlestick]:
+        api_response = await self.get_instrument_candles(instrument, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment)
+        candles = api_response.candles
+        if candles:
+            async for candle in candles:
+                yield candle
 
-        Fetch candlestick data for an instrument.  # noqa: E501
+    @validate_request
+    async def get_instrument_candles_by_account(self,
+                                                account_id: AccountId,
+                                                instrument: InstrumentName,
+                                                price: Optional[Union[PriceComponent, str]] = None,
+                                                granularity: Optional[models.CandlestickGranularity] = None,
+                                                count: Optional[int] = None,
+                                                var_from: Optional[str] = None,
+                                                to: Optional[str] = None,
+                                                smooth: Optional[bool] = None,
+                                                include_first: Optional[bool] = None,
+                                                daily_alignment: Optional[int] = None,
+                                                alignment_timezone: Optional[str] = None,
+                                                weekly_alignment: Optional[str] = None,
+                                                units: Optional[str] = None,
+                                                future: Optional[aio.Future[GetInstrumentCandles200Response]] = None
+                                                ) -> Awaitable[GetInstrumentCandles200Response]:
+        """Get Candlesticks using account ID
 
-        >>> response = api.get_instrument_candles_0(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, units)
+        Retrieve candlestick data for an instrument, using a provided account identifier. The instrument
+        request parameters are the same as with get_instrument_candles()
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.get_instrument_candles_0(instrument, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, units)
+
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param price: The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).
-        :type price: str
+        :type instrument: InstrumentName
+        :param account_id: Account Identifier (required)
+        :type account_id: AccountId
+        :param price: The Price component(s) for the candlestick data request. May be one of PriceComponent.Median (default), PriceComponent.Ask, PriceComponent.Bid, or a sequence of similar PriceComponent
+        :type price: PriceComopnent
         :param granularity: The granularity of the candlesticks to fetch
         :type granularity: str
         :param count: The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.
@@ -2057,4547 +778,1405 @@ class DefaultApi(object):
         :type weekly_alignment: str
         :param units: The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.
         :type units: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetInstrumentCandles200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_instrument_candles_0_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_instrument_candles_0_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, units, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_instrument_candles_0_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, price : Annotated[Optional[StrictStr], Field(description="The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).")] = None, granularity : Annotated[Optional[StrictStr], Field(description="The granularity of the candlesticks to fetch")] = None, count : Annotated[Optional[StrictInt], Field(description="The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The start of the time range to fetch candlesticks for.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch candlesticks for.")] = None, smooth : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.")] = None, include_first : Annotated[Optional[StrictBool], Field(description="A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.")] = None, daily_alignment : Annotated[Optional[StrictInt], Field(description="The hour of the day (in the specified timezone) to use for granularities that have daily alignments.")] = None, alignment_timezone : Annotated[Optional[StrictStr], Field(description="The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.")] = None, weekly_alignment : Annotated[Optional[StrictStr], Field(description="The day of the week used for granularities that have weekly alignment.")] = None, units : Annotated[Optional[StrictStr], Field(description="The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Candlesticks  # noqa: E501
-
-        Fetch candlestick data for an instrument.  # noqa: E501
-
-        >>> response = api.get_instrument_candles_0_with_http_info(authorization, instrument, accept_datetime_format, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment, units)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param price: The Price component(s) to get candlestick data for. Can contain any combination of the characters \"M\" (midpoint candles) \"B\" (bid candles) and \"A\" (ask candles).
-        :type price: str
-        :param granularity: The granularity of the candlesticks to fetch
-        :type granularity: str
-        :param count: The number of candlesticks to return in the response. Count should not be specified if both the start and end parameters are provided, as the time range combined with the granularity will determine the number of candlesticks to return.
-        :type count: int
-        :param var_from: The start of the time range to fetch candlesticks for.
-        :type var_from: str
-        :param to: The end of the time range to fetch candlesticks for.
-        :type to: str
-        :param smooth: A flag that controls whether the candlestick is \"smoothed\" or not.  A smoothed candlestick uses the previous candle's close price as its open price, while an unsmoothed candlestick uses the first price from its time range as its open price.
-        :type smooth: bool
-        :param include_first: A flag that controls whether the candlestick that is covered by the from time should be included in the results. This flag enables clients to use the timestamp of the last completed candlestick received to poll for future candlesticks but avoid receiving the previous candlestick repeatedly.
-        :type include_first: bool
-        :param daily_alignment: The hour of the day (in the specified timezone) to use for granularities that have daily alignments.
-        :type daily_alignment: int
-        :param alignment_timezone: The timezone to use for the dailyAlignment parameter. Candlesticks with daily alignment will be aligned to the dailyAlignment hour within the alignmentTimezone.  Note that the returned times will still be represented in UTC.
-        :type alignment_timezone: str
-        :param weekly_alignment: The day of the week used for granularities that have weekly alignment.
-        :type weekly_alignment: str
-        :param units: The number of units used to calculate the volume-weighted average bid and ask prices in the returned candles.
-        :type units: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetInstrumentCandles200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {
+            'instrument': instrument,
+            "accountID": account_id
+        }
 
-        _all_params = [
-            'authorization',
-            'instrument',
-            'accept_datetime_format',
-            'price',
-            'granularity',
-            'count',
-            'var_from',
-            'to',
-            'smooth',
-            'include_first',
-            'daily_alignment',
-            'alignment_timezone',
-            'weekly_alignment',
-            'units'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_instrument_candles_0" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
         _query_params = []
-        if _params.get('price') is not None:  # noqa: E501
-            _query_params.append(('price', _params['price']))
+        if price:
+            _query_params.append(('price', price))
 
-        if _params.get('granularity') is not None:  # noqa: E501
-            _query_params.append(('granularity', _params['granularity']))
+        if granularity:
+            _query_params.append(('granularity', granularity))
 
-        if _params.get('count') is not None:  # noqa: E501
-            _query_params.append(('count', _params['count']))
+        if count:
+            _query_params.append(('count', count))
 
-        if _params.get('var_from') is not None:  # noqa: E501
-            _query_params.append(('from', _params['var_from']))
+        if var_from:
+            _query_params.append(('from', var_from))
 
-        if _params.get('to') is not None:  # noqa: E501
-            _query_params.append(('to', _params['to']))
+        if to:
+            _query_params.append(('to', to))
 
-        if _params.get('smooth') is not None:  # noqa: E501
-            _query_params.append(('smooth', _params['smooth']))
+        if smooth:
+            _query_params.append(('smooth', smooth))
 
-        if _params.get('include_first') is not None:  # noqa: E501
-            _query_params.append(('includeFirst', _params['include_first']))
+        if include_first:
+            _query_params.append(('includeFirst', include_first))
 
-        if _params.get('daily_alignment') is not None:  # noqa: E501
-            _query_params.append(('dailyAlignment', _params['daily_alignment']))
+        if daily_alignment:
+            _query_params.append(('dailyAlignment', daily_alignment))
 
-        if _params.get('alignment_timezone') is not None:  # noqa: E501
-            _query_params.append(('alignmentTimezone', _params['alignment_timezone']))
+        if alignment_timezone:
+            _query_params.append(('alignmentTimezone', alignment_timezone))
 
-        if _params.get('weekly_alignment') is not None:  # noqa: E501
-            _query_params.append(('weeklyAlignment', _params['weekly_alignment']))
+        if weekly_alignment:
+            _query_params.append(('weeklyAlignment', weekly_alignment))
 
-        if _params.get('units') is not None:  # noqa: E501
-            _query_params.append(('units', _params['units']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if units:
+            _query_params.append(('units', units))
 
         _response_types_map = {
-            '200': "GetInstrumentCandles200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetInstrumentCandles200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/instruments/{instrument}/candles', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_instrument_price(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> Union[GetInstrumentPrice200Response, Awaitable[GetInstrumentPrice200Response]]:  # noqa: E501
-        """Price  # noqa: E501
+    @validate_request
+    async def candles(self,
+                      account_id: AccountId,
+                      instrument: InstrumentName,
+                      price: Optional[Union[PriceComponent, str]] = None,
+                      granularity: Optional[models.CandlestickGranularity] = None,
+                      count: Optional[int] = None,
+                      var_from: Optional[str] = None,
+                      to: Optional[str] = None,
+                      smooth: Optional[bool] = None,
+                      include_first: Optional[bool] = None,
+                      daily_alignment: Optional[int] = None,
+                      alignment_timezone: Optional[str] = None,
+                      weekly_alignment: Optional[str] = None
+                      ) -> AsyncIterator[models.Candlestick]:
+        api_response = await self.get_instrument_candles_by_account(account_id, instrument, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment)
+        candles = api_response.candles
+        if candles:
+            async for candle in candles:
+                yield candle
 
-        Fetch a price for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
+    @validate_request
+    async def get_instrument_price(self,
+                                   instrument: InstrumentName,
+                                   time: Optional[datetime] = None,
+                                   future: Optional[aio.Future[GetInstrumentPrice200Response]] = None
+                                   ) -> Awaitable[GetInstrumentPrice200Response]:
+        """Price
 
-        >>> response = api.get_instrument_price(authorization, instrument, accept_datetime_format, time)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        Fetch a price for an instrument. Accounts are not associated in any way with this endpoint.
+
+        >>> response = api.get_instrument_price(instrument, time)
+
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type instrument: InstrumentName
         :param time: The time at which the desired price is in effect. The current price is returned if no time is provided.
         :type time: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetInstrumentPrice200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_instrument_price_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_instrument_price_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_instrument_price_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time at which the desired price is in effect. The current price is returned if no time is provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Price  # noqa: E501
-
-        Fetch a price for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
-
-        >>> response = api.get_instrument_price_with_http_info(authorization, instrument, accept_datetime_format, time)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param time: The time at which the desired price is in effect. The current price is returned if no time is provided.
-        :type time: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetInstrumentPrice200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'instrument': instrument}
 
-        _all_params = [
-            'authorization',
-            'instrument',
-            'accept_datetime_format',
-            'time'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_instrument_price" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('time') is not None:  # noqa: E501
-            _query_params.append(('time', _params['time']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            '200': "GetInstrumentPrice200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetInstrumentPrice200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/instruments/{instrument}/price', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_instrument_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
-        """Get Prices  # noqa: E501
+    @validate_request
+    async def get_instrument_price_range(self,
+                                         instrument: InstrumentName,
+                                         var_from: str,
+                                         to: Optional[str] = None,
+                                         future: Optional[aio.Future[GetInstrumentPriceRange200Response]] = None
+                                         ) -> Awaitable[GetInstrumentPriceRange200Response]:
+        """Get Prices
 
-        Fetch a range of prices for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
+        Fetch a range of prices for an instrument. Accounts are not associated in any way with this endpoint.
 
-        >>> response = api.get_instrument_price_range(authorization, instrument, var_from, accept_datetime_format, to)
+        >>> response = api.get_instrument_price_range(instrument, var_from, to)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
+        :type instrument: InstrumentName
         :param var_from: The start of the time range to fetch prices for. (required)
         :type var_from: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param to: The end of the time range to fetch prices for. The current time is used if this parameter is not provided.
         :type to: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetInstrumentPriceRange200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_instrument_price_range_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_instrument_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_instrument_price_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Prices  # noqa: E501
-
-        Fetch a range of prices for an instrument. Accounts are not associated in any way with this endpoint.  # noqa: E501
-
-        >>> response = api.get_instrument_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param var_from: The start of the time range to fetch prices for. (required)
-        :type var_from: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param to: The end of the time range to fetch prices for. The current time is used if this parameter is not provided.
-        :type to: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetInstrumentPriceRange200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'instrument': instrument}
 
-        _all_params = [
-            'authorization',
-            'instrument',
-            'var_from',
-            'accept_datetime_format',
-            'to'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        _query_params = [('from', var_from)]
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_instrument_price_range" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('var_from') is not None:  # noqa: E501
-            _query_params.append(('from', _params['var_from']))
-
-        if _params.get('to') is not None:  # noqa: E501
-            _query_params.append(('to', _params['to']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if to:
+            _query_params.append(('to', to))
 
         _response_types_map = {
-            '200': "GetInstrumentPriceRange200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetInstrumentPriceRange200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/instruments/{instrument}/price/range', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetOrder200Response, Awaitable[GetOrder200Response]]:  # noqa: E501
-        """Get Order  # noqa: E501
+    @validate_request
+    async def get_order(self,
+                        account_id: AccountId,
+                        order_specifier: str,
+                        future: Optional[aio.Future[GetOrder200Response]] = None
+                        ) -> Awaitable[GetOrder200Response]:
+        """Get Order
 
-        Get details for a single Order in an Account  # noqa: E501
+        Get details for a single Order in an Account
 
-        >>> response = api.get_order(authorization, account_id, order_specifier, accept_datetime_format)
+        >>> response = api.get_order(account_id, order_specifier)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param order_specifier: The Order Specifier (required)
         :type order_specifier: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetOrder200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Order  # noqa: E501
-
-        Get details for a single Order in an Account  # noqa: E501
-
-        >>> response = api.get_order_with_http_info(authorization, account_id, order_specifier, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param order_specifier: The Order Specifier (required)
-        :type order_specifier: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetOrder200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id',
-            'order_specifier',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_order" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['order_specifier']:
-            _path_params['orderSpecifier'] = _params['order_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id,
+                        'orderSpecifier': order_specifier
+                        }
 
         _response_types_map = {
-            '200': "GetOrder200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetOrder200Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_position(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> Union[GetPosition200Response, Awaitable[GetPosition200Response]]:  # noqa: E501
-        """Instrument Position  # noqa: E501
+    @validate_request
+    async def get_position(self,
+                           account_id: AccountId,
+                           instrument: InstrumentName,
+                           future: Optional[aio.Future[GetPosition200Response]] = None
+                           ) -> Awaitable[GetPosition200Response]:
+        """Instrument Position
 
-        Get the details of a single Instrument's Position in an Account. The Position may by open or not.  # noqa: E501
+        Get the details of a single Instrument's Position in an Account. The Position may by open or not.
 
-        >>> response = api.get_position(authorization, account_id, instrument)
+        >>> response = api.get_position(account_id, instrument)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetPosition200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_position_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_position_with_http_info(authorization, account_id, instrument, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_position_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], **kwargs) -> ApiResponse:  # noqa: E501
-        """Instrument Position  # noqa: E501
-
-        Get the details of a single Instrument's Position in an Account. The Position may by open or not.  # noqa: E501
-
-        >>> response = api.get_position_with_http_info(authorization, account_id, instrument)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type instrument: InstrumentName
         :return: Returns the response object.
         :rtype: tuple(GetPosition200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'instrument'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_position" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if instrument:
+            _path_params['instrument'] = instrument
 
         _response_types_map = {
-            '200': "GetPosition200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetPosition200Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/positions/{instrument}', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_price_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> Union[GetInstrumentPriceRange200Response, Awaitable[GetInstrumentPriceRange200Response]]:  # noqa: E501
-        """Get Price Range  # noqa: E501
+    @validate_request
+    async def get_price_range(self,
+                              instrument: InstrumentName,
+                              var_from: str,
+                              to: Optional[str] = None,
+                              future: Optional[aio.Future[GetInstrumentPriceRange200Response]] = None
+                              ) -> Awaitable[GetInstrumentPriceRange200Response]:
+        """Get Price Range
 
-        Get pricing information for a specified range of prices. Accounts are not associated in any way with this endpoint.  # noqa: E501
 
-        >>> response = api.get_price_range(authorization, instrument, var_from, accept_datetime_format, to)
+        Get pricing information for a specified range of prices. Accounts are not associated in any way with this endpoint.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.get_price_range(instrument, var_from, to)
+
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
+        :type instrument: InstrumentName
         :param var_from: The start of the time range to fetch prices for. (required)
         :type var_from: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param to: The end of the time range to fetch prices for. The current time is used if this parameter is not provided.
         :type to: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetInstrumentPriceRange200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_price_range_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_price_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], var_from : Annotated[StrictStr, Field(..., description="The start of the time range to fetch prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, to : Annotated[Optional[StrictStr], Field(description="The end of the time range to fetch prices for. The current time is used if this parameter is not provided.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Price Range  # noqa: E501
-
-        Get pricing information for a specified range of prices. Accounts are not associated in any way with this endpoint.  # noqa: E501
-
-        >>> response = api.get_price_range_with_http_info(authorization, instrument, var_from, accept_datetime_format, to)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param var_from: The start of the time range to fetch prices for. (required)
-        :type var_from: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param to: The end of the time range to fetch prices for. The current time is used if this parameter is not provided.
-        :type to: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetInstrumentPriceRange200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'instrument': instrument}
 
-        _all_params = [
-            'authorization',
-            'instrument',
-            'var_from',
-            'accept_datetime_format',
-            'to'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_price_range" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
         _query_params = []
-        if _params.get('var_from') is not None:  # noqa: E501
-            _query_params.append(('from', _params['var_from']))
+        if var_from:
+            _query_params.append(('from', var_from))
 
-        if _params.get('to') is not None:  # noqa: E501
-            _query_params.append(('to', _params['to']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if to:
+            _query_params.append(('to', to))
 
         _response_types_map = {
-            '200': "GetInstrumentPriceRange200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetInstrumentPriceRange200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/pricing/range', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_prices(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> Union[GetPrices200Response, Awaitable[GetPrices200Response]]:  # noqa: E501
-        """Current Account Prices  # noqa: E501
+    @validate_request
+    async def get_prices(self,
+                         account_id: AccountId,
+                         instruments: Sequence[str],
+                         since: Optional[str] = None,
+                         include_units_available: Optional[bool] = None,
+                         include_home_conversions: Optional[bool] = None,
+                         future: Optional[aio.Future[GetPrices200Response]] = None
+                         ) -> Awaitable[GetPrices200Response]:
+        """Current Account Prices
 
-        Get pricing information for a specified list of Instruments within an Account.  # noqa: E501
 
-        >>> response = api.get_prices(authorization, account_id, instruments, accept_datetime_format, since, include_units_available, include_home_conversions)
+        Get pricing information for a specified list of Instruments within an Account.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.get_prices(account_id, instruments, since, include_units_available, include_home_conversions)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param instruments: List of Instruments to get pricing for. (required)
         :type instruments: List[str]
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param since: Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.
         :type since: str
         :param include_units_available: Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.
         :type include_units_available: bool
         :param include_home_conversions: Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.
         :type include_home_conversions: bool
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetPrices200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_prices_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_prices_with_http_info(authorization, account_id, instruments, accept_datetime_format, since, include_units_available, include_home_conversions, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_prices_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to get pricing for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, since : Annotated[Optional[StrictStr], Field(description="Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.")] = None, include_units_available : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.")] = None, include_home_conversions : Annotated[Optional[StrictBool], Field(description="Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Current Account Prices  # noqa: E501
-
-        Get pricing information for a specified list of Instruments within an Account.  # noqa: E501
-
-        >>> response = api.get_prices_with_http_info(authorization, account_id, instruments, accept_datetime_format, since, include_units_available, include_home_conversions)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param instruments: List of Instruments to get pricing for. (required)
-        :type instruments: List[str]
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param since: Date/Time filter to apply to the response. Only prices and home conversions (if requested) with a time later than this filter (i.e. the price has changed after the since time) will be provided, and are filtered independently.
-        :type since: str
-        :param include_units_available: Flag that enables the inclusion of the unitsAvailable field in the returned Price objects.
-        :type include_units_available: bool
-        :param include_home_conversions: Flag that enables the inclusion of the homeConversions field in the returned response. An entry will be returned for each currency in the set of all base and quote currencies present in the requested instruments list.
-        :type include_home_conversions: bool
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetPrices200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'instruments',
-            'accept_datetime_format',
-            'since',
-            'include_units_available',
-            'include_home_conversions'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        _query_params = [('instruments', instruments)]
+        _collection_formats = {'instruments': 'csv'}
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_prices" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
+        if since:
+            _query_params.append(('since', since))
 
-        _collection_formats = None
+        if include_units_available:
+            _query_params.append(('includeUnitsAvailable', include_units_available))
 
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('instruments') is not None:  # noqa: E501
-            _query_params.append(('instruments', _params['instruments']))
-            _collection_formats['instruments'] = 'csv'
-
-        if _params.get('since') is not None:  # noqa: E501
-            _query_params.append(('since', _params['since']))
-
-        if _params.get('include_units_available') is not None:  # noqa: E501
-            _query_params.append(('includeUnitsAvailable', _params['include_units_available']))
-
-        if _params.get('include_home_conversions') is not None:  # noqa: E501
-            _query_params.append(('includeHomeConversions', _params['include_home_conversions']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if include_home_conversions:
+            _query_params.append(('includeHomeConversions', include_home_conversions))
 
         _response_types_map = {
-            '200': "GetPrices200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetPrices200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/pricing', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
+            path_params=_path_params,
+            query_params=_query_params,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            collection_formats=_collection_formats, future=future)
 
-    @validate_arguments
-    async def get_trade(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTrade200Response, Awaitable[GetTrade200Response]]:  # noqa: E501
-        """Trade Details  # noqa: E501
+    @validate_request
+    async def get_trade(self,
+                        account_id: AccountId,
+                        trade_specifier: str,
+                        future: Optional[aio.Future[GetTrade200Response]] = None
+                        ) -> Awaitable[GetTrade200Response]:
+        """Trade Details
 
-        Get the details of a specific Trade in an Account  # noqa: E501
+        Get the details of a specific Trade in an Account
 
-        >>> response = api.get_trade(authorization, account_id, trade_specifier, accept_datetime_format)
+        >>> response = api.get_trade(account_id, trade_specifier)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param trade_specifier: Specifier for the Trade (required)
         :type trade_specifier: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetTrade200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_trade_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_trade_with_http_info(authorization, account_id, trade_specifier, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_trade_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Trade Details  # noqa: E501
-
-        Get the details of a specific Trade in an Account  # noqa: E501
-
-        >>> response = api.get_trade_with_http_info(authorization, account_id, trade_specifier, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param trade_specifier: Specifier for the Trade (required)
-        :type trade_specifier: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetTrade200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'trade_specifier',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_trade" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['trade_specifier']:
-            _path_params['tradeSpecifier'] = _params['trade_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if trade_specifier:
+            _path_params['tradeSpecifier'] = trade_specifier
 
         _response_types_map = {
-            '200': "GetTrade200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetTrade200Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_transaction(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTransaction200Response, Awaitable[GetTransaction200Response]]:  # noqa: E501
-        """Transaction Details  # noqa: E501
+    @validate_request
+    async def get_transaction(self,
+                              account_id: AccountId,
+                              transaction_id: str,
+                              future: Optional[aio.Future[GetTransaction200Response]] = None
+                              ) -> Awaitable[GetTransaction200Response]:
+        """Transaction Details
 
-        Get the details of a single Account Transaction.  # noqa: E501
+        Get the details of a single Account Transaction.
 
-        >>> response = api.get_transaction(authorization, account_id, transaction_id, accept_datetime_format)
+        >>> response = api.get_transaction(account_id, transaction_id)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param transaction_id: A Transaction ID (required)
         :type transaction_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetTransaction200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_transaction_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_transaction_with_http_info(authorization, account_id, transaction_id, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_transaction_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], transaction_id : Annotated[StrictStr, Field(..., description="A Transaction ID")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Transaction Details  # noqa: E501
-
-        Get the details of a single Account Transaction.  # noqa: E501
-
-        >>> response = api.get_transaction_with_http_info(authorization, account_id, transaction_id, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param transaction_id: A Transaction ID (required)
-        :type transaction_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetTransaction200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'transaction_id',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_transaction" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['transaction_id']:
-            _path_params['transactionID'] = _params['transaction_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if transaction_id:
+            _path_params['transactionID'] = transaction_id
 
         _response_types_map = {
-            '200': "GetTransaction200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetTransaction200Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/{transactionID}', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_transaction_range(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> Union[GetTransactionRange200Response, Awaitable[GetTransactionRange200Response]]:  # noqa: E501
-        """Transaction ID Range  # noqa: E501
+    @validate_request
+    async def get_transaction_range(self,
+                                    account_id: AccountId,
+                                    var_from: str,
+                                    to: str,
+                                    type_filter: Optional[Sequence[str]] = None,
+                                    future: Optional[aio.Future[GetTransactionRange200Response]] = None
+                                    ) -> Awaitable[GetTransactionRange200Response]:
+        """Transaction ID Range
 
-        Get a range of Transactions for an Account based on the Transaction IDs.  # noqa: E501
+        Get a range of Transactions for an Account based on the Transaction IDs.
 
-        >>> response = api.get_transaction_range(authorization, account_id, var_from, to, accept_datetime_format, type)
+        >>> response = api.get_transaction_range(account_id, var_from, to, type)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param var_from: The starting Transacion ID (inclusive) to fetch. (required)
         :type var_from: str
         :param to: The ending Transaction ID (inclusive) to fetch. (required)
         :type to: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param type: The filter that restricts the types of Transactions to retreive.
+        :param type_filter: The filter that restricts the types of Transactions to retreive.
         :type type: List[str]
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetTransactionRange200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_transaction_range_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_transaction_range_with_http_info(authorization, account_id, var_from, to, accept_datetime_format, type, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_transaction_range_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], var_from : Annotated[StrictStr, Field(..., description="The starting Transacion ID (inclusive) to fetch.")], to : Annotated[StrictStr, Field(..., description="The ending Transaction ID (inclusive) to fetch.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="The filter that restricts the types of Transactions to retreive.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Transaction ID Range  # noqa: E501
-
-        Get a range of Transactions for an Account based on the Transaction IDs.  # noqa: E501
-
-        >>> response = api.get_transaction_range_with_http_info(authorization, account_id, var_from, to, accept_datetime_format, type)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param var_from: The starting Transacion ID (inclusive) to fetch. (required)
-        :type var_from: str
-        :param to: The ending Transaction ID (inclusive) to fetch. (required)
-        :type to: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param type: The filter that restricts the types of Transactions to retreive.
-        :type type: List[str]
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetTransactionRange200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'var_from',
-            'to',
-            'accept_datetime_format',
-            'type'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_transaction_range" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
         _query_params = []
-        if _params.get('var_from') is not None:  # noqa: E501
-            _query_params.append(('from', _params['var_from']))
+        if var_from:
+            _query_params.append(('from', var_from))
 
-        if _params.get('to') is not None:  # noqa: E501
-            _query_params.append(('to', _params['to']))
+        if to:
+            _query_params.append(('to', to))
 
-        if _params.get('type') is not None:  # noqa: E501
-            _query_params.append(('type', _params['type']))
-            _collection_formats['type'] = 'csv'
+        if type_filter:
+            _query_params.append(('type', type_filter))
 
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _collection_formats = {'type': 'csv'} if type_filter else None
 
         _response_types_map = {
-            '200': "GetTransactionRange200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
-            '416': "GetInstrumentCandles400Response",
+            200: models.GetTransactionRange200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
+            416: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/idrange', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
+            path_params=_path_params,
+            query_params=_query_params,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            collection_formats=_collection_formats, future=future)
 
-    @validate_arguments
-    async def get_transactions_since_id(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[GetTransactionRange200Response, Awaitable[GetTransactionRange200Response]]:  # noqa: E501
-        """Transactions Since ID  # noqa: E501
+    @validate_request
+    async def get_transactions_since_id(self,
+                                        account_id: AccountId,
+                                        txn_id: str,
+                                        future: Optional[aio.Future[GetTransactionRange200Response]] = None
+                                        ) -> Awaitable[GetTransactionRange200Response]:
+        """Transactions Since ID
 
-        Get a range of Transactions for an Account starting at (but not including) a provided Transaction ID.  # noqa: E501
+        Get a range of Transactions for an Account starting at (but not including) a provided Transaction ID.
 
-        >>> response = api.get_transactions_since_id(authorization, account_id, id, accept_datetime_format)
+        >>> response = api.get_transactions_since_id(account_id, id)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param id: The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID. (required)
+        :type account_id: AccountId
+        :param txn_id: The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID. (required)
         :type id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetTransactionRange200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_transactions_since_id_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_transactions_since_id_with_http_info(authorization, account_id, id, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_transactions_since_id_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], id : Annotated[StrictStr, Field(..., description="The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Transactions Since ID  # noqa: E501
-
-        Get a range of Transactions for an Account starting at (but not including) a provided Transaction ID.  # noqa: E501
-
-        >>> response = api.get_transactions_since_id_with_http_info(authorization, account_id, id, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param id: The ID of the last Transacion fetched. This query will return all Transactions newer than the TransactionID. (required)
-        :type id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetTransactionRange200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'id',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_transactions_since_id" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('id') is not None:  # noqa: E501
-            _query_params.append(('id', _params['id']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _query_params = (('id', txn_id),)
 
         _response_types_map = {
-            '200': "GetTransactionRange200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
-            '416': "GetInstrumentCandles400Response",
+            200: models.GetTransactionRange200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
+            416: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/sinceid', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def get_user_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> Union[GetUserInfo200Response, Awaitable[GetUserInfo200Response]]:  # noqa: E501
-        """User Info  # noqa: E501
+    @validate_request
+    async def get_user_info(self,
+                            user_specifier: str,
+                            future: Optional[aio.Future[GetUserInfo200Response]] = None
+                            ) -> Awaitable[GetUserInfo200Response]:
+        """User Info
 
-        Fetch the user information for the specified user. This endpoint is intended to be used by the user themself to obtain their own information.  # noqa: E501
+        Fetch the user information for the specified user. This endpoint is intended to be used by the user themself to obtain their own information.
 
-        >>> response = api.get_user_info(authorization, user_specifier)
+        >>> response = api.get_user_info(user_specifier)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param user_specifier: The User Specifier (required)
         :type user_specifier: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: GetUserInfo200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the get_user_info_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.get_user_info_with_http_info(authorization, user_specifier, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def get_user_info_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], user_specifier : Annotated[StrictStr, Field(..., description="The User Specifier")], **kwargs) -> ApiResponse:  # noqa: E501
-        """User Info  # noqa: E501
-
-        Fetch the user information for the specified user. This endpoint is intended to be used by the user themself to obtain their own information.  # noqa: E501
-
-        >>> response = api.get_user_info_with_http_info(authorization, user_specifier)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param user_specifier: The User Specifier (required)
-        :type user_specifier: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(GetUserInfo200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'user_specifier'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method get_user_info" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['user_specifier']:
-            _path_params['userSpecifier'] = _params['user_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'userSpecifier': user_specifier}
 
         _response_types_map = {
-            '200': "GetUserInfo200Response",
-            '401': "GetInstrumentCandles400Response",
-            '403': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.GetUserInfo200Response,
+            401: models.FxTrade400Response,
+            403: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/users/{userSpecifier}', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def instruments_instrument_order_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> Union[InstrumentsInstrumentOrderBookGet200Response, Awaitable[InstrumentsInstrumentOrderBookGet200Response]]:  # noqa: E501
-        """Get Order Book  # noqa: E501
+    @validate_request
+    async def instruments_instrument_order_book_get(self,
+                                                    instrument: InstrumentName,
+                                                    time: Optional[str] = None,
+                                                    future: Optional[aio.Future[InstrumentsInstrumentOrderBookGet200Response]] = None
+                                                    ) -> Awaitable[InstrumentsInstrumentOrderBookGet200Response]:
+        """Get Order Book
 
-        Fetch an order book for an instrument.  # noqa: E501
+        [Endpoint may not be available for FX Instruments]
 
-        >>> response = api.instruments_instrument_order_book_get(authorization, instrument, accept_datetime_format, time)
+        Fetch an order book for an instrument.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.instruments_instrument_order_book_get(instrument, time)
+
         :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type instrument: InstrumentName
         :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
         :type time: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: InstrumentsInstrumentOrderBookGet200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the instruments_instrument_order_book_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.instruments_instrument_order_book_get_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def instruments_instrument_order_book_get_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Order Book  # noqa: E501
-
-        Fetch an order book for an instrument.  # noqa: E501
-
-        >>> response = api.instruments_instrument_order_book_get_with_http_info(authorization, instrument, accept_datetime_format, time)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
-        :type time: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(InstrumentsInstrumentOrderBookGet200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'instrument': instrument}
 
-        _all_params = [
-            'authorization',
-            'instrument',
-            'accept_datetime_format',
-            'time'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method instruments_instrument_order_book_get" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('time') is not None:  # noqa: E501
-            _query_params.append(('time', _params['time']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _query_params = (('time', time),) if time else None
 
         _response_types_map = {
-            '200': "InstrumentsInstrumentOrderBookGet200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.InstrumentsInstrumentOrderBookGet200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/instruments/{instrument}/orderBook', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def instruments_instrument_position_book_get(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> Union[InstrumentsInstrumentPositionBookGet200Response, Awaitable[InstrumentsInstrumentPositionBookGet200Response]]:  # noqa: E501
-        """Get Position Book  # noqa: E501
+    @validate_request
+    async def list_accounts(self, future: Optional[aio.Future[ListAccounts200Response]] = None
+                            ) -> Awaitable[Optional[ListAccounts200Response]]:
+        """List Accounts
 
-        Fetch a position book for an instrument.  # noqa: E501
+        Get a list of all Accounts authorized for the provided token.
 
-        >>> response = api.instruments_instrument_position_book_get(authorization, instrument, accept_datetime_format, time)
+        >>> response = api.list_accounts()
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
-        :type time: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: InstrumentsInstrumentPositionBookGet200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the instruments_instrument_position_book_get_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.instruments_instrument_position_book_get_with_http_info(authorization, instrument, accept_datetime_format, time, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def instruments_instrument_position_book_get_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], instrument : Annotated[StrictStr, Field(..., description="Name of the Instrument")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, time : Annotated[Optional[StrictStr], Field(description="The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Get Position Book  # noqa: E501
-
-        Fetch a position book for an instrument.  # noqa: E501
-
-        >>> response = api.instruments_instrument_position_book_get_with_http_info(authorization, instrument, accept_datetime_format, time)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param instrument: Name of the Instrument (required)
-        :type instrument: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
-        :type time: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
-        :return: Returns the response object.
-        :rtype: tuple(InstrumentsInstrumentPositionBookGet200Response, status_code(int), headers(HTTPHeaderDict))
-        """
-
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'instrument',
-            'accept_datetime_format',
-            'time'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method instruments_instrument_position_book_get" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['instrument']:
-            _path_params['instrument'] = _params['instrument']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('time') is not None:  # noqa: E501
-            _query_params.append(('time', _params['time']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
-
-        _response_types_map = {
-            '200': "InstrumentsInstrumentPositionBookGet200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
-        }
-
-        return await self.api_client.call_api(
-            '/instruments/{instrument}/positionBook', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
-
-    @validate_arguments
-    async def list_accounts(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> Union[ListAccounts200Response, Awaitable[ListAccounts200Response]]:  # noqa: E501
-        """List Accounts  # noqa: E501
-
-        Get a list of all Accounts authorized for the provided token.  # noqa: E501
-
-        >>> response = api.list_accounts(authorization)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListAccounts200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_accounts_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_accounts_with_http_info(authorization, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def list_accounts_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], **kwargs) -> ApiResponse:  # noqa: E501
-        """List Accounts  # noqa: E501
-
-        Get a list of all Accounts authorized for the provided token.  # noqa: E501
-
-        >>> response = api.list_accounts_with_http_info(authorization)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
-        :return: Returns the response object.
+        :return: Returns the response object, or None if a generator receiver was provided
         :rtype: tuple(ListAccounts200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_accounts" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
-
         _response_types_map = {
-            '200': "ListAccounts200Response",
-            '401': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListAccounts200Response,
+            401: models.FxTrade400Response,
+            405: models.FxTrade400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            future=future)
 
-    @validate_arguments
-    async def list_open_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[ListOpenPositions200Response, Awaitable[ListOpenPositions200Response]]:  # noqa: E501
-        """Open Positions  # noqa: E501
+    @validate_request
+    async def accounts(self,
+                       ## pydantic entirely fails to parse the AsyncGenerator arg
+                       # controller: ApiController, ## for prototyping only @ the arg's presence here ...
+                       receiver: Optional[AsyncGenerator[Any, models.AccountProperties]] = None
+                       ) -> AsyncIterator[models.AccountProperties]:
+        response = await self.list_accounts()
+        accounts = response.accounts
+        if accounts:
+            for ac in accounts:
+                yield ac
+        else:
+            return
 
-        List all open Positions for an Account. An open Position is a Position in an Account that currently has a Trade opened for it.  # noqa: E501
+    @validate_request
+    async def instruments_instrument_position_book_get(self,
+                                                       instrument: InstrumentName,
+                                                       time: Optional[str] = None,
+                                                       future: Optional[aio.Future[InstrumentsInstrumentPositionBookGet200Response]] = None
+                                                       ) -> Awaitable[InstrumentsInstrumentPositionBookGet200Response]:
+        """Get Position Book
 
-        >>> response = api.list_open_positions(authorization, account_id)
+        Fetch a position book for an instrument.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
+        >>> response = api.instruments_instrument_position_book_get(instrument, time)
+
+        :param instrument: Name of the Instrument (required)
+        :type instrument: InstrumentName
+        :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
+        :type time: str
         :return: Returns the response object.
-        :rtype: ListOpenPositions200Response
+        :rtype: tuple(InstrumentsInstrumentPositionBookGet200Response, status_code(int), headers(HTTPHeaderDict))
         """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_open_positions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_open_positions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
 
-    @validate_arguments
-    async def list_open_positions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
-        """Open Positions  # noqa: E501
+        _path_params = {'instrument': instrument}
 
-        List all open Positions for an Account. An open Position is a Position in an Account that currently has a Trade opened for it.  # noqa: E501
+        _query_params = (('time', time),) if time else None
 
-        >>> response = api.list_open_positions_with_http_info(authorization, account_id)
+        _response_types_map = {
+            200: models.InstrumentsInstrumentPositionBookGet200Response,
+            400: models.FxTrade400Response,
+            401: models.FxTrade400Response,
+            404: models.FxTrade400Response,
+            405: models.FxTrade400Response,
+        }
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        return await self.api_client.call_api(
+            '/instruments/{instrument}/positionBook', RequestMethod.GET,
+            path_params=_path_params,
+            query_params=_query_params,
+            response_types_map=_response_types_map, future=future)
+
+    @validate_request
+    async def list_open_positions(self,
+                                  account_id: AccountId,
+                                  future: Optional[aio.Future[ListOpenPositions200Response]] = None
+                                  ) -> Awaitable[ListOpenPositions200Response]:
+        """Open Positions
+
+        List all open Positions for an Account. An open Position is a Position in an Account that currently has a Trade opened for it.
+
+        >>> response = api.list_open_positions(account_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(ListOpenPositions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_open_positions" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "ListOpenPositions200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListOpenPositions200Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/openPositions', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def list_open_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ListOpenTrades200Response, Awaitable[ListOpenTrades200Response]]:  # noqa: E501
-        """List Open Trades  # noqa: E501
+    @validate_request
+    async def open_positions(self, account_id: AccountId
+                             ) -> AsyncIterator[models.Position]:
+        response = await self.list_open_positions(account_id)
+        positions = response.positions
+        if positions:
+            for p in positions:
+                yield p
 
-        Get the list of open Trades for an Account  # noqa: E501
+    @validate_request
+    async def list_open_trades(self, account_id: AccountId,
+                               future: Optional[aio.Future[ListOpenTrades200Response]] = None
+                               ) -> Awaitable[ListOpenTrades200Response]:
+        """List Open Trades
 
-        >>> response = api.list_open_trades(authorization, account_id, accept_datetime_format)
+        Get the list of open Trades for an Account
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.list_open_trades(account_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListOpenTrades200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_open_trades_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_open_trades_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def list_open_trades_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """List Open Trades  # noqa: E501
-
-        Get the list of open Trades for an Account  # noqa: E501
-
-        >>> response = api.list_open_trades_with_http_info(authorization, account_id, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(ListOpenTrades200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_open_trades" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "ListOpenTrades200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListOpenTrades200Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/openTrades', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def list_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> Union[ListOrders200Response, Awaitable[ListOrders200Response]]:  # noqa: E501
-        """List Orders  # noqa: E501
+    @validate_request
+    async def open_trades(self, account_id: AccountId
+                          ) -> AsyncIterator[models.Trade]:
+        response = await self.list_open_trades(account_id)
 
-        Get a list of Orders for an Account  # noqa: E501
+    @validate_request
+    async def list_orders(self, account_id: AccountId,
+                          ids: Optional[Sequence[str]] = None,
+                          state: Optional[str] = None,
+                          instrument: Optional[str] = None,
+                          count: Annotated[Optional[int], Field(json_schema_extra=dict(max=500))] = 50,
+                          before_id: Optional[str] = None,
+                          future: Optional[aio.Future[ListOrders200Response]] = None
+                          ) -> Awaitable[ListOrders200Response]:
+        """List Orders
 
-        >>> response = api.list_orders(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id)
+        Get a list of Orders for an Account
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.list_orders(account_id, ids, state, instrument, count, before_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type account_id: AccountId
+
         :param ids: List of Order IDs to retrieve
         :type ids: List[str]
+
         :param state: The state to filter the requested Orders by
         :type state: str
+
         :param instrument: The instrument to filter the requested orders by
-        :type instrument: str
-        :param count: The maximum number of Orders to return
+        :type instrument: InstrumentName
+
+        :param count: The maximum number of Orders to return (default: 50, maximum: 500)
         :type count: int
+
         :param before_id: The maximum Order ID to return. If not provided the most recent Orders in the Account are returned
         :type before_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListOrders200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_orders_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_orders_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id, **kwargs)  # noqa: E501
 
-    @validate_arguments
-    async def list_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Order IDs to retrieve")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Orders by")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested orders by")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Orders to return")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Order ID to return. If not provided the most recent Orders in the Account are returned")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """List Orders  # noqa: E501
-
-        Get a list of Orders for an Account  # noqa: E501
-
-        >>> response = api.list_orders_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param ids: List of Order IDs to retrieve
-        :type ids: List[str]
-        :param state: The state to filter the requested Orders by
-        :type state: str
-        :param instrument: The instrument to filter the requested orders by
-        :type instrument: str
-        :param count: The maximum number of Orders to return
-        :type count: int
-        :param before_id: The maximum Order ID to return. If not provided the most recent Orders in the Account are returned
-        :type before_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(ListOrders200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format',
-            'ids',
-            'state',
-            'instrument',
-            'count',
-            'before_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        _query_params = [('ids', ids)] if ids else []
+        _collection_formats = {'ids': 'csv'} if ids else None
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_orders" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
+        if state:
+            _query_params.append(('state', state))
 
-        _collection_formats = None
+        if instrument:
+            _query_params.append(('instrument', instrument))
 
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
+        if count:
+            _query_params.append(('count', count))
 
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('ids') is not None:  # noqa: E501
-            _query_params.append(('ids', _params['ids']))
-            _collection_formats['ids'] = 'csv'
-
-        if _params.get('state') is not None:  # noqa: E501
-            _query_params.append(('state', _params['state']))
-
-        if _params.get('instrument') is not None:  # noqa: E501
-            _query_params.append(('instrument', _params['instrument']))
-
-        if _params.get('count') is not None:  # noqa: E501
-            _query_params.append(('count', _params['count']))
-
-        if _params.get('before_id') is not None:  # noqa: E501
-            _query_params.append(('beforeID', _params['before_id']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if before_id:
+            _query_params.append(('beforeID', before_id))
 
         _response_types_map = {
-            '200': "ListOrders200Response",
-            '400': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListOrders200Response,
+            400: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
+            path_params=_path_params,
+            query_params=_query_params,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            collection_formats=_collection_formats, future=future)
 
-    @validate_arguments
-    async def list_pending_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[ListPendingOrders200Response, Awaitable[ListPendingOrders200Response]]:  # noqa: E501
-        """Pending Orders  # noqa: E501
+    @validate_request
+    async def orders(self,
+                     account_id: AccountId,
+                     ids: Optional[Sequence[str]] = None,
+                     state: Optional[str] = None,
+                     instrument: Optional[str] = None,
+                     count: Optional[int] = None,
+                     before_id: Optional[str] = None) -> AsyncIterator[models.Order]:
+        response = await self.list_orders(account_id, ids, state, instrument, count, before_id)
+        orders = response.orders
+        if orders:
+            for o in orders:
+                yield o
 
-        List all pending Orders in an Account  # noqa: E501
+    @validate_request
+    async def list_pending_orders(self, account_id: AccountId,
+                                  future: Optional[aio.Future[ListPendingOrders200Response]] = None
+                                  ) -> Awaitable[ListPendingOrders200Response]:
+        """Pending Orders
 
-        >>> response = api.list_pending_orders(authorization, account_id, accept_datetime_format)
+        List all pending Orders in an Account
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.list_pending_orders(account_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListPendingOrders200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_pending_orders_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_pending_orders_with_http_info(authorization, account_id, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def list_pending_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Pending Orders  # noqa: E501
-
-        List all pending Orders in an Account  # noqa: E501
-
-        >>> response = api.list_pending_orders_with_http_info(authorization, account_id, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(ListPendingOrders200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_pending_orders" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "ListPendingOrders200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListPendingOrders200Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/pendingOrders', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def list_positions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[ListPositions200Response, Awaitable[ListPositions200Response]]:  # noqa: E501
-        """List Positions  # noqa: E501
+    @validate_request
+    async def pending_orders(self, account_id: AccountId
+                             ) -> AsyncIterator[models.Order]:
+        response = await self.pending_orders(account_id)
+        orders = response.orders
+        if orders:
+            for o in orders:
+                yield o
 
-        List all Positions for an Account. The Positions returned are for every instrument that has had a position during the lifetime of an the Account.  # noqa: E501
+    @validate_request
+    async def list_positions(self, account_id: AccountId,
+                             future: Optional[aio.Future[ListPositions200Response]] = None
+                             ) -> Awaitable[ListPositions200Response]:
+        """List Positions
 
-        >>> response = api.list_positions(authorization, account_id)
+        List all Positions for an Account. The Positions returned are for every instrument that has had a position during the lifetime of an the Account.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.list_positions(account_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListPositions200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_positions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_positions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def list_positions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
-        """List Positions  # noqa: E501
-
-        List all Positions for an Account. The Positions returned are for every instrument that has had a position during the lifetime of an the Account.  # noqa: E501
-
-        >>> response = api.list_positions_with_http_info(authorization, account_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(ListPositions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_positions" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "ListPositions200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListPositions200Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/positions', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params,
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def list_trades(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> Union[ListTrades200Response, Awaitable[ListTrades200Response]]:  # noqa: E501
-        """List Trades  # noqa: E501
+    @validate_request
+    async def positions(self, account_id: AccountId
+                        ) -> AsyncIterator[models.Position]:
+        response = await self.list_positions(account_id)
+        positions = response.positions
+        if positions:
+            for p in positions:
+                yield p
 
-        Get a list of Trades for an Account  # noqa: E501
+    @validate_request
+    async def list_trades(self,
+                          account_id: AccountId,
+                          ids: Optional[Sequence[str]] = None,
+                          state: Optional[str] = None,
+                          instrument: Optional[str] = None,
+                          count: Optional[int] = None,
+                          before_id: Optional[str] = None,
+                          future: Optional[aio.Future[ListTrades200Response]] = None
+                          ) -> Awaitable[ListTrades200Response]:
+        """List Trades
 
-        >>> response = api.list_trades(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id)
+        Get a list of Trades for an Account
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.list_trades(account_id, ids, state, instrument, count, before_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type account_id: AccountId
         :param ids: List of Trade IDs to retrieve.
         :type ids: List[str]
         :param state: The state to filter the requested Trades by.
         :type state: str
         :param instrument: The instrument to filter the requested Trades by.
-        :type instrument: str
+        :type instrument: InstrumentName
         :param count: The maximum number of Trades to return.
         :type count: int
         :param before_id: The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.
         :type before_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListTrades200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_trades_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_trades_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def list_trades_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, ids : Annotated[Optional[conlist(StrictStr)], Field(description="List of Trade IDs to retrieve.")] = None, state : Annotated[Optional[StrictStr], Field(description="The state to filter the requested Trades by.")] = None, instrument : Annotated[Optional[StrictStr], Field(description="The instrument to filter the requested Trades by.")] = None, count : Annotated[Optional[StrictInt], Field(description="The maximum number of Trades to return.")] = None, before_id : Annotated[Optional[StrictStr], Field(description="The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """List Trades  # noqa: E501
-
-        Get a list of Trades for an Account  # noqa: E501
-
-        >>> response = api.list_trades_with_http_info(authorization, account_id, accept_datetime_format, ids, state, instrument, count, before_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param ids: List of Trade IDs to retrieve.
-        :type ids: List[str]
-        :param state: The state to filter the requested Trades by.
-        :type state: str
-        :param instrument: The instrument to filter the requested Trades by.
-        :type instrument: str
-        :param count: The maximum number of Trades to return.
-        :type count: int
-        :param before_id: The maximum Trade ID to return. If not provided the most recent Trades in the Account are returned.
-        :type before_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(ListTrades200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format',
-            'ids',
-            'state',
-            'instrument',
-            'count',
-            'before_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        _query_params = [('ids', ids)] if ids else []
+        _collection_formats = {'ids': 'csv'} if ids else None
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_trades" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
+        if state:
+            _query_params.append(('state', state))
 
-        _collection_formats = None
+        if instrument:
+            _query_params.append(('instrument', instrument))
 
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
+        if count:
+            _query_params.append(('count', count))
 
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('ids') is not None:  # noqa: E501
-            _query_params.append(('ids', _params['ids']))
-            _collection_formats['ids'] = 'csv'
-
-        if _params.get('state') is not None:  # noqa: E501
-            _query_params.append(('state', _params['state']))
-
-        if _params.get('instrument') is not None:  # noqa: E501
-            _query_params.append(('instrument', _params['instrument']))
-
-        if _params.get('count') is not None:  # noqa: E501
-            _query_params.append(('count', _params['count']))
-
-        if _params.get('before_id') is not None:  # noqa: E501
-            _query_params.append(('beforeID', _params['before_id']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        if before_id:
+            _query_params.append(('beforeID', before_id))
 
         _response_types_map = {
-            '200': "ListTrades200Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.ListTrades200Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/trades', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
+            path_params=_path_params,
+            query_params=_query_params,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            collection_formats=_collection_formats, future=future)
 
-    @validate_arguments
-    async def list_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> Union[ListTransactions200Response, Awaitable[ListTransactions200Response]]:  # noqa: E501
-        """List Transactions  # noqa: E501
+    @validate_request
+    async def trades(self,
+                     account_id: AccountId,
+                     ids: Optional[Sequence[str]] = None,
+                     state: Optional[str] = None,
+                     instrument: Optional[str] = None,
+                     count: Optional[int] = None,
+                     before_id: Optional[str] = None) -> AsyncIterator[models.Trade]:
+        response = await self.list_trades(account_id, ids, state, instrument, count, before_id)
+        trades = response.trades
+        if trades:
+            for t in trades:
+                yield t
 
-        Get a list of Transactions pages that satisfy a time-based Transaction query.  # noqa: E501
+    @validate_request
+    async def list_transactions(self,
+                                account_id: AccountId,
+                                var_from: Optional[str] = None,
+                                to: Optional[str] = None,
+                                page_size: Annotated[Optional[int], Field(json_schema_extra=dict(max=1000))] = 100,
+                                type_filter: Optional[Sequence[str]] = None,
+                                future: Optional[aio.Future[ListTransactions200Response]] = None
+                                ) -> Awaitable[ListTransactions200Response]:
+        """List Transactions
 
-        >>> response = api.list_transactions(authorization, account_id, accept_datetime_format, var_from, to, page_size, type)
+        Get a list of Transactions pages that satisfy a time-based Transaction query.
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.list_transactions(account_id, var_from, to, page_size, type)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
+        :type account_id: AccountId
         :param var_from: The starting time (inclusive) of the time range for the Transactions being queried.
         :type var_from: str
         :param to: The ending time (inclusive) of the time range for the Transactions being queried.
         :type to: str
         :param page_size: The number of Transactions to include in each page of the results.
         :type page_size: int
-        :param type: A filter for restricting the types of Transactions to retreive.
+        :param type_filter: A filter for restricting the types of Transactions to retreive.
         :type type: List[str]
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ListTransactions200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the list_transactions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.list_transactions_with_http_info(authorization, account_id, accept_datetime_format, var_from, to, page_size, type, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def list_transactions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, var_from : Annotated[Optional[StrictStr], Field(description="The starting time (inclusive) of the time range for the Transactions being queried.")] = None, to : Annotated[Optional[StrictStr], Field(description="The ending time (inclusive) of the time range for the Transactions being queried.")] = None, page_size : Annotated[Optional[StrictInt], Field(description="The number of Transactions to include in each page of the results.")] = None, type : Annotated[Optional[conlist(StrictStr)], Field(description="A filter for restricting the types of Transactions to retreive.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """List Transactions  # noqa: E501
-
-        Get a list of Transactions pages that satisfy a time-based Transaction query.  # noqa: E501
-
-        >>> response = api.list_transactions_with_http_info(authorization, account_id, accept_datetime_format, var_from, to, page_size, type)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param var_from: The starting time (inclusive) of the time range for the Transactions being queried.
-        :type var_from: str
-        :param to: The ending time (inclusive) of the time range for the Transactions being queried.
-        :type to: str
-        :param page_size: The number of Transactions to include in each page of the results.
-        :type page_size: int
-        :param type: A filter for restricting the types of Transactions to retreive.
-        :type type: List[str]
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(ListTransactions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'accept_datetime_format',
-            'var_from',
-            'to',
-            'page_size',
-            'type'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method list_transactions" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
+        _path_params = {'accountID': account_id}
 
 
-        # process the query parameters
         _query_params = []
-        if _params.get('var_from') is not None:  # noqa: E501
-            _query_params.append(('from', _params['var_from']))
+        if var_from:
+            _query_params.append(('from', var_from))
 
-        if _params.get('to') is not None:  # noqa: E501
-            _query_params.append(('to', _params['to']))
+        if to:
+            _query_params.append(('to', to))
 
-        if _params.get('page_size') is not None:  # noqa: E501
-            _query_params.append(('pageSize', _params['page_size']))
+        if page_size:
+            _query_params.append(('pageSize', page_size))
 
-        if _params.get('type') is not None:  # noqa: E501
-            _query_params.append(('type', _params['type']))
-            _collection_formats['type'] = 'csv'
+        if type_filter:
+            _query_params.append(('type', type_filter))
 
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _collection_formats = {'type': 'csv'} if type_filter else None
 
         _response_types_map = {
-            '200': "ListTransactions200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '403': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
-            '416': "GetInstrumentCandles400Response",
+            200: models.ListTransactions200Response,
+            400: models.GetInstrumentCandles400Response,
+            401: models.GetInstrumentCandles400Response,
+            403: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
+            416: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/transactions', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
+            path_params=_path_params,
+            query_params=_query_params,
             response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            collection_formats=_collection_formats, future=future)
 
-    @validate_arguments
-    async def replace_order(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> Union[ReplaceOrder201Response, Awaitable[ReplaceOrder201Response]]:  # noqa: E501
-        """Replace Order  # noqa: E501
+    @validate_request
+    async def transactions(self,
+                           account_id: AccountId,
+                           var_from: datetime = DT_ORDINAL_ONE,
+                           to: Optional[datetime] = None,
+                           page_size: Annotated[Optional[int], Field(json_schema_extra=dict(max=1000))] = 100,
+                           type: Optional[Sequence[models.TransactionFilter]] = None
+                           ) -> AsyncIterator[models.Transaction]:
+        # Implementation Notes
+        #
+        # Each item in 'pages' of the response will have to be accessed and deserialized separately.
+        #
+        # Each page will generally provide a JSON mapping object, with keys 'transactions', 'lastTransactionID"
+        #
+        # The 'transactions' field will be provided as a JSON sequence of Transaction values
+        #
+        # API info: https://developer.oanda.com/rest-live-v20/transaction-ep/
+        response = await self.list_transactions(account_id, var_from, to, page_size, type)
+        pages = response.pages
+        if pages:
+            for url in pages:
+                async with self.api_client.rest_client.client.stream(RequestMethod.GET.value, url) as response:
+                    text = ''
+                    async for chunk in response.aiter_bytes():
+                        text += chunk.decode()
+                    # mapping = thunk.load_the_json(text)
 
-        Replace an Order in an Account by simultaneously cancelling it and creating a replacement Order  # noqa: E501
+    @validate_request
+    async def replace_order(self,
+                            account_id: AccountId,
+                            order_specifier: str,
+                            replace_order_body: CreateOrderRequest,
+                            client_request_id: Optional[str] = None,
+                            future: Optional[aio.Future[ReplaceOrder201Response]] = None
+                            ) -> Awaitable[ReplaceOrder201Response]:
+        """Replace Order
 
-        >>> response = api.replace_order(authorization, account_id, order_specifier, replace_order_body, accept_datetime_format, client_request_id)
+        Replace an Order in an Account by simultaneously cancelling it and creating a replacement Order
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+        >>> response = api.replace_order(account_id, order_specifier, replace_order_body, client_request_id)
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param order_specifier: The Order Specifier (required)
         :type order_specifier: str
         :param replace_order_body: Specification of the replacing Order. The replacing order must have the same type as the replaced Order. (required)
         :type replace_order_body: CreateOrderRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param client_request_id: Client specified RequestID to be sent with request.
         :type client_request_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: ReplaceOrder201Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the replace_order_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.replace_order_with_http_info(authorization, account_id, order_specifier, replace_order_body, accept_datetime_format, client_request_id, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def replace_order_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], replace_order_body : Annotated[CreateOrderRequest, Field(..., description="Specification of the replacing Order. The replacing order must have the same type as the replaced Order.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, client_request_id : Annotated[Optional[StrictStr], Field(description="Client specified RequestID to be sent with request.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Replace Order  # noqa: E501
-
-        Replace an Order in an Account by simultaneously cancelling it and creating a replacement Order  # noqa: E501
-
-        >>> response = api.replace_order_with_http_info(authorization, account_id, order_specifier, replace_order_body, accept_datetime_format, client_request_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param order_specifier: The Order Specifier (required)
-        :type order_specifier: str
-        :param replace_order_body: Specification of the replacing Order. The replacing order must have the same type as the replaced Order. (required)
-        :type replace_order_body: CreateOrderRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param client_request_id: Client specified RequestID to be sent with request.
-        :type client_request_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(ReplaceOrder201Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'order_specifier',
-            'replace_order_body',
-            'accept_datetime_format',
-            'client_request_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        if order_specifier:
+            _path_params['orderSpecifier'] = order_specifier
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method replace_order" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
+        _header_params = {'ClientRequestID': client_request_id} if client_request_id else None
 
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['order_specifier']:
-            _path_params['orderSpecifier'] = _params['order_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        if _params['client_request_id']:
-            _header_params['ClientRequestID'] = _params['client_request_id']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['replace_order_body'] is not None:
-            _body_params = _params['replace_order_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = replace_order_body
 
         _response_types_map = {
-            '201': "ReplaceOrder201Response",
-            '400': "ReplaceOrder400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "ReplaceOrder404Response",
-            '405': "GetInstrumentCandles400Response",
+            201: models.ReplaceOrder201Response,
+            400: models.ReplaceOrder400Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.ReplaceOrder404Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
+            header_params=_header_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def set_order_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetOrderClientExtensions200Response, Awaitable[SetOrderClientExtensions200Response]]:  # noqa: E501
-        """Set Order Extensions  # noqa: E501
+    @validate_request
+    async def set_order_client_extensions(self,
+                                          account_id: AccountId,
+                                          order_specifier: str,
+                                          set_order_client_extensions_body: SetOrderClientExtensionsRequest,
+                                          future: Optional[aio.Future[SetOrderClientExtensions200Response]] = None
+                                          ) -> Awaitable[SetOrderClientExtensions200Response]:
+        """Set Order Extensions
 
-        Update the Client Extensions for an Order in an Account. Do not set, modify, or delete clientExtensions if your account is associated with MT4.  # noqa: E501
+        Update the Client Extensions for an Order in an Account. Do not set, modify, or delete clientExtensions if your account is associated with MT4.
 
-        >>> response = api.set_order_client_extensions(authorization, account_id, order_specifier, set_order_client_extensions_body, accept_datetime_format)
+        >>> response = api.set_order_client_extensions(account_id, order_specifier, set_order_client_extensions_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param order_specifier: The Order Specifier (required)
         :type order_specifier: str
         :param set_order_client_extensions_body: Representation of the replacing Order (required)
         :type set_order_client_extensions_body: SetOrderClientExtensionsRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: SetOrderClientExtensions200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the set_order_client_extensions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.set_order_client_extensions_with_http_info(authorization, account_id, order_specifier, set_order_client_extensions_body, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def set_order_client_extensions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], order_specifier : Annotated[StrictStr, Field(..., description="The Order Specifier")], set_order_client_extensions_body : Annotated[SetOrderClientExtensionsRequest, Field(..., description="Representation of the replacing Order")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Set Order Extensions  # noqa: E501
-
-        Update the Client Extensions for an Order in an Account. Do not set, modify, or delete clientExtensions if your account is associated with MT4.  # noqa: E501
-
-        >>> response = api.set_order_client_extensions_with_http_info(authorization, account_id, order_specifier, set_order_client_extensions_body, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param order_specifier: The Order Specifier (required)
-        :type order_specifier: str
-        :param set_order_client_extensions_body: Representation of the replacing Order (required)
-        :type set_order_client_extensions_body: SetOrderClientExtensionsRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(SetOrderClientExtensions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'order_specifier',
-            'set_order_client_extensions_body',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        if order_specifier:
+            _path_params['orderSpecifier'] = order_specifier
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method set_order_client_extensions" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['order_specifier']:
-            _path_params['orderSpecifier'] = _params['order_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['set_order_client_extensions_body'] is not None:
-            _body_params = _params['set_order_client_extensions_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = set_order_client_extensions_body
 
         _response_types_map = {
-            '200': "SetOrderClientExtensions200Response",
-            '400': "SetOrderClientExtensions400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "SetOrderClientExtensions404Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.SetOrderClientExtensions200Response,
+            400: models.SetOrderClientExtensions400Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.SetOrderClientExtensions404Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}/clientExtensions', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def set_trade_client_extensions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetTradeClientExtensions200Response, Awaitable[SetTradeClientExtensions200Response]]:  # noqa: E501
-        """Set Trade Client Extensions  # noqa: E501
+    @validate_request
+    async def set_trade_client_extensions(self,
+                                          account_id: AccountId,
+                                          trade_specifier: str,
+                                          set_trade_client_extensions_body: SetTradeClientExtensionsRequest,
+                                          future: Optional[aio.Future[SetTradeClientExtensions200Response]] = None
+                                          ) -> Awaitable[SetTradeClientExtensions200Response]:
+        """Set Trade Client Extensions
 
-        Update the Client Extensions for a Trade. Do not add, update, or delete the Client Extensions if your account is associated with MT4.  # noqa: E501
+        Update the Client Extensions for a Trade. Do not add, update, or delete the Client Extensions if your account is associated with MT4.
 
-        >>> response = api.set_trade_client_extensions(authorization, account_id, trade_specifier, set_trade_client_extensions_body, accept_datetime_format)
+        >>> response = api.set_trade_client_extensions(account_id, trade_specifier, set_trade_client_extensions_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param trade_specifier: Specifier for the Trade (required)
         :type trade_specifier: str
         :param set_trade_client_extensions_body: Details of how to modify the Trade's Client Extensions. (required)
         :type set_trade_client_extensions_body: SetTradeClientExtensionsRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: SetTradeClientExtensions200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the set_trade_client_extensions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.set_trade_client_extensions_with_http_info(authorization, account_id, trade_specifier, set_trade_client_extensions_body, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def set_trade_client_extensions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_client_extensions_body : Annotated[SetTradeClientExtensionsRequest, Field(..., description="Details of how to modify the Trade's Client Extensions.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Set Trade Client Extensions  # noqa: E501
-
-        Update the Client Extensions for a Trade. Do not add, update, or delete the Client Extensions if your account is associated with MT4.  # noqa: E501
-
-        >>> response = api.set_trade_client_extensions_with_http_info(authorization, account_id, trade_specifier, set_trade_client_extensions_body, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param trade_specifier: Specifier for the Trade (required)
-        :type trade_specifier: str
-        :param set_trade_client_extensions_body: Details of how to modify the Trade's Client Extensions. (required)
-        :type set_trade_client_extensions_body: SetTradeClientExtensionsRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(SetTradeClientExtensions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'trade_specifier',
-            'set_trade_client_extensions_body',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        if trade_specifier:
+            _path_params['tradeSpecifier'] = trade_specifier
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method set_trade_client_extensions" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['trade_specifier']:
-            _path_params['tradeSpecifier'] = _params['trade_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['set_trade_client_extensions_body'] is not None:
-            _body_params = _params['set_trade_client_extensions_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = set_trade_client_extensions_body
 
         _response_types_map = {
-            '200': "SetTradeClientExtensions200Response",
-            '400': "SetTradeClientExtensions400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "SetTradeClientExtensions404Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.SetTradeClientExtensions200Response,
+            400: models.SetTradeClientExtensions400Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.SetTradeClientExtensions404Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}/clientExtensions', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def set_trade_dependent_orders(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> Union[SetTradeDependentOrders200Response, Awaitable[SetTradeDependentOrders200Response]]:  # noqa: E501
-        """Set Dependent Orders  # noqa: E501
+    @validate_request
+    async def set_trade_dependent_orders(self,
+                                         account_id: AccountId,
+                                         trade_specifier: str,
+                                         set_trade_dependent_orders_body: SetTradeDependentOrdersRequest,
+                                         future: Optional[aio.Future[SetTradeDependentOrders200Response]] = None
+                                         ) -> Awaitable[SetTradeDependentOrders200Response]:
+        """Set Dependent Orders
 
-        Create, replace and cancel a Trade's dependent Orders (Take Profit, Stop Loss and Trailing Stop Loss) through the Trade itself  # noqa: E501
+        Create, replace and cancel a Trade's dependent Orders (Take Profit, Stop Loss and Trailing Stop Loss) through the Trade itself
 
-        >>> response = api.set_trade_dependent_orders(authorization, account_id, trade_specifier, set_trade_dependent_orders_body, accept_datetime_format)
+        >>> response = api.set_trade_dependent_orders(account_id, trade_specifier, set_trade_dependent_orders_body)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param trade_specifier: Specifier for the Trade (required)
         :type trade_specifier: str
         :param set_trade_dependent_orders_body: Details of how to modify the Trade's dependent Orders. (required)
         :type set_trade_dependent_orders_body: SetTradeDependentOrdersRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: SetTradeDependentOrders200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the set_trade_dependent_orders_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.set_trade_dependent_orders_with_http_info(authorization, account_id, trade_specifier, set_trade_dependent_orders_body, accept_datetime_format, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def set_trade_dependent_orders_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], trade_specifier : Annotated[StrictStr, Field(..., description="Specifier for the Trade")], set_trade_dependent_orders_body : Annotated[SetTradeDependentOrdersRequest, Field(..., description="Details of how to modify the Trade's dependent Orders.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Set Dependent Orders  # noqa: E501
-
-        Create, replace and cancel a Trade's dependent Orders (Take Profit, Stop Loss and Trailing Stop Loss) through the Trade itself  # noqa: E501
-
-        >>> response = api.set_trade_dependent_orders_with_http_info(authorization, account_id, trade_specifier, set_trade_dependent_orders_body, accept_datetime_format)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param trade_specifier: Specifier for the Trade (required)
-        :type trade_specifier: str
-        :param set_trade_dependent_orders_body: Details of how to modify the Trade's dependent Orders. (required)
-        :type set_trade_dependent_orders_body: SetTradeDependentOrdersRequest
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
         :return: Returns the response object.
         :rtype: tuple(SetTradeDependentOrders200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
+        _path_params = {'accountID': account_id}
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'trade_specifier',
-            'set_trade_dependent_orders_body',
-            'accept_datetime_format'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        if trade_specifier:
+            _path_params['tradeSpecifier'] = trade_specifier
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method set_trade_dependent_orders" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-        if _params['trade_specifier']:
-            _path_params['tradeSpecifier'] = _params['trade_specifier']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        if _params['set_trade_dependent_orders_body'] is not None:
-            _body_params = _params['set_trade_dependent_orders_body']
-
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # set the HTTP header `Content-Type`
-        _content_types_list = _params.get('_content_type',
-            self.api_client.select_header_content_type(
-                ['application/json']))
-        if _content_types_list:
-                _header_params['Content-Type'] = _content_types_list
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _body_params = set_trade_dependent_orders_body
 
         _response_types_map = {
-            '200': "SetTradeDependentOrders200Response",
-            '400': "SetTradeDependentOrders400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            200: models.SetTradeDependentOrders200Response,
+            400: models.SetTradeDependentOrders400Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/trades/{tradeSpecifier}/orders', RequestMethod.PUT,
-            _path_params,
-            _query_params,
-            _header_params,
+            path_params=_path_params,
             body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            response_types_map=_response_types_map, future=future)
 
-    @validate_arguments
-    async def stream_pricing(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> Union[StreamPricing200Response, Awaitable[StreamPricing200Response]]:  # noqa: E501
-        """Price Stream  # noqa: E501
+    @validate_request
+    async def stream_pricing(self,
+                             model_callback: Callable[[ApiObject], Any],
+                             account_id: AccountId, instruments: Sequence[str],
+                             snapshot: Optional[bool] = None,
+                             callback_heartbeat: bool = False,
+                             future: Optional[aio.Future[Literal[True]]] = None
+                             ):  # -> Awaitable[StreamPricing200Response]:
+        """Price Stream
 
-        Get a stream of Account Prices starting from when the request is made. This pricing stream does not include every single price created for the Account, but instead will provide at most 4 prices per second (every 250 milliseconds) for each instrument being requested. If more than one price is created for an instrument during the 250 millisecond window, only the price in effect at the end of the window is sent. This means that during periods of rapid price movement, subscribers to this stream will not be sent every price. Pricing windows for different connections to the price stream are not all aligned in the same way (i.e. they are not all aligned to the top of the second). This means that during periods of rapid price movement, different subscribers may observe different prices depending on their alignment.  # noqa: E501
+        Get a stream of Account Prices starting from when the request is made. This pricing stream does not include every single price created for the Account, but instead will provide at most 4 prices per second (every 250 milliseconds) for each instrument being requested. If more than one price is created for an instrument during the 250 millisecond window, only the price in effect at the end of the window is sent. This means that during periods of rapid price movement, subscribers to this stream will not be sent every price. Pricing windows for different connections to the price stream are not all aligned in the same way (i.e. they are not all aligned to the top of the second). This means that during periods of rapid price movement, different subscribers may observe different prices depending on their alignment.
 
-        >>> response = api.stream_pricing(authorization, account_id, instruments, accept_datetime_format, snapshot)
+        >>> response = api.stream_pricing(account_id, instruments, snapshot)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
+
+        :param model_callback: Callback for model objects. This callback will called for each
+               normal response object decoded from the streaming server messages.
+
+               For the `stream_pricing()` request, each server response message will be
+               decoded as a `StreamPricing200Response` object. This object will contain
+               information about ask and bid prices for the requested endpoints.
+
+               The callback should be either a synchronous or asynchronous callable, such
+               that will will receive each succesful sucessive `StreamPricing200Response`
+               object.
+
+               If callback_heartbeat is True, the callback will also receive decoded server
+               heartbeat messages of a type `PricingHeartbeat`
+
+        :param callback_heartbeat: If True, the callback will receive an ApiObject for each
+               streaming heartbeat message. By default, streaming heatbeat messages will be
+               skipped by the JSON decoder process.
+
         :param account_id: Account Identifier (required)
-        :type account_id: str
+        :type account_id: AccountId
         :param instruments: List of Instruments to stream Prices for. (required)
         :type instruments: List[str]
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
         :param snapshot: Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.
         :type snapshot: bool
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: StreamPricing200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the stream_pricing_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.stream_pricing_with_http_info(authorization, account_id, instruments, accept_datetime_format, snapshot, **kwargs)  # noqa: E501
 
-    @validate_arguments
-    async def stream_pricing_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], instruments : Annotated[conlist(StrictStr), Field(..., description="List of Instruments to stream Prices for.")], accept_datetime_format : Annotated[Optional[StrictStr], Field(description="Format of DateTime fields in the request and response.")] = None, snapshot : Annotated[Optional[StrictBool], Field(description="Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.")] = None, **kwargs) -> ApiResponse:  # noqa: E501
-        """Price Stream  # noqa: E501
+        :return: TBD
+        :rtype: TBD
 
-        Get a stream of Account Prices starting from when the request is made. This pricing stream does not include every single price created for the Account, but instead will provide at most 4 prices per second (every 250 milliseconds) for each instrument being requested. If more than one price is created for an instrument during the 250 millisecond window, only the price in effect at the end of the window is sent. This means that during periods of rapid price movement, subscribers to this stream will not be sent every price. Pricing windows for different connections to the price stream are not all aligned in the same way (i.e. they are not all aligned to the top of the second). This means that during periods of rapid price movement, different subscribers may observe different prices depending on their alignment.  # noqa: E501
-
-        >>> response = api.stream_pricing_with_http_info(authorization, account_id, instruments, accept_datetime_format, snapshot)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param instruments: List of Instruments to stream Prices for. (required)
-        :type instruments: List[str]
-        :param accept_datetime_format: Format of DateTime fields in the request and response.
-        :type accept_datetime_format: str
-        :param snapshot: Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.
-        :type snapshot: bool
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
-        :return: Returns the response object.
-        :rtype: tuple(StreamPricing200Response, status_code(int), headers(HTTPHeaderDict))
+        Exceptions: TBD
         """
 
-        _params = locals()
+        assert len(instruments) is not int(0), "No instruments provided in request"
 
-        _all_params = [
-            'authorization',
-            'account_id',
-            'instruments',
-            'accept_datetime_format',
-            'snapshot'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
+        _path_params = {'accountID': account_id}
 
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method stream_pricing" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
+        _query_params = [('instruments', instruments)]
+        _collection_formats = {'instruments': 'csv'}
 
-        _collection_formats = None
+        if snapshot:
+            _query_params.append(('snapshot', snapshot))
 
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        if _params.get('instruments') is not None:  # noqa: E501
-            _query_params.append(('instruments', _params['instruments']))
-            _collection_formats['instruments'] = 'csv'
-
-        if _params.get('snapshot') is not None:  # noqa: E501
-            _query_params.append(('snapshot', _params['snapshot']))
-
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        if _params['accept_datetime_format']:
-            _header_params['Accept-Datetime-Format'] = _params['accept_datetime_format']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        ## TBD note one Heartbeat type not used in any method of DefaultApi,
+        ## presumably "Deprecated"
+        ## - models.MT4TransactionHeartbeat
 
         _response_types_map = {
-            '200': "StreamPricing200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            0: models.PricingHeartbeat,
+            200: models.StreamPricing200Response,
+            400: models.GetInstrumentCandles400Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
+
+        types_callback = self.__class__.get_streaming_type_callback(_response_types_map, callback_heartbeat)
+        receiver = ModelBuilder.from_receiver_gen(types_callback, model_callback)
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/pricing/stream', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
+            path_params=_path_params,
+            query_params=_query_params,
             collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            streaming=True, receiver=receiver,
+            future=future)
 
-    @validate_arguments
-    async def stream_transactions(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> Union[StreamTransactions200Response, Awaitable[StreamTransactions200Response]]:  # noqa: E501
-        """Transaction Stream  # noqa: E501
+    @validate_request
+    async def stream_transactions(self,
+                                  callback: Union[CoroutineType, FunctionType],
+                                  account_id: AccountId,
+                                  future: Optional[aio.Future[Literal[True]]] = None
+                                  ) -> Awaitable[StreamTransactions200Response]:
+        """Transaction Stream
 
-        Get a stream of Transactions for an Account starting from when the request is made.  # noqa: E501
+        Get a stream of Transactions for an Account starting from when the request is made.
 
-        >>> response = api.stream_transactions(authorization, account_id)
+        >>> response = api.stream_transactions(account_id)
 
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
         :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :return: Returns the response object.
-        :rtype: StreamTransactions200Response
-        """
-        kwargs['_return_http_data_only'] = True
-        if '_preload_content' in kwargs:
-            raise ValueError("Error! Please call the stream_transactions_with_http_info method with `_preload_content` instead and obtain raw data from ApiResponse.raw_data")
-        return await self.stream_transactions_with_http_info(authorization, account_id, **kwargs)  # noqa: E501
-
-    @validate_arguments
-    async def stream_transactions_with_http_info(self, authorization : Annotated[StrictStr, Field(..., description="The authorization bearer token previously obtained by the client")], account_id : Annotated[StrictStr, Field(..., description="Account Identifier")], **kwargs) -> ApiResponse:  # noqa: E501
-        """Transaction Stream  # noqa: E501
-
-        Get a stream of Transactions for an Account starting from when the request is made.  # noqa: E501
-
-        >>> response = api.stream_transactions_with_http_info(authorization, account_id)
-
-        :param authorization: The authorization bearer token previously obtained by the client (required)
-        :type authorization: str
-        :param account_id: Account Identifier (required)
-        :type account_id: str
-        :param _preload_content: if False, the ApiResponse.data will
-                                 be set to none and raw_data will store the
-                                 HTTP response body without reading/decoding.
-                                 Default is True.
-        :type _preload_content: bool, optional
-        :param _return_http_data_only: response data instead of ApiResponse
-                                       object with status code, headers, etc
-        :type _return_http_data_only: bool, optional
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the authentication
-                              in the spec for a single request.
-        :type _request_auth: dict, optional
-        :type _content_type: string, optional: force content-type for the request
+        :type account_id: AccountId
         :return: Returns the response object.
         :rtype: tuple(StreamTransactions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _params = locals()
-
-        _all_params = [
-            'authorization',
-            'account_id'
-        ]
-        _all_params.extend(
-            [
-                '_return_http_data_only',
-                '_preload_content',
-                '_request_timeout',
-                '_request_auth',
-                '_content_type',
-                '_headers'
-            ]
-        )
-
-        if __debug__:
-            # validate the arguments
-            for _key, _val in _params['kwargs'].items():
-                if _key not in _all_params:
-                    raise ApiTypeError(
-                        "Got an unexpected keyword argument '%s'"
-                        " to method stream_transactions" % _key
-                    )
-                _params[_key] = _val
-            del _params['kwargs']
-        else:
-            kw = _params['kwargs']
-            del _params['kwargs']
-            _params.update(kw)
-            del kw
-
-        _collection_formats = None
-
-        # process the path parameters
-        _path_params = {}
-        if _params['account_id']:
-            _path_params['accountID'] = _params['account_id']
-
-
-        # process the query parameters
-        _query_params = []
-        # process the header parameters
-        _header_params = dict(_params.get('_headers', {}))
-        if _params['authorization']:
-            _header_params['Authorization'] = _params['authorization']
-
-        # process the form parameters
-        _form_params = []
-        _files = {}
-        # process the body parameter
-        _body_params = None
-        # set the HTTP header `Accept`
-        _header_params['Accept'] = self.api_client.select_header_accept(
-            ['application/json'])  # noqa: E501
-
-        # authentication setting
-        _auth_settings = []  # noqa: E501
+        _path_params = {'accountID': account_id}
 
         _response_types_map = {
-            '200': "StreamTransactions200Response",
-            '400': "GetInstrumentCandles400Response",
-            '401': "GetInstrumentCandles400Response",
-            '404': "GetInstrumentCandles400Response",
-            '405': "GetInstrumentCandles400Response",
+            0: models.TransactionHeartbeat,
+            200: models.StreamTransactions200Response,
+            400: models.GetInstrumentCandles400Response,
+            401: models.GetInstrumentCandles400Response,
+            404: models.GetInstrumentCandles400Response,
+            405: models.GetInstrumentCandles400Response,
         }
+
+        types_callback = self.__class__.get_streaming_type_callback(_response_types_map)
+
+        receiver = ModelBuilder.from_receiver_gen(types_callback, callback)
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/transactions/stream', RequestMethod.GET,
-            _path_params,
-            _query_params,
-            _header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            response_types_map=_response_types_map,
-            auth_settings=_auth_settings,
-            _return_http_data_only=_params.get('_return_http_data_only'),  # noqa: E501
-            _preload_content=_params.get('_preload_content', True),
-            _request_timeout=_params.get('_request_timeout'),
-            collection_formats=_collection_formats,
-            _request_auth=_params.get('_request_auth'))
+            path_params=_path_params, streaming=True, receiver=receiver,
+            future=future)
+
+
+Tmodel = TypeVar('Tmodel', bound=ApiObject)
+
+# from ..data_futures import DataFuture, FutureProcess, Ti, To
+
+
+class ApiFuture(FutureIter[Tmodel, Literal[True]]):
+    client: DefaultApi
+
+    def __init__(self, client: DefaultApi):
+        super().__init__(loop=client.api_client.loop)
+        self.client = client
+
+    def get_done_flag(self) -> Awaitable[Literal[True]]:
+        return True
+
+
+class Acccounts(ApiFuture[models.AccountProperties]):
+    async def iterator(self) -> AsyncIterator[models.AccountProperties]:
+        async for account in self.client.accounts():
+            yield account
+
+
+class Instruments(ApiFuture[models.Instrument]):
+    account_id: AccountId
+
+    def __init__(self, account_id: AccountId, client: DefaultApi):
+        super().__init__(client=client)
+        self.account_id = account_id
+
+    async def iterator(self) -> AsyncIterator[models.Instrument]:
+        async for account in self.client.instruments(self.account_id):
+            yield account
+
+
+class Candles(ApiFuture[models.Candlestick]):
+    async def iterator(self) -> AsyncIterator[models.Candlestick]:
+        async for candlestick in self.client.candles(...):
+            yield candlestick
+
+
+__all__ = exporting(__name__, ...)

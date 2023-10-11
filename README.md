@@ -165,8 +165,9 @@ used to print a summary of account codes for an account with an
 authorized API token.
 
 **Caveats**
-* An API token is available
-  [via the OANDA hub](https://www.oanda.com/demo-account/tpa/personal_token).
+* Information about the OANDA v20 API is available at the [OANDA Developer Hub](https://developer.oanda.com/rest-live-v20/introduction/). The Hub provides an introduction to the OANDA v20 API, with illustrations of each v20 API endpoint and a complete reference about the data types defined in the v20 API schema.
+* An API token is available for OANDA demo accounts,
+  [via OANDA](https://www.oanda.com/demo-account/tpa/personal_token).
   Once created, the token should be stored securely.
 * For purpose of example, the token may be substituted in place of the
   `<private_api_token>` text, below.

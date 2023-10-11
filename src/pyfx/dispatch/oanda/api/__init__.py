@@ -1,5 +1,9 @@
-# flake8: noqa
+## pyfx.dispatch.oanda.api
 
-# import apis into api package
-from .default_api import DefaultApi
+from ..util import exporting
 
+from . import default_api  # noqa: E402
+__all__ = exporting(default_api, ...)
+from .default_api import *  # noqa: F403, E402
+
+__all__ = tuple(__all__)

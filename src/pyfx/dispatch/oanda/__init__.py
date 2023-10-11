@@ -1,217 +1,73 @@
-# coding: utf-8
+# pyfx.dispatch.oanda
 
 __version__ = "1.0.0"
 
-# import apis into sdk package
-from .api.default_api import DefaultApi
+__all__ = ["__version__"]
 
-# import ApiClient
-from .api_response import ApiResponse
-from .api_client import ApiClient
-from .configuration import ConfigError, Configuration
-from .config_manager import load_config
-from .exceptions import OpenApiException
-from .exceptions import ApiTypeError
-from .exceptions import ApiValueError
-from .exceptions import ApiKeyError
-from .exceptions import ApiAttributeError
-from .exceptions import ApiException
+from .util.naming import exporting
 
-from .util import *
+from . import credential  #  noqa: E402
+__all__.extend(exporting(credential, ...))
+from .credential import *  #  noqa: F403, E402
 
-# import models into sdk package
-from .models.accept_datetime_format import AcceptDatetimeFormat
-from .models.account import Account
-from .models.account_changes import AccountChanges
-from .models.account_changes_state import AccountChangesState
-from .models.account_financing_mode import AccountFinancingMode
-from .models.account_properties import AccountProperties
-from .models.account_summary import AccountSummary
-from .models.calculated_account_state import CalculatedAccountState
-from .models.calculated_position_state import CalculatedPositionState
-from .models.calculated_trade_state import CalculatedTradeState
-from .models.cancel_order200_response import CancelOrder200Response
-from .models.cancel_order404_response import CancelOrder404Response
-from .models.cancellable_order_type import CancellableOrderType
-from .models.candlestick import Candlestick
-from .models.candlestick_data import CandlestickData
-from .models.candlestick_granularity import CandlestickGranularity
-from .models.client_configure_reject_transaction import ClientConfigureRejectTransaction
-from .models.client_configure_transaction import ClientConfigureTransaction
-from .models.client_extensions import ClientExtensions
-from .models.client_price import ClientPrice
-from .models.close_position200_response import ClosePosition200Response
-from .models.close_position400_response import ClosePosition400Response
-from .models.close_position404_response import ClosePosition404Response
-from .models.close_position_request import ClosePositionRequest
-from .models.close_trade200_response import CloseTrade200Response
-from .models.close_trade400_response import CloseTrade400Response
-from .models.close_trade404_response import CloseTrade404Response
-from .models.close_trade_request import CloseTradeRequest
-from .models.close_transaction import CloseTransaction
-from .models.configure_account200_response import ConfigureAccount200Response
-from .models.configure_account400_response import ConfigureAccount400Response
-from .models.configure_account_request import ConfigureAccountRequest
-from .models.create_order201_response import CreateOrder201Response
-from .models.create_order400_response import CreateOrder400Response
-from .models.create_order404_response import CreateOrder404Response
-from .models.create_order_request import CreateOrderRequest
-from .models.create_transaction import CreateTransaction
-from .models.daily_financing_transaction import DailyFinancingTransaction
-from .models.delayed_trade_closure_transaction import DelayedTradeClosureTransaction
-from .models.direction import Direction
-from .models.dynamic_order_state import DynamicOrderState
-from .models.fixed_price_order import FixedPriceOrder
-from .models.fixed_price_order_reason import FixedPriceOrderReason
-from .models.fixed_price_order_transaction import FixedPriceOrderTransaction
-from .models.funding_reason import FundingReason
-from .models.get_account200_response import GetAccount200Response
-from .models.get_account_changes200_response import GetAccountChanges200Response
-from .models.get_account_instruments200_response import GetAccountInstruments200Response
-from .models.get_account_summary200_response import GetAccountSummary200Response
-from .models.get_external_user_info200_response import GetExternalUserInfo200Response
-from .models.get_instrument_candles200_response import GetInstrumentCandles200Response
-from .models.get_instrument_candles400_response import GetInstrumentCandles400Response
-from .models.get_instrument_price200_response import GetInstrumentPrice200Response
-from .models.get_instrument_price_range200_response import GetInstrumentPriceRange200Response
-from .models.get_order200_response import GetOrder200Response
-from .models.get_position200_response import GetPosition200Response
-from .models.get_prices200_response import GetPrices200Response
-from .models.get_trade200_response import GetTrade200Response
-from .models.get_transaction200_response import GetTransaction200Response
-from .models.get_transaction_range200_response import GetTransactionRange200Response
-from .models.get_user_info200_response import GetUserInfo200Response
-from .models.guaranteed_stop_loss_order_entry_data import GuaranteedStopLossOrderEntryData
-from .models.guaranteed_stop_loss_order_level_restriction import GuaranteedStopLossOrderLevelRestriction
-from .models.guaranteed_stop_loss_order_mode import GuaranteedStopLossOrderMode
-from .models.home_conversions import HomeConversions
-from .models.instrument import Instrument
-from .models.instrument_commission import InstrumentCommission
-from .models.instrument_type import InstrumentType
-from .models.instruments_instrument_order_book_get200_response import InstrumentsInstrumentOrderBookGet200Response
-from .models.instruments_instrument_position_book_get200_response import InstrumentsInstrumentPositionBookGet200Response
-from .models.limit_order import LimitOrder
-from .models.limit_order_reason import LimitOrderReason
-from .models.limit_order_reject_transaction import LimitOrderRejectTransaction
-from .models.limit_order_request import LimitOrderRequest
-from .models.limit_order_transaction import LimitOrderTransaction
-from .models.liquidity_regeneration_schedule import LiquidityRegenerationSchedule
-from .models.liquidity_regeneration_schedule_step import LiquidityRegenerationScheduleStep
-from .models.list_accounts200_response import ListAccounts200Response
-from .models.list_open_positions200_response import ListOpenPositions200Response
-from .models.list_open_trades200_response import ListOpenTrades200Response
-from .models.list_orders200_response import ListOrders200Response
-from .models.list_pending_orders200_response import ListPendingOrders200Response
-from .models.list_positions200_response import ListPositions200Response
-from .models.list_trades200_response import ListTrades200Response
-from .models.list_transactions200_response import ListTransactions200Response
-from .models.mt4_transaction_heartbeat import MT4TransactionHeartbeat
-from .models.margin_call_enter_transaction import MarginCallEnterTransaction
-from .models.margin_call_exit_transaction import MarginCallExitTransaction
-from .models.margin_call_extend_transaction import MarginCallExtendTransaction
-from .models.market_if_touched_order import MarketIfTouchedOrder
-from .models.market_if_touched_order_reason import MarketIfTouchedOrderReason
-from .models.market_if_touched_order_reject_transaction import MarketIfTouchedOrderRejectTransaction
-from .models.market_if_touched_order_request import MarketIfTouchedOrderRequest
-from .models.market_if_touched_order_transaction import MarketIfTouchedOrderTransaction
-from .models.market_order import MarketOrder
-from .models.market_order_delayed_trade_close import MarketOrderDelayedTradeClose
-from .models.market_order_margin_closeout import MarketOrderMarginCloseout
-from .models.market_order_margin_closeout_reason import MarketOrderMarginCloseoutReason
-from .models.market_order_position_closeout import MarketOrderPositionCloseout
-from .models.market_order_reason import MarketOrderReason
-from .models.market_order_reject_transaction import MarketOrderRejectTransaction
-from .models.market_order_request import MarketOrderRequest
-from .models.market_order_trade_close import MarketOrderTradeClose
-from .models.market_order_transaction import MarketOrderTransaction
-from .models.open_trade_financing import OpenTradeFinancing
-from .models.order import Order
-from .models.order_book import OrderBook
-from .models.order_book_bucket import OrderBookBucket
-from .models.order_cancel_reason import OrderCancelReason
-from .models.order_cancel_reject_transaction import OrderCancelRejectTransaction
-from .models.order_cancel_transaction import OrderCancelTransaction
-from .models.order_client_extensions_modify_reject_transaction import OrderClientExtensionsModifyRejectTransaction
-from .models.order_client_extensions_modify_transaction import OrderClientExtensionsModifyTransaction
-from .models.order_fill_reason import OrderFillReason
-from .models.order_fill_transaction import OrderFillTransaction
-from .models.order_identifier import OrderIdentifier
-from .models.order_position_fill import OrderPositionFill
-from .models.order_state import OrderState
-from .models.order_state_filter import OrderStateFilter
-from .models.order_trigger_condition import OrderTriggerCondition
-from .models.order_type import OrderType
-from .models.position import Position
-from .models.position_aggregation_mode import PositionAggregationMode
-from .models.position_book import PositionBook
-from .models.position_book_bucket import PositionBookBucket
-from .models.position_financing import PositionFinancing
-from .models.position_side import PositionSide
-from .models.price import Price
-from .models.price_bucket import PriceBucket
-from .models.price_status import PriceStatus
-from .models.pricing_heartbeat import PricingHeartbeat
-from .models.quote_home_conversion_factors import QuoteHomeConversionFactors
-from .models.reopen_transaction import ReopenTransaction
-from .models.replace_order201_response import ReplaceOrder201Response
-from .models.replace_order400_response import ReplaceOrder400Response
-from .models.replace_order404_response import ReplaceOrder404Response
-from .models.reset_resettable_pl_transaction import ResetResettablePLTransaction
-from .models.set_order_client_extensions200_response import SetOrderClientExtensions200Response
-from .models.set_order_client_extensions400_response import SetOrderClientExtensions400Response
-from .models.set_order_client_extensions404_response import SetOrderClientExtensions404Response
-from .models.set_order_client_extensions_request import SetOrderClientExtensionsRequest
-from .models.set_trade_client_extensions200_response import SetTradeClientExtensions200Response
-from .models.set_trade_client_extensions400_response import SetTradeClientExtensions400Response
-from .models.set_trade_client_extensions404_response import SetTradeClientExtensions404Response
-from .models.set_trade_client_extensions_request import SetTradeClientExtensionsRequest
-from .models.set_trade_dependent_orders200_response import SetTradeDependentOrders200Response
-from .models.set_trade_dependent_orders400_response import SetTradeDependentOrders400Response
-from .models.set_trade_dependent_orders_request import SetTradeDependentOrdersRequest
-from .models.stop_loss_details import StopLossDetails
-from .models.stop_loss_order import StopLossOrder
-from .models.stop_loss_order_reason import StopLossOrderReason
-from .models.stop_loss_order_reject_transaction import StopLossOrderRejectTransaction
-from .models.stop_loss_order_request import StopLossOrderRequest
-from .models.stop_loss_order_transaction import StopLossOrderTransaction
-from .models.stop_order import StopOrder
-from .models.stop_order_reason import StopOrderReason
-from .models.stop_order_reject_transaction import StopOrderRejectTransaction
-from .models.stop_order_request import StopOrderRequest
-from .models.stop_order_transaction import StopOrderTransaction
-from .models.stream_pricing200_response import StreamPricing200Response
-from .models.stream_transactions200_response import StreamTransactions200Response
-from .models.take_profit_details import TakeProfitDetails
-from .models.take_profit_order import TakeProfitOrder
-from .models.take_profit_order_reason import TakeProfitOrderReason
-from .models.take_profit_order_reject_transaction import TakeProfitOrderRejectTransaction
-from .models.take_profit_order_request import TakeProfitOrderRequest
-from .models.take_profit_order_transaction import TakeProfitOrderTransaction
-from .models.time_in_force import TimeInForce
-from .models.trade import Trade
-from .models.trade_client_extensions_modify_reject_transaction import TradeClientExtensionsModifyRejectTransaction
-from .models.trade_client_extensions_modify_transaction import TradeClientExtensionsModifyTransaction
-from .models.trade_open import TradeOpen
-from .models.trade_pl import TradePL
-from .models.trade_reduce import TradeReduce
-from .models.trade_state import TradeState
-from .models.trade_state_filter import TradeStateFilter
-from .models.trade_summary import TradeSummary
-from .models.trailing_stop_loss_details import TrailingStopLossDetails
-from .models.trailing_stop_loss_order import TrailingStopLossOrder
-from .models.trailing_stop_loss_order_reason import TrailingStopLossOrderReason
-from .models.trailing_stop_loss_order_reject_transaction import TrailingStopLossOrderRejectTransaction
-from .models.trailing_stop_loss_order_request import TrailingStopLossOrderRequest
-from .models.trailing_stop_loss_order_transaction import TrailingStopLossOrderTransaction
-from .models.transaction import Transaction
-from .models.transaction_filter import TransactionFilter
-from .models.transaction_heartbeat import TransactionHeartbeat
-from .models.transaction_reject_reason import TransactionRejectReason
-from .models.transaction_type import TransactionType
-from .models.transfer_funds_reject_transaction import TransferFundsRejectTransaction
-from .models.transfer_funds_transaction import TransferFundsTransaction
-from .models.units_available import UnitsAvailable
-from .models.units_available_details import UnitsAvailableDetails
-from .models.user_info import UserInfo
-from .models.user_info_external import UserInfoExternal
-from .models.weekly_alignment import WeeklyAlignment
+from . import util  #  noqa: E402
+__all__.extend(exporting(util, ...))
+from .util import *  #  noqa: F403, E402
+
+from . import logging  #  noqa: E402
+__all__.extend(exporting(logging, ...))
+from .logging import *  #  noqa: F403, E402
+
+from . import request_constants  #  noqa: E402
+__all__.extend(exporting(request_constants, ...))
+from .request_constants import *  #  noqa: F403, E402
+
+from . import hosts  #  noqa: E402
+__all__.extend(exporting(hosts, ...))
+from .hosts import *  #  noqa: F403, E402
+
+from . import transport  #  noqa: E402
+__all__.extend(exporting(transport, ...))
+from .transport import *  #  noqa: F403, E402
+
+from . import io  #  noqa: E402
+__all__.extend(exporting(io, ...))
+from .io import *  #  noqa: F403, E402
+
+from . import exec_controller
+__all__.extend(exporting(exec_controller, ...))
+from .exec_controller import *  #  noqa: F403, E402
+
+from . import dispatch  #  noqa: E402
+__all__.extend(exporting(dispatch, ...))
+from .dispatch import *  #  noqa: F403, E402
+
+from . import response_common #  noqa: E402
+__all__.extend(exporting(response_common, ...))
+from .response_common import *  #  noqa: F403, E402
+
+from . import models  #  noqa: E402
+__all__.extend(exporting(models, ...))
+from .models import *  #  noqa: F403, E402
+
+from . import exceptions  #  noqa: E402
+__all__.extend(exporting(exceptions, ...))
+from .exceptions import *  #  noqa: F403, E402
+
+from . import api  #  noqa: E402
+__all__.extend(exporting(api, ...))
+from .api import *  #  noqa: F403, E402
+
+from . import api_client  #  noqa: E402
+__all__.extend(exporting(api_client, ...))
+from .api_client import *  #  noqa: F403, E402
+
+from . import configuration  #  noqa: E402
+__all__.extend(exporting(configuration, ...))
+from .configuration import *  #  noqa: F403, E402
+
+from . import config_manager  #  noqa: E402
+__all__.extend(exporting(config_manager, ...))
+from .config_manager import *  #  noqa: F403, E402
+
+__all__ = tuple(__all__)

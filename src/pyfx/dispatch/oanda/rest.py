@@ -1,229 +1,329 @@
-# coding: utf-8
 
 import asyncio as aio
-import io
-import json
-import logging
-import ssl
-
+import ijson
 import httpx
-from urllib.parse import urlencode
+import logging
+import os
+import re
+import ssl
+from typing import Any, Awaitable, Mapping, Optional, Union, Type
+from types import MappingProxyType
+from typing_extensions import AsyncGenerator
 
-from .exceptions import ApiException, ApiValueError
+from .io import AsyncSegmentChannel
+from .exec_controller import ExecController, thread_loop
+
+from .response_common import ResponseInfo, REST_CONTENT_TYPE, REST_CONTENT_TYPE_BYTES
+
+from .transport.data import ApiObject
+
+from .exceptions import ApiException
 from .configuration import Configuration
 from .request_constants import RequestMethod
+from .parser import ModelBuilder
 
 logger = logging.getLogger(__name__)
 
-class RESTResponse(io.IOBase):
+UTF8_RE_MATCH: re.Pattern = re.compile(r"\s*charset=[Uu][Tt][Ff]-8")
+CHARSET_RE_GROUP: re.Pattern = re.compile(r"\s*charset=(\S+)")
 
-    def __init__(self, resp: httpx.Response, data):
-        self.http_response = resp
-        self.status = resp.status_code
-        self.reason = resp.reason_phrase
-        self.data = data
 
-    def getheaders(self):
-        """Returns a CIMultiDictProxy of the response headers."""
-        return self.http_response.headers
-
-    def getheader(self, name, default=None):
-        """Returns a given response header."""
-        return self.http_response.headers.get(name, default)
+def set_future_exception(future: aio.Future, exception: Exception):
+    future.get_loop().call_soon_threadsafe(future.set_exception, exception)
 
 
 class RESTClientObject(object):
+    ## per-request generalization for ApiClient
 
-    def __init__(self, loop: aio.AbstractEventLoop, configuration: Configuration):
-        self._loop = loop
+    transport: httpx.AsyncHTTPTransport
+    client: httpx.AsyncClient
+    controller: ExecController
 
-        maxconn = configuration.max_connections
-        max_keepalive = configuration.max_keepalive_connections
-        keepalive_expiry = configuration.keepalive_expiry
+    # def __init__(self, loop: aio.AbstractEventLoop, configuration: Configuration):
+    def __init__(self, controller: ExecController):
+        self._loop = controller.main_loop
+        config = controller.config
+        self.config = config
+        self.controller = controller
 
-        limits = httpx.Limits(max_connections= maxconn,
-                              max_keepalive_connections = max_keepalive,
+        maxconn = config.max_connections
+        max_keepalive = config.max_keepalive_connections
+        keepalive_expiry = config.keepalive_expiry
+
+        limits = httpx.Limits(max_connections=maxconn,
+                              max_keepalive_connections=max_keepalive,
                               keepalive_expiry=keepalive_expiry)
 
-        ssl_context = ssl.create_default_context(cafile=configuration.ssl_ca_cert)
-        if configuration.cert_file:
+        ssl_context = ssl.create_default_context(cafile=config.ssl_ca_cert)
+
+        if config.ssl_cert_file:
             ssl_context.load_cert_chain(
-                configuration.cert_file, keyfile=configuration.key_file
+                config.ssl_cert_file, keyfile=config.ssl_key_file
             )
 
-        if not configuration.verify_ssl:
+        if not config.verify_ssl:
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
-        self.proxy = configuration.proxy
-        self.proxy_headers = configuration.proxy_headers
+        proxy_in = config.proxy
+        if proxy_in is None:
+            proxy_in = os.environ["https_proxy"] if "https_proxy" in os.environ else os.environ["HTTPS_PROXY"] if "HTTPS_PROXY" in os.environ else None
+        proxy = httpx.Proxy(proxy_in) if proxy_in and not isinstance(proxy_in, httpx.Proxy) else proxy_in
 
-        transport = httpx.AsyncHTTPTransport(http2=True, proxy=configuration.proxy,
-                                             socket_options=configuration.socket_options,
-                                             trust_env=True, retries=configuration.retries,
+        headers = MappingProxyType({
+            b'Authorization': b'Bearer ' + config.access_token.encode(),
+            b'Accept': REST_CONTENT_TYPE_BYTES,
+            b'User-Agent': b'pyfx.dispatch/1.0.1/python',
+        })
+
+        transport = httpx.AsyncHTTPTransport(http2=True, proxy=proxy,
+                                             socket_options=config.socket_options,
+                                             trust_env=True, retries=config.retries,
                                              limits=limits, verify=ssl_context)
+        self.transport = transport
 
-        ## enabling follow_redirects after response "307", "Temporary Redirect"
-        ses = httpx.AsyncClient(transport = transport, follow_redirects=True)
-        self.session = ses
+        ## enabling follow_redirects after response 307, "Temporary Redirect"
+        ## with the v20 demo server
+        ##
+        ## this client will be reused for every request
+        client = httpx.AsyncClient(transport=transport,
+                                   follow_redirects=True,
+                                   headers=headers)
+        self.client = client
+
+    def __del__(self):
+        loop = self.controller.main_loop
+        if not loop.is_closed():
+            loop.run_until_complete(self.aclose())
 
     @property
-    def session(self) -> httpx.AsyncClient:
-        return self._session
+    def client(self) -> httpx.AsyncClient:
+        return self._client
 
-    @session.setter
-    def session(self, session: httpx.AsyncClient):
-        self._session = session
+    @client.setter
+    def client(self, session: httpx.AsyncClient):
+        self._client = session
 
-    @property
-    def closed(self) -> bool:
-        return self.session.is_closed
+    async def aclose(self):
+        ## Implementation Note: The same self.session value should be used
+        ## throughout each application session, mainly to ensure HTTP/2
+        ## support can be implemented in a "Most optimal" way, e.g
+        ## for connection reuse if not also for request pipelining
+        await self.transport.aclose()
+        await self.client.aclose()
 
-    async def close(self):
-        if not self.closed:
-            await self.session.aclose()
 
-    async def request(self, method: RequestMethod, url: str, query_params=None, headers=None,
-                      body=None, post_params=None, _preload_content=True,
-                      _request_timeout=None):
-        """Execute request
+    async def request(self, method: RequestMethod, url: str,
+                      response_types_map: Mapping[int, Type[ApiObject]], *,
+                      headers: Optional[Mapping[str, str]] = None,
+                      body: Optional[str] = None,
+                      receiver: Optional[AsyncGenerator[Any, bytes]] = None,
+                      future: Optional[aio.Future[ApiObject]] = None
+                      ) -> Awaitable[Optional[ApiObject]]:
+
+        """Send an HTTP request and return an ApiObject
 
         :param method: http request method
-        :param url: http request url
-        :param query_params: query parameters in the url
-        :param headers: http request headers
-        :param body: request json body, for `application/json`
-        :param post_params: request post parameters,
-                            `application/x-www-form-urlencoded`
-                            and `multipart/form-data`
-        :param _preload_content: this is a non-applicable field for
-                                 the AiohttpClient.
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
+        :param url: http request url, including host, path, and query string, URL encoded
+        :param response_types_map: Mapping of HTTP response code to ApiObject classes
+        :param headers: http request headers, including the supported content type
+                application/json
+        :param body: JSON-encodable request body, if applicable
+
+        If a receiving async generator is provided, returns the provided generator,
+        else returns a deserialized ApiObject
         """
-        if post_params and body:
-            raise ApiValueError(
-                "body parameter cannot be used with post_params parameter."
-            )
 
-        post_params = post_params or {}
-        headers = headers or {}
-        # url already contains the URL query string
-        # so reset query_params to empty dict
-        query_params = {}
-        timeout = _request_timeout or 5 * 60
+        request_method = method.name
+        request_headers = headers
+        request_url = url
 
-        if 'Content-Type' not in headers:
-            headers['Content-Type'] = 'application/json'
-
-        args = {
-            "method": method.name,
-            "url": url,
-            "timeout": timeout,
-            "headers": headers
-        }
-
-        if self.proxy_headers:
-            args["proxy_headers"] = self.proxy_headers
-
-        if query_params:
-            args["url"] += '?' + urlencode(query_params)
-
-        # For `POST`, `PUT`, `PATCH`, and `DELETE`
-        if method.isFormRequest():
-            # All form requests in the v20 API will use json encoding
-            # in the request body
-            if body:
-                args['json'] = json.dumps(body)
-            else:
-                raise ApiException("No request body provided for %s request" % method.name)
-
+        request_json = None
         if __debug__:
-            logger.debug("request %s %s", method.name, url)
-        r = await self.session.request(**args)
-        if _preload_content:
+            if method.isFormRequest():
+                assert isinstance(body, str), "Request body is not a string"
+            logger.debug("request: sending request %s %s", method.name, url)
+
+        status = None
+        reason = None
+        async with self.client.stream(request_method, request_url,
+                                      headers=request_headers,
+                                      json=request_json) as client_response:
             if __debug__:
-                logger.debug("preload %s %s", method.name, url)
+                logger.debug("request: processing response %s %s", method.name, url)
 
-            data = await r.aread()
-            await r.aclose()
-            r = RESTResponse(r, data)
+            encoding = client_response.charset_encoding
+            status = client_response.status_code
+            reason = client_response.reason_phrase
 
-            # log response body
+
+            response_headers = client_response.headers
+            content_info = response_headers["Content-Type"].split(";") if "Content-Type" in response_headers else None
+            content_type = content_info[0].rstrip() if content_info else None
+            if content_info:
+                ## assumptions for client access to the v20 fxTrade servers:
+                ## - for REST requests, content_info[0]=="application/json", content_info[1]==" charset=UTF-8",
+                ## - for streaming requests, content_info[0] == "application/octet-stream", len(content_info) == 1
+                if len(content_info) is int(1):
+                    content_encoding = None
+                else:
+                    content_end = content_info[1]
+                    if UTF8_RE_MATCH.match(content_end):
+                        content_encoding = None
+                    else:
+                        m = CHARSET_RE_GROUP.match(content_end)
+                        content_encoding = m.group(1)
+            else:
+                content_encoding = None
+
+            if receiver:
+                ## This call section would provide support for the streaming endpoints
+                ## in the OANDA v20 fxTrade API. The receiver should represent an
+                ## asynchronous generator. The generator will receive successive byte
+                ## sequences from this function, via asend.
+                ##
+                ## In a successful response for a streaming endpoint, the server
+                ## will generally send sucessive chunks of fully encoded JSON object
+                ## representations.
+                ##
+                ## For each of the two streaming endpoints in the v20 API, a method is
+                ## provided in DefaultApi such that will provide a generator incorporated
+                ## with a JSON parser and callback infrastructure. The generator will
+                ## receive byte sequences form the following iterator
+                info = ResponseInfo(response_types_map, status, reason,
+                                    response_headers, content_type, content_encoding)
+                if __debug__:
+                    logger.debug("request [stream]: Initializing receiver")
+                try:
+                    await receiver.asend(None)
+                    if __debug__:
+                        logger.debug("request [stream]: Sending response information")
+                    await receiver.asend(info)
+                    last = None
+                    if __debug__:
+                        logger.debug("request [stream]: Sending response bytes")
+                    async for chunk in client_response.aiter_bytes():
+                        await receiver.asend(chunk)
+                    if future:
+                        try:
+                            future.set_result(True)
+                        except:
+                            logger.critical("request [stream]: Failed to set future result: %r", future)
+                            raise
+                    return
+                except Exception as exc:
+                    if future:
+                        set_future_exception(future, exc)
+                finally:
+                    if __debug__:
+                        logger.debug("request [stream]: Returning")
+                    await receiver.aclose()
+            else:
+                ## dispatch to an async component method for the REST response
+                response_future = future or aio.Future[ApiObject]()
+                if not response_future.done():
+                    proc_coro = self.process_response(response_future, client_response, response_types_map, content_type)
+                    task = self.controller.main_loop.create_task(proc_coro)
+                    if __debug__:
+                        ## Implementation Note: The request URL won't be logged here,
+                        ## as it may contain a private account ID. The URL prototype
+                        ## for the request may have been logged by the caller
+                        logger.debug("request: Procesing response")
+                    await response_future
+                    await task
+                return None if future else response_future.result()
+
+    async def process_response(self, response_future: aio.Future, client_response: httpx.Response,
+                               response_types_map: Mapping[int, Type[ApiObject]],
+                               content_type: str):
+
+        try:
+            status = client_response.status_code
+            response_type = response_types_map.get(status)
+
+            async with AsyncSegmentChannel[bytes]() as stream:
+                async for chunk in client_response.aiter_bytes():
+                    await stream.feed(chunk)
+                ## feed EOF
+                await stream.feed(b'', True)
+                response_future.add_done_callback(lambda _: stream.close_sync())
+                if __debug__:
+                    logger.debug("process_response: dispatch to parse_response thread")
+                rslt = await self.controller.dispatch(self.parse_response, response_future, stream, content_type, response_type, client_response)
+                if __debug__:
+                    logger.debug("process_response: parse_response => %r", rslt)
+        except Exception as exc:
+            await stream.aclose()
+            set_future_exception(response_future, exc)
+
+    def parse_response(self, response_future: aio.Future,
+                       stream: AsyncSegmentChannel,
+                       content_type: str, response_type: Type[ApiObject],
+                       client_response: httpx.Response):
+        loop = thread_loop.get()
+        if __debug__:
+            logger.debug("parse_response: dispatch to parse_response_async")
+        try:
+            ## dispatching to the async parser, from within this synchronous thread runner
+            rslt = loop.run_until_complete(self.parse_response_async(response_future, stream, content_type, response_type, client_response))
             if __debug__:
-                logger.debug("parsed response: %s", r.data)
+                logger.debug("parse_response: parse_response_async => %s", rslt)
+            return rslt
+        except Exception as exc:
+            set_future_exception(response_future, exc)
 
-            if not 200 <= r.status <= 299:
-                raise ApiException(http_resp=r)
+    async def parse_response_async(self, response_future: aio.Future,
+                                   stream: AsyncSegmentChannel,
+                                   content_type: str, response_type: Type[ApiObject],
+                                   client_response: httpx.Response):
+        ## parse a server response asynchronously
+        response = ''
+        try:
+            if response_type:
+                builder = ModelBuilder(response_type)
+                ## main parser - deserialize an object for a model class determined
+                ## in the calling context, per the server response status code
+                ##
+                ## the resulting object may indicate one of a set of possible expected
+                ## exception responses, for response codes >= 300 in the original
+                ## response types map.
+                async for event, value in ijson.basic_parse_async(stream, use_float=True):
+                    # if __debug__:
+                    #     logger.debug("parse_response_async: event %s => %r", event, value)
+                    await builder.aevent(event, value)
+                response = builder.instance
+                if __debug__:
+                    logger.debug("parse_response_async: parsed %r", response)
+            elif content_type == REST_CONTENT_TYPE:
+                ## parse any response content for an unexpected JSON-typed response
+                for toplevel in ijson.items(stream, ''):
+                    response = toplevel
+                    break
+                if __debug__:
+                    logger.warning("parse_response_async: unexpected JSON response %r", response)
+            else:
+                ## read any non-JSON response
+                ##
+                ## the response here may represent an intermediate proxy response,
+                ## typically using an HTML content type
+                response = stream.read()
+                if __debug__:
+                    logger.warning("parse_response_async: unexpected non-JSON response %r...", response[:70])
+        except Exception as exc:
+            ## parse failed, return
+            set_future_exception(response_future, exc)
+            return
 
-        return r
-
-    async def get_request(self, url, headers=None, query_params=None,
-                  _preload_content=True, _request_timeout=None):
-        return (await self.request(RequestMethod.GET, url,
-                                   headers=headers,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   query_params=query_params))
-
-    async def head_request(self, url, headers=None, query_params=None,
-                   _preload_content=True, _request_timeout=None):
-        return (await self.request(RequestMethod.HEAD, url,
-                                   headers=headers,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   query_params=query_params))
-
-    async def options_request(self, url, headers=None, query_params=None,
-                      post_params=None, body=None, _preload_content=True,
-                      _request_timeout=None):
-        return (await self.request(RequestMethod.OPTIONS, url,
-                                   headers=headers,
-                                   query_params=query_params,
-                                   post_params=post_params,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   body=body))
-
-    async def delete_request(self, url, headers=None, query_params=None, body=None,
-                     _preload_content=True, _request_timeout=None):
-        return (await self.request(RequestMethod.DELETE, url,
-                                   headers=headers,
-                                   query_params=query_params,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   body=body))
-
-    async def post_request(self, url, headers=None, query_params=None,
-                   post_params=None, body=None, _preload_content=True,
-                   _request_timeout=None):
-        return (await self.request(RequestMethod.POST, url,
-                                   headers=headers,
-                                   query_params=query_params,
-                                   post_params=post_params,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   body=body))
-
-    async def put_request(self, url, headers=None, query_params=None, post_params=None,
-                  body=None, _preload_content=True, _request_timeout=None):
-        return (await self.request(RequestMethod.PUT, url,
-                                   headers=headers,
-                                   query_params=query_params,
-                                   post_params=post_params,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   body=body))
-
-    async def patch_request(self, url, headers=None, query_params=None,
-                    post_params=None, body=None, _preload_content=True,
-                    _request_timeout=None):
-        return (await self.request(RequestMethod.PATCH, url,
-                                   headers=headers,
-                                   query_params=query_params,
-                                   post_params=post_params,
-                                   _preload_content=_preload_content,
-                                   _request_timeout=_request_timeout,
-                                   body=body))
+        status = client_response.status_code
+        if status and 200 <= status <= 299:
+            try:
+                self.controller.main_loop.call_soon_threadsafe(response_future.set_result, response)
+            except Exception as exc:
+                logger.critical("parse_response_async: Failed to initialize call to set result for future %r", response_future)
+                raise
+        else:
+            ## set an exception indicating the server error response
+            reason = client_response.reason_phrase
+            api_exc = ApiException(status=status, reason=reason, response=response,
+                                   content_type=content_type)
+            set_future_exception(response_future, api_exc)

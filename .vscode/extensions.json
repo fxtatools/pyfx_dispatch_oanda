@@ -1,8 +1,9 @@
 {
         "recommendations": [
                 "ms-python.autopep8",
-                "ms-python.python",
                 "github.vscode-github-actions",
-                "ms-vscode.makefile-tools"
+                "ms-vscode.makefile-tools",
+                "moykeen.ipython2",
+                "amodio.restore-editors"
         ]
 }

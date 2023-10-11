@@ -1,4 +1,4 @@
-## Asynchronous Console I/O Support with aioconsole
+"""Asynchronous Console I/O Support with aioconsole"""
 
 import aioconsole
 import asyncio as aio
@@ -6,12 +6,14 @@ from contextlib import asynccontextmanager
 import sys
 from typing_extensions import TypeAlias, Optional, Union
 
+from .naming import exporting
 
 ConsoleStreamReader: TypeAlias = Union[aioconsole.stream.StandardStreamReader, aioconsole.stream.NonFileStreamReader]
 ConsoleStreamWriter: TypeAlias = Union[aioconsole.stream.StandardStreamWriter, aioconsole.stream.NonFileStreamWriter]
 
 
 class ConsoleIO:
+    '''Streams wrapper for aioconsole via console_io()'''
     def __init__(self, loop: aio.AbstractEventLoop,
                  reader: aio.StreamReader,
                  out_writer: aio.StreamWriter,
@@ -20,6 +22,8 @@ class ConsoleIO:
         self._reader = reader
         self._out_writer = out_writer
         self._err_writer = err_writer if err_writer else out_writer
+
+    __slots__ = ("_loop", "_reader", "_out_writer", "_err_writer")
 
     @property
     def stdin_reader(self) -> ConsoleStreamReader:
@@ -33,17 +37,50 @@ class ConsoleIO:
     def stderr_writer(self) -> ConsoleStreamWriter:
         return self._err_writer
 
-    async def close(self):
+    async def aclose(self):
         ## drain and close the writer streams
-        self.stdout_writer.close()
-        await self.stdout_writer.wait_closed()
-        self.stderr_writer.close()
-        await self.stderr_writer.wait_closed()
+        stdout = self.stdout_writer
+        stdout.close
+        await stdout.wait_closed()
+        stderr = self.stderr_writer
+        if stderr is not stdout:
+            stderr.close()
+            await stderr.wait_closed()
 
 
 @asynccontextmanager
 async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventLoop] = None):
-    ## async context manager shim
+    '''Async context manager for aioconsole streams
+
+    On entry to the context manager, creates a new ConsoleIO object for sys.stdin, sys.stdout,
+    and sys.stderr. A new ConsoleIO object will be returned the caller, containing each of
+    these asynchronous streams.
+
+    The new streams are created with `aioconsole.stream.create_standard_streams()`
+
+    Within the context scope of the context manager, each of the `sys` streams is replaced
+    with the corresopnding aioconsole stream.
+
+    On exit from the context manager, the stdout, stderr, and stdin streams are each set to
+    the stream that was acvtive when the context manager was entered, then the ConsoleIO
+    object is closed. By side effect, this will drain and close the asynchronous output
+    streams.
+
+    Known Limitations:
+
+    - Provided as a utilty for general applications in console scripts, this context
+      manager may not serve as a complete asyncio replacement for the operating system's
+      PTY implementation, or for any PTY-like interface for the host system.
+
+    - asyncio streams are each managed under the asyncio event loop for the primary thread.
+      As such, this context manager may produce any undetermined side effects on event of
+      error, and on event of unexpected loop closure.
+
+      For instance, with Python on Microsoft Windows platforms, messages such as "Lost stdout"
+      may appear during a bracktrace, in an application of this context manager.
+
+      Output from Python Debug mode is not known to be adversely affected with this feature.
+    '''
     pipe = None
     stdout = sys.stdout
     stderr = sys.stderr
@@ -57,8 +94,10 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
         sys.stdin = pipe.stdin_reader
         yield pipe
     finally:
-        sys.stder = stderr
+        sys.stderr = stderr
         sys.stdout = stdout
         sys.stdin = stdin
         if pipe:
-            await pipe.close()
+            await pipe.aclose()
+
+__all__ = exporting(__name__, ..., annotations=True)
