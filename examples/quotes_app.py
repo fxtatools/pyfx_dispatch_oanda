@@ -135,6 +135,8 @@ class ExampleController(DispatchController):
             )
             coro: Awaitable = self.api.list_accounts(accounts_future)
             self.add_task(coro)
+            ## ensure the application completes before the async stdio streams are closed
+            await self.exit_future
 
 
 if __name__ == "__main__":
