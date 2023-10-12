@@ -44,45 +44,34 @@ class ClosedError(DataError):
 class Segment(Generic[Tdata]):
     ## partial implementation for segmented read()
 
-    __slots__ = ("_data", "_len", "_cursor", "_last", "_eof")
+    __slots__ = ("data", "slen", "cursor", "last", "eof",)
 
-    @property
-    def data(self) -> Tdata:
-        return self._data
-
-    @property
-    def len(self) -> int:
-        return self._len
-
-    @property
-    def cursor(self) -> int:
-        return self._cursor
-
-    @property
-    def eof(self) -> bool:
-        return self._eof
+    data: Tdata
+    slen: int
+    cursor: int
+    eof: bool
 
     def __init__(self, data: Tdata, eof: bool = False):
-        self._data = data
-        self._len = len(data)
-        self._eof = eof
-        self._cursor = 0
+        self.data = data
+        self.slen = len(data)
+        self.eof = eof
+        self.cursor = 0
 
     def read(self, n: int = -1) -> Tdata:
         data = self.data
-        last = self.len
+        last = self.slen
         if n is int(-1) or n is math.inf:
             rslt = data[self.cursor:]
-            self._cursor = last
+            self.cursor = last
             return rslt
         else:
-            cursor = self._cursor
+            cursor = self.cursor
             end = cursor + n
             if end > last:
                 raise aio.IncompleteReadError(expected=n, partial=data[cursor:last])
             else:
                 rslt = data[self.cursor:end]
-                self._cursor = end
+                self.cursor = end
                 return rslt
 
 class SegmentChannel(Generic[Tdata]):
@@ -94,70 +83,35 @@ class SegmentChannel(Generic[Tdata]):
     ##
     ## Assumption: All input values will beof the same type
 
-    __slots__ = ("_read_queue", "_closed_future", "_eof",
-                 "_empty_sequence", "_line_separator",
-                 "_current_segment", "_poll_interval")
+    __slots__ = ("read_queue", "closed_future", "eof",
+                 "empty_sequence", "line_separator",
+                 "current_segment")
 
-
-    @property
-    def eof(self) -> bool:
-        return self._eof
-
-    @eof.setter
-    def eof(self, value: bool):
-        self._eof = value
-
-    @property
-    def empty_sequence(self) -> Tdata:
-        return self._empty_sequence
-
-    @empty_sequence.setter
-    def empty_sequence(self, value: Tdata):
-        self._empty_sequence = value
-
-    @property
-    def line_separator(self) -> Tdata:
-        return self._line_separator
-
-    @line_separator.setter
-    def line_separator(self, value: Tdata) -> Tdata:
-        self._line_separator = value
-
-    @property
-    def poll_interval(self) -> int:
-        return self._poll_interval
-
-    @property
-    def current_segment(self) -> Optional[Segment[Tdata]]:
-        return self._current_segment
-
-    @property
-    def read_queue(self) -> SimpleQueue[Segment[Tdata]]:
-        return self._read_queue
-
-    @property
-    def closed_future(self) -> concurrent.futures.Future:
-        return self._closed_future
+    eof: bool
+    empty_sequence: Tdata
+    line_separator: Tdata
+    current_segment: Optional[Segment[Tdata]]
+    read_queue: SimpleQueue[Segment[Tdata]]
+    closed_future: concurrent.futures.Future
 
 
     def __init__(self, empty_sequence: Optional[Tdata] = None,
                  line_separator: Tdata = os.linesep,
                  closed_future: Optional[concurrent.futures.Future] = None):
 
-        self._eof = False
-        self._current_segment = None
-        self._line_separator = line_separator
-        self._poll_interval = sys.getswitchinterval()
+        self.eof = False
+        self.current_segment = None
+        self.line_separator = line_separator
 
-        if not hasattr(self, "_read_queue"):
+        if not hasattr(self, "read_queue"):
             ## may be overridden in a subclass
-            self._read_queue = SimpleQueue[Segment[Tdata]]()
+            self.read_queue = SimpleQueue[Segment[Tdata]]()
 
         if closed_future:
-            self._closed_future = closed_future
-        elif not hasattr(self, "_closed_future"):
+            self.closed_future = closed_future
+        elif not hasattr(self, "closed_future"):
             ## default may be overridden in a subclass
-            self._closed_future = concurrent.futures.Future()
+            self.closed_future = concurrent.futures.Future()
 
         if empty_sequence:
             ## if not provided here, empty_sequence will be set with the first
@@ -186,13 +140,13 @@ class SegmentChannel(Generic[Tdata]):
         return self.feed(data + self.line_separator, eof)
 
     def next_segment(self) -> Optional[Segment[Tdata]]:
-        seg = self._current_segment
+        seg = self.current_segment
         if seg is None:
             if self.closed() or self.eof:
                 return None
             else:
                 seg = self.read_queue.get()
-                self._current_segment = seg
+                self.current_segment = seg
         return seg
 
     def next_chunk(self) -> Tdata:
@@ -202,7 +156,7 @@ class SegmentChannel(Generic[Tdata]):
         return seg if seg else self.empty_sequence
 
     def chunk_done(self):
-        self._current_segment = None
+        self.current_segment = None
 
     def read(self, n: int = -1) -> Tdata:
 
@@ -216,18 +170,17 @@ class SegmentChannel(Generic[Tdata]):
             try:
                 # print("Read %s" % to_read)
                 seg_read = seg.read(to_read)
-                have_read = have_read + seg_read
+                have_read = have_read + seg_read if have_read else seg_read
             except aio.IncompleteReadError as exc:
                 partial = exc.partial
                 # print("incomplete read %s" % partial)
-                have_read = have_read + partial
+                have_read = have_read + partial if have_read else partial
                 self.chunk_done()
                 if seg.eof:
                     self.eof = True
                 break
             except Exception as exc:
                 self.closed_future.set_exception(exc)
-                have_read = have_read + partial
                 break
             else:
                 n_read = len(seg_read)
@@ -294,17 +247,10 @@ class AsyncSegment(Segment[Tdata]):
 
 class AsyncSegmentChannel(SegmentChannel[Tdata]):
 
-    @property
-    def current_segment(self) -> Optional[AsyncSegment[Tdata]]:
-        return self._current_segment
+    current_segment: Optional[AsyncSegment[Tdata]]
+    read_queue: SimpleQueue[AsyncSegment[Tdata]]
+    closed_future: aio.Future
 
-    @property
-    def read_queue(self) -> SimpleQueue[AsyncSegment[Tdata]]:
-        return self._read_queue
-
-    @property
-    def closed_future(self) -> aio.Future:
-        return self._closed_future
 
     def __init__(self, empty_sequence: Optional[Tdata] = None,
                  line_separator: Tdata = os.linesep,
@@ -315,11 +261,11 @@ class AsyncSegmentChannel(SegmentChannel[Tdata]):
             ## using the provided future for indiating a self.closed() state
             ##
             ## this value is independent to self.eof state
-            self._closed_future = closed_future
+            self.closed_future = closed_future
         else:
             ## initializing a new future, in either the provided loop or in the
             ## effective event loop for the current run context
-            self._closed_future = aio.Future(loop=loop if loop else aio.get_event_loop_policy().get_event_loop())
+            self.closed_future = aio.Future(loop=loop if loop else aio.get_event_loop_policy().get_event_loop())
 
         super().__init__(empty_sequence, line_separator)
 
@@ -355,39 +301,37 @@ class AsyncSegmentChannel(SegmentChannel[Tdata]):
     async def read(self, n: int = -1) -> Tdata:
         inf = math.inf
         to_read = n if n >= 0 else inf
-        sleep_for = self.poll_interval
         have_read = self.empty_sequence if hasattr(self, "empty_sequence") else None
         while to_read >= 0:
             queue = self.read_queue
-            seg = self._current_segment
+            seg = self.current_segment
             if seg == None:
                 # print("Fetch next segment")
                 if self.closed() or self.eof:
                     return have_read
                 seg = queue.get()
-                self._current_segment = seg
+                self.current_segment = seg
             try:
                 # print("Read %s" % to_read)
                 seg_read = await seg.read(to_read)  # x async
-                have_read = have_read + seg_read
+                have_read = have_read + seg_read if have_read else seg_read
             except aio.IncompleteReadError as exc:
                 partial = exc.partial
                 # print("incomplete read %s" % partial)
-                have_read = have_read + partial
-                self._current_segment = None
+                have_read = have_read + partial if have_read else partial
+                self.current_segment = None
                 if seg.eof:
                     self.eof = True
                 break
             except Exception as exc:
                 self.closed_future.set_exception(exc)
-                have_read = have_read + partial
                 break
             else:
                 n_read = len(seg_read)
                 # print("Read %d from segment" % n_read)
-                if n_read is seg.len:
+                if n_read is seg.slen:
                     # print("Reached EOF")
-                    self._current_segment = None
+                    self.current_segment = None
                     seg_eof = seg.eof
                     if seg_eof:
                         self.eof = seg_eof
