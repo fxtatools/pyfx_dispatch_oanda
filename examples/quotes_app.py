@@ -29,18 +29,16 @@ logger = logging.getLogger("pyfx.dispatch.oanda.examples")
 
 @dataclass(eq=False, order=False)
 class ExampleController(DispatchController):
+
     active_accounts: list[AccountProperties] = field(default_factory=list, repr=False, hash=False)
     instruments: Mapping[str, Instrument] = field(default_factory=dict, repr=False, hash=False)
     instruments_to_process: Set[str] = field(init=False, hash=False)
-
-    exit_future: aio.Future
 
     def initialize_defaults(self):
         super().initialize_defaults()
         self.active_accounts = []
         self.instruments = {}
         self.instruments_to_process = set()
-        self.exit_future = aio.Future()
 
     async def dispatch_candles_display(self, future: aio.Future[GetInstrumentCandles200Response]):
         # Print OHLC data and timestamps from the instrument candles response
@@ -137,7 +135,6 @@ class ExampleController(DispatchController):
             )
             coro: Awaitable = self.api.list_accounts(accounts_future)
             self.add_task(coro)
-            await self.exit_future
 
 
 if __name__ == "__main__":

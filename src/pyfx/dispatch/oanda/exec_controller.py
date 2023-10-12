@@ -8,7 +8,7 @@ from .config_manager import load_config
 import asyncio as aio
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, Executor
 from dataclasses import dataclass, field
 from functools import partial
 from queue import SimpleQueue
@@ -65,6 +65,9 @@ class ExecController(ABC):
 
     - Context manager, dispatching to `close()` on exit
 
+    - An exit future, available for a non-blocking test before
+      exiting the controller main loop process.
+
     ### Motivation
 
     This class provides a controller interface without API class dependencies.
@@ -73,59 +76,64 @@ class ExecController(ABC):
     """
 
     config: Configuration
-    """
-    Configuration for this controller
+    """Configuration for this controller
 
-    ### Usage
-
-    This Configuration object will be initialized within the generalized
-    constructor, `ExecController.from_config_ini()`
+    This Configuration object will be initialized within the
+    generalized constructor, `ExecController.from_config_ini()`
     """
 
     executor: ThreadPoolExecutor = field(hash=False)
-    """
-    Thread pool executor for this controller
+    """Thread pool executor for this controller
 
-    ### Usage
-
-    This thread pool executor will be created within `initialize_defaults()`
-    then defined as the default executor for the controller's main event
-    loop.
+    An executor may be provied to `from_config_ini()`. If not provided,
+    a default ThreadPoolExecutor will be created. The executor will be
+    defined as the default executor for the controller's main loop.
 
     This executor is available mainly via `ExecController.dispatch()`
     """
 
     main_loop: aio.AbstractEventLoop = field(hash=False)
-    """
-    Main event loop for this controller.
-
-    ### Usage
+    """Main event loop for this controller.
 
     This loop may be provided to the ExecController constructor,
     or initialized via an event loop policy
     """
 
     loop_policy: aio.AbstractEventLoopPolicy
-    """
-    Policy for event loop creation with this controller
+    """Policy for event loop creation with this controller
 
-    This policy will be used mainly when creating the event
-    loop for each worker thread. The policy may be provided
-    to the ExecController constructor
+    This policy will be applied mainly when creating the event loop for
+    each worker thread, and may be applied when creating the exec
+    controller's main loop.
+
+    In order to use a custom event loop implementation with the
+    exec controller, an event loop policy can be provided to the
+    ExecController constructor or `from_config_ini()`
     """
 
     managed_loops: SimpleQueue[aio.AbstractEventLoop]
-    """
-    Event loops managed with this controller
+    """Event loops managed with this controller
 
-    As it representing a stateful queue, this value should
+    As representing a stateful queue, this value should
     generally not be modified external to the controller.
     """
 
     task_group: aio.TaskGroup = field(init=False, hash=False)
+    """Task group for this controller.
+
+    Coroutines may be added to this task group with the controller
+    method, `add_task()`
     """
-    Task group for this controller. Coroutines may be added
-    to this task group with the controller method, `add_task()`
+
+    exit_future: aio.Future
+    """The exit future for this controller.
+
+    This future will be applied to ensure that any context manager onto
+    the exec controller's task group will not return until this future
+    has been set to a 'done' state. This is managed mainly via the
+    methods, `run_trampoline()` and `await_exit()`, such that would
+    be called via the synchronous `run_context()` context manager
+    when dispatching to `run_async()` for the implementing class.
     """
 
     def init_worker_thread(self):
@@ -181,17 +189,22 @@ class ExecController(ABC):
         be called within at most one thread.
         """
         max_workers = self.config.max_thread_workers
-        exc = ThreadPoolExecutor(max_workers, "exec_",
-                                 initializer=self.init_worker_thread)
-        self.main_loop.set_default_executor(exc)
-        self.executor = exc
+        if not hasattr(self, "executor"):
+            exc = ThreadPoolExecutor(max_workers, "exec_",
+                                    initializer=self.init_worker_thread)
+            self.executor = exc
+        self.main_loop.set_default_executor(self.executor)
         self.managed_loops = SimpleQueue[aio.AbstractEventLoop]()
-        self.task_group = aio.TaskGroup()
+        if not hasattr(self, "task_group"):
+            self.task_group = aio.TaskGroup()
+        if not hasattr(self, "exit_future"):
+            self.exit_future = aio.Future()
 
     @classmethod
     def from_config_ini(cls, path: os.PathLike = "account.ini",
                         loop: Optional[aio.AbstractEventLoop] = None,
-                        loop_policy: Optional[aio.AbstractEventLoopPolicy] = None
+                        loop_policy: Optional[aio.AbstractEventLoopPolicy] = None,
+                        executor: Optional[Executor] = None,
                         ) -> Self:
         """
         Create an ExecController with a configuration from a provided config ini file
@@ -219,12 +232,37 @@ class ExecController(ABC):
         main_loop = loop or _loop_policy.get_event_loop()
         inst.main_loop = main_loop
 
+        if executor:
+            inst.executor = executor
+
         inst.initialize_defaults()
         return inst
 
+
+    async def await_exit(self):
+        """Await the exit future for this ExecController
+
+        `await_exit()` will return once the exit future for the
+        ExecController is set to a 'done' state.
+
+        When this function is provided as a coroutine to a task for the
+        ExecController's task group, this should serve to ensure - by
+        side effect - that any context manager onto the ExecController's
+        task group will not return until the exit future has been set to
+        a 'done' state.
+
+        `await_exit()` is added to the exec controller's task group, in
+        the default implementation of `ExecController.run_trampoline()`
+        """
+        try:
+            await self.exit_future
+        except:
+            pass
+
+
     async def dispatch(self, func: Callable[..., T], *args, **kwargs) -> T:
         """
-        Dispatch a synchronous function call to a thread worker under this controller
+        Dispatch a synchronous function call to a threaded worker under this controller
 
         ### Usage
 
@@ -232,9 +270,9 @@ class ExecController(ABC):
         via the thread pool executor for this controller.
 
         For applications under asynchronous dispatch, the synchronous function
-        `func` will be provided with access to an event loop via the binding
-        for the `thread_loop` context variable within the containing thread,
-        e.g  `thread_loop.get()`
+        `func` will be have access to an event loop for the thread, via
+        the  binding for the `thread_loop` context variable within the
+        containing thread, e.g  `thread_loop.get()`
         """
         if len(kwargs) is int(0):
             return await self.main_loop.run_in_executor(self.executor, func, *args)
@@ -254,7 +292,7 @@ class ExecController(ABC):
         2. Close each worker loop
 
         3. Pause asynchronously for `sys.getswitchinterval()` seconds
-        before return, to allow for normal exit under managed tasks
+        before return, to allow for normal exit under cancelled tasks
         """
         q = self.managed_loops
         while not q.empty():
@@ -269,6 +307,22 @@ class ExecController(ABC):
 
     @abstractmethod
     async def run_async(self):
+        """The primary asynchronous 'run' routine for the exec controller.
+
+        The implementation of `run_async()` will be called from within
+        the exec controller's main event loop, such as via the
+        synchronous `run_context()` context manager.
+
+        The implementing method should provide any primary application
+        logic for the exec controller.
+
+        Additionally, the implementation should ensure that the
+        controller's `exit_future` will be set to a 'done' state, at
+        some point during the program's runtime.
+
+        An example implementation is avaialble for the DispatchController
+        class, in the `examples` sources.
+        """
         raise NotImplementedError(self.run_async)
 
     async def run_trampoline(self):
@@ -280,14 +334,34 @@ class ExecController(ABC):
         the ExecController's synchronous `run_context()` context manager to
         the implementing class' `run_async()` method.
 
-        In application, `run_trampoline()` will call `run_async()`  within
-        an asynchronous `exec_context()` context for the  ExecController.
+        In application, `run_trampoline()` will call `run_async()` within
+        an asynchronous `task_context()` for the ExecController.
 
         In effect, this will ensure that all tasks in the ExecController's
         task group will be awaited before return from `run_trampline()`,
         correspondingly before return from `run_context()`.
+
+        ### Exiting the Main Loop
+
+        `run_trampoline()` will add an initial task to the task group
+        for the ExecController, such that the task will call the
+        coroutine `ExecController.await_exit()` for the exec controller
+        instance. The default implementation of `await_exit()` will
+        await the `exit_future` for the instance, discarding any
+        received exception.
+
+        By side effect, this should serve to ensure that any context
+        manager onto the ExecController's task group will not return
+        until the `exit_future` for the controller has been set to some
+        value, or set to an exception state, or cancelled.
+
+        The implementing class should ensure that the `exit_future` for
+        the instance will be set to some value or cancelled at some
+        point during the call to `run_async()`, such as once the
+        application is in an exit state.
         """
         async with self.task_context():
+            self.add_task(self.await_exit())
             await self.run_async()
 
     @contextmanager
@@ -298,12 +372,15 @@ class ExecController(ABC):
 
         The context manager method `run_context()` will run the
         `run_async()` method of the implementing ExecController
-        within the controller's main loop, after initially yielding
-        the controller instance to the implementing context.
+        within the controller's main loop. This will be managed
+        directly via the ExecController's `run_trampoline()`
+        method.
 
-        The caller may perform any initial configuration on the
-        ExecController instance, while control is yielded to the
-        implementing context.
+        Before dispatching to `run_trampoline()`, the controller
+        instance will be yielded to the calling context. The caller
+        may provide any additional configuration to the ExecController
+        instance, at this time, such as within the top-level forms
+        of a context manager expression.
 
         Before return, the context manager will call `close()`
         on the implementing ExecController
@@ -311,14 +388,15 @@ class ExecController(ABC):
         ### Example
 
         Given a class `Controller` implementing
-        `ExecController.run_async()` and a method `run_pre()`,
-        example:
+        `ExecController.run_async()` and a method `run_pre()`, an
+        example pattern for application:
 
         ```python
         config_file = "config.ini"
         with Controller.from_config_ini(config_file).run_context() as controller:
             controller.run_pre()
             # ... run_async() runs under the controller's main event loop ...
+            print("Exiting")
             # ... context manager exits and the controller is closed  ...
         ```
         """
@@ -329,9 +407,11 @@ class ExecController(ABC):
             self.close()
 
     def add_task(self, coro: CoroutineType) -> aio.Task:
-        """
-        Create a task to call the provided coroutine `coro` within
-        this controller's task group.
+        """Task inteface for the exec controller's task group
+
+        `add_task()` will create a task calling the provided
+        coroutine `coro` within this exec controller's task
+        group.
 
         Returns the newly created task
         """
@@ -339,21 +419,23 @@ class ExecController(ABC):
 
     def get_future_callback(self, call_to: Callable[..., Awaitable],
                             *args, **kwargs) -> Callable[[aio.Future], Any]:
-        """
-        Return a callback function for an asyncio Future
+        """Return a callback function for an asyncio Future
 
-        The returned function may be applied as a future callback function, for
-        dispatch to a provided coroutine function. The function will accept
-        a single arg, assumed to represent a completed aio.Future() object.
+        The returned function may be applied as a future callback
+        function, for dispatch to a provided coroutine function on
+        completion of some aio future. The new function will accept
+        a single arg, assumed to represent a completed aio.Future
+        object.
 
-        When the returned function is called, then the provided coroutine function
-        `call_to` will be called with the future as its first arg. Additional args
-        may provided to the couroutine call, via `args` and `kwargs`.
+        When the function is called, then the provided coroutine function
+        `call_to` will be called with the future as its first arg.
+        Additional args may provided to the couroutine call, via `args`
+        and `kwargs`.
 
         ## Known Limitations
 
-        It's assumed that the returned callback function will be applied within
-        same thread as the executor loop for this controlller
+        It's assumed that the callback function will be applied within
+        the same thread as the executor loop for this controlller.
         """
         def future_callback(future):
             nonlocal call_to, args, kwargs
@@ -367,15 +449,14 @@ class ExecController(ABC):
         ## Usage
 
         This context manager is applied under ExecController.run_trampoline()
-        while dispatching to
 
         ## Synopsis
 
-        - Bind the current thread's `thread_loop` context variable
-        to the main loop for this controller, within the calling
-        context
-        - Await all tasks within the ExecController's task group,
-        before return
+        - Bind the current thread's `thread_loop` context variable to
+        the main loop for this controller, within the calling context
+
+        - Await all tasks within the ExecController's task group, before
+        return
         """
         async with self.task_group:
             loop_pre = thread_loop.set(self.main_loop)
