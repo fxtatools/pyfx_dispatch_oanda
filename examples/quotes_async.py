@@ -45,6 +45,9 @@ class ScriptController(DispatchController):
         loop = aio.get_running_loop()
         config = controller.config
         api_instance = controller.api
+        n_instruments = 0
+        n_processed = 0
+        processed_lock = aio.Lock()
 
         async for account_props in api_instance.accounts(controller):
             account_id = account_props.id
@@ -61,6 +64,16 @@ class ScriptController(DispatchController):
                 ## localized task callbacks for instrument->candle*
                 ## and account->instrument* requests
                 ##
+
+                async def check_exit():
+                    nonlocal n_instruments, n_processed, processed_lock
+                    async with processed_lock:
+                        n_processed += 1
+                        if n_processed == n_instruments:
+                            try:
+                                self.exit_future.set_result(n_instruments)
+                            except aio.InvalidStateError:
+                                pass
 
                 def candles_cb(reqftr: aio.Future):
                     nonlocal dt_format, tz, out
@@ -88,9 +101,11 @@ class ScriptController(DispatchController):
                                     ),
                                     file=out
                                 )
+                    self.add_task(check_exit())
+
 
                 def acct_instrument_cb(reqftr: aio.Future):
-                    nonlocal req_grp, api_instance, tasks, account_id
+                    nonlocal req_grp, api_instance, tasks, account_id, n_instruments
                     if reqftr.cancelled():
                         return
                     exc = reqftr.exception()
@@ -101,6 +116,7 @@ class ScriptController(DispatchController):
                     logger.info("response class: %r", api_response.__class__)
 
                     instruments = api_response.instruments
+                    n_instruments = len(instruments)
                     last = None
                     for inst in instruments:
                         inst_task = self.add_task(
@@ -113,24 +129,6 @@ class ScriptController(DispatchController):
                                                                             ))
                         inst_task.add_done_callback(candles_cb)
                         last = inst_task
-                    ## Implementation note: Though the last task created here may not be
-                    ## the last task to exit, setting the 'done' state during the last
-                    ## task's completion here should serve to ensure that the 'done' state
-                    ## is set, not until there are already a number of tasks in the task
-                    ## group. It will not cause the task group to exit immediately, simply
-                    ## indicating that the controller is in a closeable state.
-                    ##
-                    ## This is really a bit of a hack. Considering that the list of
-                    ## instruments to fetch is not recorded here except for purpose
-                    ## of dispatching to fetch instrument candles, the number of remaining
-                    ## instruments for OHLC sets to fetch cannot be determined here.
-                    ##
-                    ## Although not by any exactly deterministic event flow, generally
-                    ## it "Just works," to set the exit_future to 'done', within this
-                    ## callback
-                    ##
-                    last.add_done_callback(lambda ftr: self.exit_future.set_result(True))
-
 
                 ##
                 ## Initial Task creation, beginning with each account
