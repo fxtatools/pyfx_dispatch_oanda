@@ -458,10 +458,11 @@ class ExecController(ABC):
         - Await all tasks within the ExecController's task group, before
         return
         """
-        async with self.task_group:
+        tg = self.task_group
+        async with tg:
             loop_pre = thread_loop.set(self.main_loop)
             try:
-                yield self
+                yield tg
             finally:
                 thread_loop.set(loop_pre)
 
