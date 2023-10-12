@@ -38,16 +38,13 @@ class ConsoleIO:
         return self._err_writer
 
     async def aclose(self):
-        ## drain and close the writer streams
-        ##
-        ## FIXME the wait_closed => drain call is blocking [fbsd]
         stdout = self.stdout_writer
-        stdout.close
-        # await stdout.wait_closed()
+        stdout.close()
+        await stdout.wait_closed()
         stderr = self.stderr_writer
         if stderr is not stdout:
             stderr.close()
-            # await stderr.wait_closed()
+            await stderr.wait_closed()
 
 
 @asynccontextmanager
@@ -101,5 +98,6 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
         sys.stdin = stdin
         if pipe:
             await pipe.aclose()
+
 
 __all__ = exporting(__name__, ..., annotations=True)

@@ -1,5 +1,6 @@
 # DefaultApi definition, based on code generated with OpenAPI Generator
 
+from contextlib import asynccontextmanager
 from ..exec_controller import ExecController
 from ..transport.data import ApiObject
 from types import CoroutineType, FunctionType
@@ -153,6 +154,12 @@ class DispatchController(ExecController):
         """
         self.main_loop.run_until_complete(self.api_client.rest_client.aclose())
         super().close()
+
+    @asynccontextmanager
+    async def task_context(self):
+        async with super().task_context() as tg:
+            async with self.api_client.rest_client.client:
+                yield tg
 
 
 ##

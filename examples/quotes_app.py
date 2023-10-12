@@ -18,7 +18,7 @@ from pyfx.dispatch.oanda import DispatchController
 import pyfx.dispatch.oanda.logging as dispatch_logging
 from pyfx.dispatch.oanda.util import expand_path, console_io
 import sys
-from typing import Awaitable, Mapping, Set
+from typing import Awaitable, Mapping
 
 
 logger = logging.getLogger("pyfx.dispatch.oanda.examples")
@@ -32,13 +32,19 @@ class ExampleController(DispatchController):
 
     active_accounts: list[AccountProperties] = field(default_factory=list, repr=False, hash=False)
     instruments: Mapping[str, Instrument] = field(default_factory=dict, repr=False, hash=False)
-    instruments_to_process: Set[str] = field(init=False, hash=False)
+
+    processed_lock: aio.Lock = field(init = False, hash=False, default_factory=aio.Lock)
+
+    instruments_to_process: set[str] = field(init=False, hash=False, default_factory=set)
+    n_instruments: int = field(init = False, default=0)
+    n_instruments_processed: int = field(init = False, default=0)
 
     def initialize_defaults(self):
         super().initialize_defaults()
         self.active_accounts = []
         self.instruments = {}
         self.instruments_to_process = set()
+        self.processed_lock = aio.Lock()
 
     async def dispatch_candles_display(self, future: aio.Future[GetInstrumentCandles200Response]):
         # Print OHLC data and timestamps from the instrument candles response
@@ -49,7 +55,6 @@ class ExampleController(DispatchController):
         out = sys.stdout
         symbol = api_response.instrument
         inst_info = self.instruments[symbol]
-        self.instruments_to_process.remove(symbol)
         out.write(inst_info.display_name)
         print(file=out)
         for quote in api_response.candles:
@@ -70,18 +75,27 @@ class ExampleController(DispatchController):
                         ),
                         file=out
                     )
-        if len(self.instruments_to_process) is int(0):
-            self.exit_future.set_result(True)
+        async with self.processed_lock:
+            self.n_instruments_processed += 1
+            if self.n_instruments_processed is self.n_instruments:
+                try:
+                    self.exit_future.set_result(True)
+                except aio.InvalidStateError:
+                    pass
 
     async def dispatch_instrument_candles(self, future: aio.Future[GetAccountInstruments200Response]):
         # for each instrument, create a task to request instrument candles
         # - in: GetAccountInstruments200Response, via future callback
         # - process kind: dispatching request broker
-        for inst in future.result().instruments:
+        instruments = future.result().instruments
+        async with self.processed_lock:
+            self.n_instruments = len(instruments)
+        for inst in instruments:
             symbol_name = inst.name
             if symbol_name not in self.instruments_to_process:
                 self.instruments[symbol_name] = inst
-                self.instruments_to_process.add(symbol_name)
+                async with self.processed_lock:
+                    self.instruments_to_process.add(symbol_name)
                 inst_candles_future = aio.Future[GetInstrumentCandles200Response]()
                 inst_candles_future.add_done_callback(
                     self.get_future_callback(self.dispatch_candles_display)
@@ -135,7 +149,8 @@ class ExampleController(DispatchController):
             )
             coro: Awaitable = self.api.list_accounts(accounts_future)
             self.add_task(coro)
-            ## ensure the application completes before the async stdio streams are closed
+            ## ensure the application completes before the async stdio
+            ## streams will be closed
             await self.exit_future
 
 
