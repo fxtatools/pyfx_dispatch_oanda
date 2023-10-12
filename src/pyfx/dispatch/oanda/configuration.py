@@ -529,7 +529,7 @@ class Configuration(ConfigurationModel):
             ## or return a default if unset
             return Configuration.__getitem__(self, name, True)
         else:
-            return BaseModel.__getattribute__(self, name)
+            return ConfigurationModel.__getattribute__(self, name)
 
     def __getattr__(self, name: str, assume_model: bool = False) -> Any:
         if assume_model or name in Configuration.model_fields:

@@ -134,50 +134,13 @@ class TransportType(TransportTypeBase[Ti, To], Generic[Ti, To], metaclass=Transp
 class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
     '''FieldInfo base class for transport fields'''
 
-    @property
-    def transport_type(self) -> TransportType[Ti, To]:
-        return self._transport_type
+    transport_type: TransportType[Ti, To]
+    storage_class: type
+    field_name: str
+    defining_class: type[BaseModel]
+    deprecated: bool
 
-    @transport_type.setter
-    def transport_type(self, t: TransportType[Ti, To]):
-        self._transport_type = t
-
-    @property
-    def storage_class(self) -> type:
-        return self._storage_class
-
-    @transport_type.setter
-    def storage_class(self, t: type):
-        self._storage_class = t
-
-    @property
-    def defining_class(self) -> type[BaseModel]:
-        return self._defining_class
-
-    @defining_class.setter
-    def defining_class(self, value: type[BaseModel]):
-        ## this property should be immutable after initialization of the defining class
-        if hasattr(self, "_defining_class") and self._defining_class is not value:
-            raise ValueError("defining_class already defined", self._defining_class, self, value)
-        else:
-            self._defining_class = value
-
-    @property
-    def field_name(self) -> str:
-        return self._field_name
-
-    @field_name.setter
-    def field_name(self, name: str):
-        if hasattr(self, "_field_name"):
-            raise ValueError("field_name already defined", self.field_name, self, name)
-        else:
-            self._field_name = name
-
-    @property
-    def deprecated(self) -> Optional[bool]:
-        return self._deprecated
-
-    __slots__: ClassVar[frozenset[str]] = frozenset(list(FieldInfo.__slots__) + ["_transport_type", "_defining_class", "_field_name", "_storage_class", "_deprecated"])
+    __slots__: ClassVar[frozenset[str]] = frozenset(list(FieldInfo.__slots__) + ["transport_type", "defining_class", "field_name", "storage_class", "deprecated"])
 
     def __init__(self, default, transport_type: TransportType[Ti, To], deprecated=None, **kw):
         # implementation note: the field's transport type will be
@@ -186,7 +149,7 @@ class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
         # transport type determined from metadata for the field,
         # at the class scope
         self.transport_type = transport_type
-        self._deprecated = deprecated
+        self.deprecated = deprecated
         super().__init__(default=default, **kw)
 
     @classmethod
@@ -194,8 +157,8 @@ class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
         return cls(default, transport_type=transport_type, **kw)
 
     def __repr__(self):
-        defining = self.defining_class.__qualname__ if hasattr(self, "_defining_class") else "<Undefined>"
-        field = self.field_name if hasattr(self, "_field_name") else "<Undefined>"
+        defining = self.defining_class.__qualname__ if hasattr(self, "defining_class") else "<Undefined>"
+        field = self.field_name if hasattr(self, "field_name") else "<Undefined>"
         return "<%s [%s.%s]>" % (self.__class__.__qualname__, defining, field)
 
 
