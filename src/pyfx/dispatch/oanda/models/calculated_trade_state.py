@@ -1,7 +1,7 @@
 
 """CalculatedTradeState model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -13,15 +13,15 @@ class CalculatedTradeState(ApiObject):
     The dynamic (calculated) state of an open Trade
     """
 
-    id: Optional[TradeId] = TransportField(None)
+    id: Annotated[Optional[TradeId], TransportField(None)]
     """The Trade's ID.
     """
 
-    unrealized_pl: Optional[AccountUnits] = TransportField(None, alias="unrealizedPL")
+    unrealized_pl: Annotated[Optional[AccountUnits], TransportField(None, alias="unrealizedPL")]
     """The Trade's unrealized profit/loss.
     """
 
-    margin_used: Optional[AccountUnits] = TransportField(None, alias="marginUsed")
+    margin_used: Annotated[Optional[AccountUnits], TransportField(None, alias="marginUsed")]
     """Margin currently used by the Trade.
     """
 

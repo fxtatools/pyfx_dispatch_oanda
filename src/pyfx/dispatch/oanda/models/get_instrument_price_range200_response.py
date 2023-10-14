@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .price import Price
@@ -16,7 +16,7 @@ class GetInstrumentPriceRange200Response(ApiObject):
     """
     GetInstrumentPriceRange200Response
     """
-    prices: Optional[list[Price]] = TransportField(None)
+    prices: Annotated[Optional[list[Price]], TransportField(None)]
     """The list of prices that satisfy the request.
     """
 

@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from ..transport import ApiObject, TransportField
@@ -16,7 +16,7 @@ class MarketOrderMarginCloseout(ApiObject):
     """
     Details for the Market Order extensions specific to a Market Order placed that is part of a Market Order Margin Closeout in a client's account
     """
-    reason: Optional[MarketOrderMarginCloseoutReason] = TransportField(None)
+    reason: Annotated[Optional[MarketOrderMarginCloseoutReason], TransportField(None)]
     """
     The reason the Market Order was created to perform a margin closeout
     """

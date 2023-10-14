@@ -1,6 +1,6 @@
 """MarginCallEnterTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -13,7 +13,7 @@ class MarginCallEnterTransaction(Transaction):
     A MarginCallEnterTransaction is created when an Account enters the margin call state.
     """
 
-    type: Literal[TransactionType.MARGIN_CALL_ENTER] = TransportField(TransactionType.MARGIN_CALL_ENTER)
+    type: Annotated[Literal[TransactionType.MARGIN_CALL_ENTER], TransportField(TransactionType.MARGIN_CALL_ENTER)] = TransactionType.MARGIN_CALL_ENTER
     """
     The Type of the Transaction. Always set to \"MARGIN_CALL_ENTER\" for an MarginCallEnterTransaction.
     """

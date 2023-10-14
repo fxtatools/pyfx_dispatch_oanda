@@ -1,6 +1,6 @@
 """FinancingDaysOfWeek model definition"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -14,12 +14,12 @@ class FinancingDaysOfWeek(ApiObject):
     supplemental to v20 3.0.25
     """
 
-    day_of_week: Optional[DayOfWeek] = TransportField(None, alias="dayOfWeek")
+    day_of_week: Annotated[Optional[DayOfWeek], TransportField(None, alias="dayOfWeek")]
     """
     The day of the week to charge the financing.
     """
 
-    days_charged: Optional[int] = TransportField(None, alias="daysCharged")
+    days_charged: Annotated[Optional[int], TransportField(None, alias="daysCharged")]
     """
     The number of days worth of financing to be charged on dayOfWeek.
     """

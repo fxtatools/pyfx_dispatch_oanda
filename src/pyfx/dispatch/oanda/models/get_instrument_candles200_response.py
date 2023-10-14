@@ -1,7 +1,7 @@
 
 """model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -14,13 +14,13 @@ class GetInstrumentCandles200Response(ApiObject):
     """
     GetInstrumentCandles200Response
     """
-    instrument: str = TransportField(...)
+    instrument: Annotated[str, TransportField(...)]
     """The instrument whose Prices are represented by the candlesticks.
     """
-    granularity: CandlestickGranularity = TransportField(...)
+    granularity: Annotated[CandlestickGranularity, TransportField(...)]
     """The granularity of the candlesticks provided.
     """
-    candles: list[Candlestick] = TransportField(...)
+    candles: Annotated[list[Candlestick], TransportField(...)]
     """The list of candlesticks that satisfy the request.
     """
 

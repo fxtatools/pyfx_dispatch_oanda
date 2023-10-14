@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .order_cancel_transaction import OrderCancelTransaction
@@ -23,21 +23,21 @@ class SetTradeDependentOrders200Response(ApiObject):
     """
     SetTradeDependentOrders200Response
     """
-    take_profit_order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="takeProfitOrderCancelTransaction")
-    take_profit_order_transaction: Optional[TakeProfitOrderTransaction] = TransportField(None, alias="takeProfitOrderTransaction")
-    take_profit_order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="takeProfitOrderFillTransaction")
-    take_profit_order_created_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="takeProfitOrderCreatedCancelTransaction")
-    stop_loss_order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="stopLossOrderCancelTransaction")
-    stop_loss_order_transaction: Optional[StopLossOrderTransaction] = TransportField(None, alias="stopLossOrderTransaction")
-    stop_loss_order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="stopLossOrderFillTransaction")
-    stop_loss_order_created_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="stopLossOrderCreatedCancelTransaction")
-    trailing_stop_loss_order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="trailingStopLossOrderCancelTransaction")
-    trailing_stop_loss_order_transaction: Optional[TrailingStopLossOrderTransaction] = TransportField(None, alias="trailingStopLossOrderTransaction")
-    related_transaction_ids: Optional[list[str]] = TransportField(None, alias="relatedTransactionIDs")
+    take_profit_order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="takeProfitOrderCancelTransaction")]
+    take_profit_order_transaction: Annotated[Optional[TakeProfitOrderTransaction], TransportField(None, alias="takeProfitOrderTransaction")]
+    take_profit_order_fill_transaction: Annotated[Optional[OrderFillTransaction], TransportField(None, alias="takeProfitOrderFillTransaction")]
+    take_profit_order_created_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="takeProfitOrderCreatedCancelTransaction")]
+    stop_loss_order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="stopLossOrderCancelTransaction")]
+    stop_loss_order_transaction: Annotated[Optional[StopLossOrderTransaction], TransportField(None, alias="stopLossOrderTransaction")]
+    stop_loss_order_fill_transaction: Annotated[Optional[OrderFillTransaction], TransportField(None, alias="stopLossOrderFillTransaction")]
+    stop_loss_order_created_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="stopLossOrderCreatedCancelTransaction")]
+    trailing_stop_loss_order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="trailingStopLossOrderCancelTransaction")]
+    trailing_stop_loss_order_transaction: Annotated[Optional[TrailingStopLossOrderTransaction], TransportField(None, alias="trailingStopLossOrderTransaction")]
+    related_transaction_ids: Annotated[Optional[list[str]], TransportField(None, alias="relatedTransactionIDs")]
     """
     The IDs of all Transactions that were created while satisfying the request.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """
     The ID of the most recent Transaction created for the Account
     """

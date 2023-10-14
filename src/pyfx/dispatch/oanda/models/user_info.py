@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 
@@ -17,19 +17,19 @@ class UserInfo(ApiObject):
     """
     A representation of user information, as provided to the user themself.
     """
-    username: Optional[str] = TransportField(None)
+    username: Annotated[Optional[str], TransportField(None)]
     """
     The user-provided username.
     """
-    user_id: Optional[int] = TransportField(None, alias="userID")
+    user_id: Annotated[Optional[int], TransportField(None, alias="userID")]
     """
     The user's OANDA-assigned user ID.
     """
-    country: Optional[str] = TransportField(None)
+    country: Annotated[Optional[str], TransportField(None)]
     """
     The country that the user is based in.
     """
-    email_address: Optional[str] = TransportField(None, alias="emailAddress")
+    email_address: Annotated[Optional[str], TransportField(None, alias="emailAddress")]
     """
     The user's email address.
     """

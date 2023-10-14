@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 
@@ -17,13 +17,13 @@ class ClientExtensions(ApiObject):
     """
     A ClientExtensions object allows a client to attach a clientID, tag and comment to Orders and Trades in their Account.  Do not set, modify, or delete this field if your account is associated with MT4.
     """
-    id: Optional[str] = TransportField(None)
+    id: Annotated[Optional[str], TransportField(None)]
     """The Client ID of the Order/Trade
     """
-    tag: Optional[str] = TransportField(None)
+    tag: Annotated[Optional[str], TransportField(None)]
     """A tag associated with the Order/Trade
     """
-    comment: Optional[str] = TransportField(None)
+    comment: Annotated[Optional[str], TransportField(None)]
     """A comment associated with the Order/Trade
     """
 

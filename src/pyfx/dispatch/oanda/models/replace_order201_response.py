@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .order_cancel_transaction import OrderCancelTransaction
@@ -18,17 +18,17 @@ class ReplaceOrder201Response(ApiObject):
     """
     ReplaceOrder201Response
     """
-    order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="orderCancelTransaction")
-    order_create_transaction: Optional[Transaction] = TransportField(None, alias="orderCreateTransaction")
-    order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="orderFillTransaction")
-    order_reissue_transaction: Optional[Transaction] = TransportField(None, alias="orderReissueTransaction")
-    order_reissue_reject_transaction: Optional[Transaction] = TransportField(None, alias="orderReissueRejectTransaction")
-    replacing_order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="replacingOrderCancelTransaction")
-    related_transaction_ids: Optional[list[str]] = TransportField(None, alias="relatedTransactionIDs")
+    order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="orderCancelTransaction")]
+    order_create_transaction: Annotated[Optional[Transaction], TransportField(None, alias="orderCreateTransaction")]
+    order_fill_transaction: Annotated[Optional[OrderFillTransaction], TransportField(None, alias="orderFillTransaction")]
+    order_reissue_transaction: Annotated[Optional[Transaction], TransportField(None, alias="orderReissueTransaction")]
+    order_reissue_reject_transaction: Annotated[Optional[Transaction], TransportField(None, alias="orderReissueRejectTransaction")]
+    replacing_order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="replacingOrderCancelTransaction")]
+    related_transaction_ids: Annotated[Optional[list[str]], TransportField(None, alias="relatedTransactionIDs")]
     """
     The IDs of all Transactions that were created while satisfying the request.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """
     The ID of the most recent Transaction created for the Account
     """

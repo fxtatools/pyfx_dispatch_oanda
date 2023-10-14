@@ -1,7 +1,7 @@
 
 """PriceBucket model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from ..transport import ApiObject, TransportField
@@ -13,12 +13,12 @@ class PriceBucket(ApiObject):
     A Price Bucket represents a price available for an amount of liquidity
     """
 
-    price: PriceValue = TransportField(...)
+    price: Annotated[PriceValue, TransportField(...)]
     """
     The Price offered by the PriceBucket
     """
 
-    liquidity: FloatValue = TransportField(...)
+    liquidity: Annotated[FloatValue, TransportField(...)]
     """
     The amount of liquidity offered by the PriceBucket
     """

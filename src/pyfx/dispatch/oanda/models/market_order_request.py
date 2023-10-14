@@ -3,7 +3,7 @@
 
 from .request_mixins import PriceBoundedRequest
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -16,12 +16,12 @@ class MarketOrderRequest(PriceBoundedRequest):
     A MarketOrderRequest specifies the parameters that may be set when creating a Market Order.
     """
 
-    type: Literal[OrderType.MARKET] = TransportField(OrderType.MARKET)
+    type: Annotated[Literal[OrderType.MARKET], TransportField(OrderType.MARKET)] = OrderType.MARKET
     """
     The type of the Order to Create. Must be set to \"MARKET\" when creating a Market Order.
     """
 
-    time_in_force: TimeInForce = TransportField(TimeInForce.FOK, alias="timeInForce")
+    time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.FOK, alias="timeInForce")]
     """
     The time-in-force requested for the Market Order. Restricted to FOK or
     IOC for a MarketOrder.

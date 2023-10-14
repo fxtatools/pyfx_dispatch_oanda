@@ -1,6 +1,6 @@
 """ConversionFactor model definition"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 from .common_types import FloatValue
@@ -13,7 +13,7 @@ class ConversionFactor(ApiObject):
     supplemental to the fxTrade v20 API 3.0.25
     """
 
-    factor: Optional[FloatValue] = TransportField(None)
+    factor: Annotated[Optional[FloatValue], TransportField(None)]
     """
     The factor by which to multiply the amount in the given currency to
     obtain the amount in the home currency of the Account.

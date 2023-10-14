@@ -1,6 +1,6 @@
 """ConfigureAccount200Response model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -12,9 +12,9 @@ class ConfigureAccount200Response(ApiObject):
     """
     ConfigureAccount200Response:  The Account was configured successfully
     """
-    client_configure_transaction: Optional[ClientConfigureTransaction] = TransportField(None, alias="clientConfigureTransaction")
+    client_configure_transaction: Annotated[Optional[ClientConfigureTransaction], TransportField(None, alias="clientConfigureTransaction")]
 
-    last_transaction_id: Optional[TransactionId] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[TransactionId], TransportField(None, alias="lastTransactionID")]
     """The ID of the last Transaction created for the Account.
     """
 

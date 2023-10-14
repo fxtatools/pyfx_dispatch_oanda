@@ -5,7 +5,7 @@
 from pandas import Timestamp
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from ..transport import ApiObject, TransportField
@@ -16,11 +16,11 @@ class PricingHeartbeat(ApiObject):
     """
     A PricingHeartbeat object is injected into the Pricing stream to ensure that the HTTP connection remains active.
     """
-    type: Optional[str] = TransportField(None)
+    type: Annotated[Optional[str], TransportField(None)]
     """
     The string \"HEARTBEAT\"
     """
-    time: Timestamp = TransportField(None)
+    time: Annotated[Timestamp, TransportField(None)]
     """
     The date/time when the Heartbeat was created.
     """

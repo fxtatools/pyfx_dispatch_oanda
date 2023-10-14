@@ -1,7 +1,7 @@
 
 """model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -15,7 +15,7 @@ class TakeProfitOrderRejectTransaction(RejectTxn, TakeProfitOrderTransaction):
     A TakeProfitOrderRejectTransaction represents the rejection of the creation of a TakeProfit Order.
     """
 
-    type: Literal[TransactionType.TAKE_PROFIT_ORDER_REJECT] = TransportField(TransactionType.TAKE_PROFIT_ORDER_REJECT)
+    type: Annotated[Literal[TransactionType.TAKE_PROFIT_ORDER_REJECT], TransportField(TransactionType.TAKE_PROFIT_ORDER_REJECT)] = TransactionType.TAKE_PROFIT_ORDER_REJECT
     """
     The Type of the Transaction. Always set to \"TAKE_PROFIT_ORDER_REJECT\" in a TakeProfitOrderRejectTransaction.
     """

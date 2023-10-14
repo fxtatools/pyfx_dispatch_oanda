@@ -1,6 +1,6 @@
 """TradeIdMixin definition"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -12,12 +12,12 @@ class TradeIdMixin(ApiObject):
     Mixin class for types representing a `trade_id` and `client_trade_id`
     """
 
-    trade_id: TradeId = TransportField(None, alias="tradeID")
+    trade_id: Annotated[TradeId, TransportField(None, alias="tradeID")]
     """
     The ID of the Trade
     """
 
-    client_trade_id: Optional[ClientId] = TransportField(None, alias="clientTradeID")
+    client_trade_id: Annotated[Optional[ClientId], TransportField(None, alias="clientTradeID")]
     """
     The client ID of the Trade
     """

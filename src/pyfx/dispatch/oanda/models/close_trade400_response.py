@@ -1,6 +1,6 @@
 """CloseTrade400Response model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -13,7 +13,7 @@ class CloseTrade400Response(ErrorResponse):
     CloseTrade400Response
     """
 
-    order_reject_transaction: Optional[MarketOrderRejectTransaction] = TransportField(None, alias="orderRejectTransaction")
+    order_reject_transaction: Annotated[Optional[MarketOrderRejectTransaction], TransportField(None, alias="orderRejectTransaction")]
     """
     The MarketOrderReject Transaction that rejects the creation of the Trade-closing MarketOrder.
     """

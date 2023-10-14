@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .client_extensions import ClientExtensions
@@ -18,8 +18,8 @@ class SetOrderClientExtensionsRequest(ApiObject):
     """
     SetOrderClientExtensionsRequest
     """
-    client_extensions: Optional[ClientExtensions] = TransportField(None, alias="clientExtensions")
-    trade_client_extensions: Optional[ClientExtensions] = TransportField(None, alias="tradeClientExtensions")
+    client_extensions: Annotated[Optional[ClientExtensions], TransportField(None, alias="clientExtensions")]
+    trade_client_extensions: Annotated[Optional[ClientExtensions], TransportField(None, alias="tradeClientExtensions")]
 
 
 __all__ = exporting(__name__, ...)

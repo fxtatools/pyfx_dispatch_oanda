@@ -5,7 +5,7 @@
 from pandas import Timestamp
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .client_extensions import ClientExtensions
@@ -23,22 +23,22 @@ class TrailingStopLossDetails(ApiObject):
     TrailingStopLossDetails specifies the details of a Trailing Stop Loss Order to be created on behalf of a client. This may happen when an Order is filled that opens a Trade requiring a Trailing Stop Loss, or when a Trade's dependent Trailing Stop Loss Order is modified directly through the Trade.
     """
 
-    distance: Optional[PriceValue] = TransportField(None)
+    distance: Annotated[Optional[PriceValue], TransportField(None)]
     """
     The distance (in price units) from the Trade's fill price that the Trailing Stop Loss Order will be triggered at.
     """
 
-    time_in_force: Optional[TimeInForce] = TransportField(None, alias="timeInForce")
+    time_in_force: Annotated[Optional[TimeInForce], TransportField(None, alias="timeInForce")]
     """
     The time in force for the created Trailing Stop Loss Order. This may only be GTC, GTD or GFD.
     """
 
-    gtd_time: Timestamp = TransportField(None, alias="gtdTime")
+    gtd_time: Annotated[Timestamp, TransportField(None, alias="gtdTime")]
     """
     The date when the Trailing Stop Loss Order will be cancelled on if timeInForce is GTD.
     """
 
-    client_extensions: Optional[ClientExtensions] = TransportField(None, alias="clientExtensions")
+    client_extensions: Annotated[Optional[ClientExtensions], TransportField(None, alias="clientExtensions")]
 
 
 __all__ = exporting(__name__, ...)

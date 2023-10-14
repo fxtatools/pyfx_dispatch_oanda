@@ -1,6 +1,6 @@
 """CloseTrade200Response model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import TransportField
 
@@ -15,17 +15,17 @@ class CloseTrade200Response(TransactionResponse):
     CloseTrade200Response: The Trade has been closed as requested
     """
 
-    order_create_transaction: Optional[MarketOrderTransaction] = TransportField(None, alias="orderCreateTransaction")
+    order_create_transaction: Annotated[Optional[MarketOrderTransaction], TransportField(None, alias="orderCreateTransaction")]
     """
     The MarketOrder Transaction created to close the Trade.
     """
 
-    order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="orderFillTransaction")
+    order_fill_transaction: Annotated[Optional[OrderFillTransaction], TransportField(None, alias="orderFillTransaction")]
     """
     The OrderFill Transaction that fills the Trade-closing MarketOrder and closes the Trade.
     """
 
-    order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="orderCancelTransaction")
+    order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="orderCancelTransaction")]
     """
     The OrderCancel Transaction that immediately cancelled the Trade-closing MarketOrder.
     """

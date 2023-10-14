@@ -5,7 +5,7 @@
 from pandas import Timestamp
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from .order_book_bucket import OrderBookBucket
 
@@ -18,23 +18,23 @@ class OrderBook(ApiObject):
     """
     The representation of an instrument's order book at a point in time
     """
-    instrument: Optional[str] = TransportField(None)
+    instrument: Annotated[Optional[str], TransportField(None)]
     """
     The order book's instrument
     """
-    time: Timestamp = TransportField(None)
+    time: Annotated[Timestamp, TransportField(None)]
     """
     The time when the order book snapshot was created.
     """
-    price: Optional[str] = TransportField(None)
+    price: Annotated[Optional[str], TransportField(None)]
     """
     The price (midpoint) for the order book's instrument at the time of the order book snapshot
     """
-    bucket_width: Optional[str] = TransportField(None, alias="bucketWidth")
+    bucket_width: Annotated[Optional[str], TransportField(None, alias="bucketWidth")]
     """
     The price width for each bucket. Each bucket covers the price range from the bucket's price to the bucket's price + bucketWidth.
     """
-    buckets: Optional[list[OrderBookBucket]] = TransportField(None)
+    buckets: Annotated[Optional[list[OrderBookBucket]], TransportField(None)]
     """
     The partitioned order book, divided into buckets using a default bucket width. These buckets are only provided for price ranges which actually contain order or position data.
     """

@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 
@@ -17,15 +17,15 @@ class UserInfoExternal(ApiObject):
     """
     A representation of user information, as available to external (3rd party) clients.
     """
-    user_id: Optional[int] = TransportField(None, alias="userID")
+    user_id: Annotated[Optional[int], TransportField(None, alias="userID")]
     """
     The user's OANDA-assigned user ID.
     """
-    country: Optional[str] = TransportField(None)
+    country: Annotated[Optional[str], TransportField(None)]
     """
     The country that the user is based in.
     """
-    fifo: Optional[bool] = TransportField(None, alias="FIFO")
+    fifo: Annotated[Optional[bool], TransportField(None, alias="FIFO")]
     """
     Flag indicating if the the user's Accounts adhere to FIFO execution rules.
     """

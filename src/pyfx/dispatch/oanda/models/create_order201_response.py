@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .order_cancel_transaction import OrderCancelTransaction
@@ -22,15 +22,15 @@ class CreateOrder201Response(ApiObject):
     """
     CreateOrder201Response
     """
-    order_create_transaction: Optional[Transaction] = TransportField(None, alias="orderCreateTransaction")
-    order_fill_transaction: Optional[OrderFillTransaction] = TransportField(None, alias="orderFillTransaction")
-    order_cancel_transaction: Optional[OrderCancelTransaction] = TransportField(None, alias="orderCancelTransaction")
-    order_reissue_transaction: Optional[Transaction] = TransportField(None, alias="orderReissueTransaction")
-    order_reissue_reject_transaction: Optional[Transaction] = TransportField(None, alias="orderReissueRejectTransaction")
-    related_transaction_ids: Optional[list[str]] = TransportField(None, alias="relatedTransactionIDs")
+    order_create_transaction: Annotated[Optional[Transaction], TransportField(None, alias="orderCreateTransaction")]
+    order_fill_transaction: Annotated[Optional[OrderFillTransaction], TransportField(None, alias="orderFillTransaction")]
+    order_cancel_transaction: Annotated[Optional[OrderCancelTransaction], TransportField(None, alias="orderCancelTransaction")]
+    order_reissue_transaction: Annotated[Optional[Transaction], TransportField(None, alias="orderReissueTransaction")]
+    order_reissue_reject_transaction: Annotated[Optional[Transaction], TransportField(None, alias="orderReissueRejectTransaction")]
+    related_transaction_ids: Annotated[Optional[list[str]], TransportField(None, alias="relatedTransactionIDs")]
     """The IDs of all Transactions that were created while satisfying the request.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """The ID of the most recent Transaction created for the Account
     """
 

@@ -5,7 +5,7 @@
 from pandas import Timestamp
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from .client_price import ClientPrice
 from .home_conversions import HomeConversions
@@ -19,15 +19,15 @@ class GetPrices200Response(ApiObject):
     """
     GetPrices200Response
     """
-    prices: Optional[list[ClientPrice]] = TransportField(None)
+    prices: Annotated[Optional[list[ClientPrice]], TransportField(None)]
     """
     The list of Price objects requested.
     """
-    home_conversions: Optional[list[HomeConversions]] = TransportField(None, alias="homeConversions")
+    home_conversions: Annotated[Optional[list[HomeConversions]], TransportField(None, alias="homeConversions")]
     """
     The list of home currency conversion factors requested. This field will only be present if includeHomeConversions was set to true in the request.
     """
-    time: Timestamp = TransportField(None)
+    time: Annotated[Timestamp, TransportField(None)]
     """
     The DateTime value to use for the \"since\" parameter in the next poll request.
     """

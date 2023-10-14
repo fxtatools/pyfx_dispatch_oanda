@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 
@@ -17,10 +17,10 @@ class ConfigureAccountRequest(ApiObject):
     """
     ConfigureAccountRequest
     """
-    alias: Optional[str] = TransportField(None)
+    alias: Annotated[Optional[str], TransportField(None)]
     """Client-defined alias (name) for the Account
     """
-    margin_rate: Optional[str] = TransportField(None, alias="marginRate")
+    margin_rate: Annotated[Optional[str], TransportField(None, alias="marginRate")]
     """The string representation of a decimal number.
     """
 

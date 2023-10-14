@@ -1,6 +1,9 @@
 """Transaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from BTrees import IOBTree
+from persistent import Persistent
+
+from typing import Annotated, Optional
 
 from ..transport import AbstractApiObject, TransportField
 
@@ -15,35 +18,44 @@ class Transaction(AbstractApiObject,
     The base Transaction specification.
     """
 
-    id: TransactionId = TransportField(...)
+    id: Annotated[TransactionId, TransportField(...)]
     """
     The Transaction's Identifier.
     """
 
-    time: Time = TransportField(...)
+    time: Annotated[Time, TransportField(...)]
     """
     The date/time when the Transaction was created.
     """
 
-    user_id: int = TransportField(..., alias="userID")
+    user_id: Annotated[int, TransportField(..., alias="userID")]
     """
     The ID of the user that initiated the creation of the Transaction.
     """
 
-    account_id: AccountId = TransportField(..., alias="accountID")
+    account_id: Annotated[AccountId, TransportField(..., alias="accountID")]
     """
     The ID of the Account the Transaction was created for.
     """
 
-    batch_id: TransactionId = TransportField(..., alias="batchID")
+    batch_id: Annotated[TransactionId, TransportField(..., alias="batchID")]
     """
     The ID of the \"batch\" that the Transaction belongs to. Transactions in the same batch are applied to the Account simultaneously.
     """
 
-    request_id: Optional[ClientRequestId] = TransportField(None, alias="requestID")
+    request_id: Annotated[Optional[ClientRequestId], TransportField(None, alias="requestID")]
     """
     The Request ID of the request which generated the transaction.
     """
+
+    def get_btree(self):
+        ## https://zodb.org/en/latest/guide/writing-persistent-objects.html#using-persistent-data-structures
+
+        return IOBTree.BTree()
+
+    def persist(self, dest: Persistent):
+        ## dest: typically an IOBTree ...
+        dest[self.id] = self
 
 
 __all__ = ("Transaction",)

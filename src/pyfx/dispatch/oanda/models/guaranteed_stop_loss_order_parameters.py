@@ -1,6 +1,6 @@
 """GuaranteedStopLossOrderParameters model definition"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -14,12 +14,12 @@ class GuaranteedStopLossOrderParameters(ApiObject):
     Supplemental to v20 3.0.25
     """
     
-    mutability_market_open: Optional[GuaranteedStopLossOrderMutability] = TransportField(None, alias="mutabilityMarketOpen")
+    mutability_market_open: Annotated[Optional[GuaranteedStopLossOrderMutability], TransportField(None, alias="mutabilityMarketOpen")]
     """
     The current guaranteed Stop Loss Order mutability setting of the Account when market is open.
     """
     
-    mutability_market_halted: Optional[GuaranteedStopLossOrderMutability] = TransportField(None, alias="mutabilityMarketHalted")
+    mutability_market_halted: Annotated[Optional[GuaranteedStopLossOrderMutability], TransportField(None, alias="mutabilityMarketHalted")]
     """
     The current guaranteed Stop Loss Order mutability setting of the Account when market is halted.
     """

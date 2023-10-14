@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .order import Order
@@ -15,11 +15,11 @@ class GetOrder200Response(ApiObject):
     """
     GetOrder200Response
     """
-    order: Optional[Order] = TransportField(None)
+    order: Annotated[Optional[Order], TransportField(None)]
     """
     The details of the Order requested
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """
     The ID of the most recent Transaction created for the Account
     """

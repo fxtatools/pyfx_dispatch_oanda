@@ -1,7 +1,7 @@
 
 """MarketOrder model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from ..transport import TransportField
 
@@ -22,41 +22,41 @@ class MarketOrder(UnitsOrderBase):
     A MarketOrder is an order that is filled immediately upon creation using the current market price.
     """
 
-    type: Literal[OrderType.MARKET] = TransportField(OrderType.MARKET)
+    type: Annotated[Literal[OrderType.MARKET], TransportField(OrderType.MARKET)] = OrderType.MARKET
     """
     The type of the Order. Always set to \"MARKET\" for Market Orders."""
 
-    time_in_force: TimeInForce = TransportField(TimeInForce.FOK, alias="timeInForce")
+    time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.FOK, alias="timeInForce")]
     """
     The time-in-force requested for the Market Order. Restricted to FOK or IOC for a MarketOrder.
     """
 
-    price_bound: Optional[PriceValue] = TransportField(None, alias="priceBound")
+    price_bound: Annotated[Optional[PriceValue], TransportField(None, alias="priceBound")]
     """
     The worst price that the client is willing to have the Market Order filled at.
     """
 
-    trade_close: Optional[MarketOrderTradeClose] = TransportField(None, alias="tradeClose")
+    trade_close: Annotated[Optional[MarketOrderTradeClose], TransportField(None, alias="tradeClose")]
     """
     Details of the Trade requested to be closed, only provided when the Market Order is being used to explicitly close a Trade.
     """
 
-    long_position_closeout: Optional[MarketOrderPositionCloseout] = TransportField(None, alias="longPositionCloseout")
+    long_position_closeout: Annotated[Optional[MarketOrderPositionCloseout], TransportField(None, alias="longPositionCloseout")]
     """
     Details of the long Position requested to be closed out, only provided when a Market Order is being used to explicitly closeout a long Position.
     """
 
-    short_position_closeout: Optional[MarketOrderPositionCloseout] = TransportField(None, alias="shortPositionCloseout")
+    short_position_closeout: Annotated[Optional[MarketOrderPositionCloseout], TransportField(None, alias="shortPositionCloseout")]
     """
     Details of the short Position requested to be closed out, only provided when a Market Order is being used to explicitly closeout a short Position.
     """
 
-    margin_closeout: Optional[MarketOrderMarginCloseout] = TransportField(None, alias="marginCloseout")
+    margin_closeout: Annotated[Optional[MarketOrderMarginCloseout], TransportField(None, alias="marginCloseout")]
     """
     Details of the Margin Closeout that this Market Order was created for
     """
 
-    delayed_trade_close: Optional[MarketOrderDelayedTradeClose] = TransportField(None, alias="delayedTradeClose")
+    delayed_trade_close: Annotated[Optional[MarketOrderDelayedTradeClose], TransportField(None, alias="delayedTradeClose")]
     """
     Details of the delayed Trade close that this Market Order was created for
     """

@@ -1,6 +1,6 @@
 """StopLossOrderTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 
 from ..transport import TransportField
@@ -20,37 +20,37 @@ class StopLossOrderTransaction(OrderDistanceStopsTransaction):
 
     """
 
-    type: Literal[TransactionType.STOP_LOSS_ORDER] = TransportField(TransactionType.STOP_LOSS_ORDER)
+    type: Annotated[Literal[TransactionType.STOP_LOSS_ORDER], TransportField(TransactionType.STOP_LOSS_ORDER)] = TransactionType.STOP_LOSS_ORDER
     """
     The Type of the Transaction. Always set to \"STOP_LOSS_ORDER\" in a StopLossOrderTransaction.
     """
 
-    price: PriceValue = TransportField(...)
+    price: Annotated[PriceValue, TransportField(...)]
     """
     The price threshold specified for the Stop Loss Order. The associated Trade will be closed by a market price that is equal to or worse than this threshold.
     """
 
-    time_in_force: TimeInForce = TransportField(TimeInForce.GTC, alias="timeInForce")
+    time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]
     """
     The time-in-force requested for the StopLoss Order. Restricted to \"GTC\", \"GFD\" and \"GTD\" for StopLoss Orders.
     """
 
-    reason: StopLossOrderReason = TransportField(...)
+    reason: Annotated[StopLossOrderReason, TransportField(...)]
     """
     The reason that the Stop Loss Order was initiated
     """
 
-    guaranteed: Optional[bool] = TransportField(None)
+    guaranteed: Annotated[Optional[bool], TransportField(None)]
     """
     Flag indicating that the Stop Loss Order is guaranteed. The default value depends on the GuaranteedStopLossOrderMode of the account, if it is REQUIRED, the default will be true, for DISABLED or ENABLED the default is false.
     """
 
-    guaranteed_execution_premium: Optional[FloatValue] = TransportField(None, alias="guaranteedExecutionPremium", deprecated=True)
+    guaranteed_execution_premium: Annotated[Optional[FloatValue], TransportField(None, alias="guaranteedExecutionPremium", deprecated=True)]
     """
     The fee that will be charged if the Stop Loss Order is guaranteed and the Order is filled at the guaranteed price. The value is determined at Order creation time. It is in price units and is charged for each unit of the Trade.
     """
 
-    trigger_mode: Optional[str] = TransportField(None, alias="triggerMode")
+    trigger_mode: Annotated[Optional[str], TransportField(None, alias="triggerMode")]
     """
     This field is supplemental to the fxTrade v20 API 3.0.25.
     Value type has been inferred from server response.

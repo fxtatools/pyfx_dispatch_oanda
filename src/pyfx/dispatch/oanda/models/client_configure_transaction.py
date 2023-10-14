@@ -1,7 +1,7 @@
 
 """ClientConfigureTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from ..transport import TransportField
 
@@ -15,17 +15,17 @@ class ClientConfigureTransaction(Transaction):
     A ClientConfigureTransaction represents the configuration of an Account by a client.
     """
 
-    type: Literal[TransactionType.CLIENT_CONFIGURE] = TransportField(TransactionType.CLIENT_CONFIGURE)
+    type: Annotated[Literal[TransactionType.CLIENT_CONFIGURE], TransportField(TransactionType.CLIENT_CONFIGURE)] = TransactionType.CLIENT_CONFIGURE
     """
     The Type of the Transaction. Always set to \"CLIENT_CONFIGURE\" in a ClientConfigureTransaction.
     """
 
-    alias: Optional[str] = TransportField(None,)
+    alias: Annotated[Optional[str], TransportField(None,)]
     """
     The client-provided alias for the Account.
     """
 
-    margin_rate: Optional[FloatValue] = TransportField(None,alias="marginRate",)
+    margin_rate: Annotated[Optional[FloatValue], TransportField(None,alias="marginRate",)]
     """
     The margin rate override for the Account.
     """

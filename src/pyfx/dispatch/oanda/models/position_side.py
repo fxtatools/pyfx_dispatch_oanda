@@ -2,7 +2,7 @@
 """PositionSide model for OANDA v20 REST API (3.0.25)"""
 
 from numpy import abs, double, sign
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 
@@ -14,42 +14,42 @@ class PositionSide(ApiObject):
     The representation of a Position for a single direction (long or short).
     """
 
-    units: LotsValue = TransportField(...)
+    units: Annotated[LotsValue, TransportField(...)]
     """
     Number of units in the position (negative value indicates short position, positive indicates long position).
     """
 
-    average_price: Optional[PriceValue] = TransportField(None, alias="averagePrice")
+    average_price: Annotated[Optional[PriceValue], TransportField(None, alias="averagePrice")]
     """
     Volume-weighted average of the underlying Trade open prices for the Position.
     """
 
-    trade_ids: Optional[list[TradeId]] = TransportField(None, alias="tradeIDs")
+    trade_ids: Annotated[Optional[list[TradeId]], TransportField(None, alias="tradeIDs")]
     """
     List of the open Trade IDs which contribute to the open Position.
     """
 
-    pl: Optional[AccountUnits] = TransportField(None)
+    pl: Annotated[Optional[AccountUnits], TransportField(None)]
     """
     Profit/loss realized by the PositionSide over the lifetime of the Account.
     """
 
-    unrealized_pl: Optional[AccountUnits] = TransportField(None, alias="unrealizedPL")
+    unrealized_pl: Annotated[Optional[AccountUnits], TransportField(None, alias="unrealizedPL")]
     """
     The unrealized profit/loss of all open Trades that contribute to this PositionSide.
     """
 
-    resettable_pl: Optional[AccountUnits] = TransportField(None, alias="resettablePL")
+    resettable_pl: Annotated[Optional[AccountUnits], TransportField(None, alias="resettablePL")]
     """
     Profit/loss realized by the PositionSide since the Account's resettablePL was last reset by the client.
     """
 
-    financing: Optional[AccountUnits] = TransportField(None)
+    financing: Annotated[Optional[AccountUnits], TransportField(None)]
     """
     The total amount of financing paid/collected for this PositionSide over the lifetime of the Account.
     """
 
-    guaranteed_execution_fees: Optional[AccountUnits] = TransportField(None, alias="guaranteedExecutionFees")
+    guaranteed_execution_fees: Annotated[Optional[AccountUnits], TransportField(None, alias="guaranteedExecutionFees")]
     """
     The total amount of fees charged over the lifetime of the Account for the execution of guaranteed Stop Loss Orders attached to Trades for this PositionSide.
     """

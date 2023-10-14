@@ -1,7 +1,7 @@
 
 """MarketIfTouchedOrderRejectTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -14,7 +14,7 @@ class MarketIfTouchedOrderRejectTransaction(RejectTxn, MarketIfTouchedOrderTrans
     """
     A MarketIfTouchedOrderRejectTransaction represents the rejection of the creation of a MarketIfTouched Order.
     """
-    type: Literal[TransactionType.MARKET_IF_TOUCHED_ORDER_REJECT] = TransportField(TransactionType.MARKET_IF_TOUCHED_ORDER_REJECT)
+    type: Annotated[Literal[TransactionType.MARKET_IF_TOUCHED_ORDER_REJECT], TransportField(TransactionType.MARKET_IF_TOUCHED_ORDER_REJECT)] = TransactionType.MARKET_IF_TOUCHED_ORDER_REJECT
     """
     The Type of the Transaction. Always set to \"MARKET_IF_TOUCHED_ORDER_REJECT\" in a MarketIfTouchedOrderRejectTransaction.
     """

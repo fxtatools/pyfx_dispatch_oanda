@@ -1,7 +1,7 @@
 
 """model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -15,7 +15,7 @@ class OrderClientExtensionsModifyRejectTransaction(RejectTxn, OrderClientExtensi
     A OrderClientExtensionsModifyRejectTransaction represents the rejection of the modification of an Order's Client Extensions.
     """
 
-    type: Literal[TransactionType.ORDER_CLIENT_EXTENSIONS_MODIFY_REJECT] = TransportField(TransactionType.ORDER_CLIENT_EXTENSIONS_MODIFY_REJECT)
+    type: Annotated[Literal[TransactionType.ORDER_CLIENT_EXTENSIONS_MODIFY_REJECT], TransportField(TransactionType.ORDER_CLIENT_EXTENSIONS_MODIFY_REJECT)] = TransactionType.ORDER_CLIENT_EXTENSIONS_MODIFY_REJECT
     """The Type of the Transaction. Always set to \"ORDER_CLIENT_EXTENSIONS_MODIFY_REJECT\" for a OrderClientExtensionsModifyRejectTransaction.
     """
 

@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .transaction import Transaction
@@ -20,11 +20,11 @@ class StreamTransactions200Response(ApiObject):
     The response body for the Transaction Stream uses chunked transfer encoding.  Each chunk contains Transaction and/or TransactionHeartbeat objects encoded as JSON.  Each JSON object is serialized into a single line of text, and multiple objects found in the same chunk are separated by newlines. TransactionHeartbeats are sent every 5 seconds.
     """
 
-    transaction: Optional[Transaction] = TransportField(None)
+    transaction: Annotated[Optional[Transaction], TransportField(None)]
     """
     The base Transaction specification. Specifies properties that are common between all Transaction.
     """
-    heartbeat: Optional[TransactionHeartbeat] = TransportField(None)
+    heartbeat: Annotated[Optional[TransactionHeartbeat], TransportField(None)]
     """
     A TransactionHeartbeat object is injected into the Transaction stream to ensure that the HTTP connection remains active.
     """

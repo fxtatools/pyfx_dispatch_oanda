@@ -1,6 +1,6 @@
 """HomeConversionFactors model definition"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import ApiObject, TransportField
 from .conversion_factor import ConversionFactor
@@ -19,21 +19,21 @@ class HomeConversionFactors(ApiObject):
     currency.
     """
 
-    loss_quote_home: Optional[ConversionFactor] = TransportField(None, alias="lossQuoteHome")
+    loss_quote_home: Annotated[Optional[ConversionFactor], TransportField(None, alias="lossQuoteHome")]
     """
     The ConversionFactor in effect for the Account for converting any losses
     realized in Instrument quote units into units of the Account’s home
     currency.
     """
 
-    gain_base_home: Optional[ConversionFactor] = TransportField(None, alias="gainBaseHome")
+    gain_base_home: Annotated[Optional[ConversionFactor], TransportField(None, alias="gainBaseHome")]
     """
     The ConversionFactor in effect for the Account for converting any gains
     realized in Instrument base units into units of the Account’s home
     currency.
     """
 
-    loss_base_home: Optional[ConversionFactor] = TransportField(None, alias="lossBaseHome")
+    loss_base_home: Annotated[Optional[ConversionFactor], TransportField(None, alias="lossBaseHome")]
     """    
     The ConversionFactor in effect for the Account for converting any losses
     realized in Instrument base units into units of the Account’s home

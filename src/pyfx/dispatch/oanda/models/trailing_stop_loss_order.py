@@ -1,7 +1,7 @@
 
 """TrailingStopLossOrder model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from ..transport import TransportField
 
@@ -18,22 +18,22 @@ class TrailingStopLossOrder(UnitsOrderBase, LimitOrderMixin, TradeIdMixin, Repla
     A TrailingStopLossOrder is an order that is linked to an open Trade and created with a price distance. The price distance is used to calculate a trailing stop value for the order that is in the losing direction from the market price at the time of the order's creation. The trailing stop value will follow the market price as it moves in the winning direction, and the order will filled (closing the Trade) by the first price that is equal to or worse than the trailing stop value. A TrailingStopLossOrder cannot be used to open a new Position.
     """
 
-    type: Literal[OrderType.TRAILING_STOP_LOSS] = TransportField(OrderType.TRAILING_STOP_LOSS)
+    type: Annotated[Literal[OrderType.TRAILING_STOP_LOSS], TransportField(OrderType.TRAILING_STOP_LOSS)] = OrderType.TRAILING_STOP_LOSS
     """
     The type of the Order. Always set to "TRAILING_STOP_LOSS" for Trailing Stop Loss Orders.
     """
 
-    distance: PriceValue = TransportField(...)
+    distance: Annotated[PriceValue, TransportField(...)]
     """
     The price distance (in price units) specified for the TrailingStopLoss Order.
     """
 
-    time_in_force: TimeInForce = TransportField(TimeInForce.GTC, alias="timeInForce")
+    time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]
     """
     The time-in-force requested for the TrailingStopLoss Order. Restricted to \"GTC\", \"GFD\" and \"GTD\" for TrailingStopLoss Orders.
     """
 
-    trailing_stop_value: Optional[PriceValue] = TransportField(None, alias="trailingStopValue")
+    trailing_stop_value: Annotated[Optional[PriceValue], TransportField(None, alias="trailingStopValue")]
     """
     The trigger price for the Trailing Stop Loss Order. The trailing stop value will trail (follow) the market price by the TSL order's configured \"distance\" as the market price moves in the winning direction. If the market price moves to a level that is equal to or worse than the trailing stop value, the order will be filled and the Trade will be closed.
     """

@@ -1,7 +1,7 @@
 
 """model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from .units_available_details import UnitsAvailableDetails
 
@@ -15,13 +15,13 @@ class UnitsAvailable(ApiObject):
     
     [Deprecated, see usage in ClientPrice]
     """
-    default: Optional[UnitsAvailableDetails] = TransportField(None)
+    default: Annotated[Optional[UnitsAvailableDetails], TransportField(None)]
     """
     The number of units that are available to be traded using an Order with a positionFill option of “DEFAULT”. For an Account with hedging enabled, this value will be the same as the “OPEN_ONLY” value. For an Account without hedging enabled, this value will be the same as the “REDUCE_FIRST” value.
     """
-    reduce_first: Optional[UnitsAvailableDetails] = TransportField(None, alias="reduceFirst")
-    reduce_only: Optional[UnitsAvailableDetails] = TransportField(None, alias="reduceOnly")
-    open_only: Optional[UnitsAvailableDetails] = TransportField(None, alias="openOnly")
+    reduce_first: Annotated[Optional[UnitsAvailableDetails], TransportField(None, alias="reduceFirst")]
+    reduce_only: Annotated[Optional[UnitsAvailableDetails], TransportField(None, alias="reduceOnly")]
+    open_only: Annotated[Optional[UnitsAvailableDetails], TransportField(None, alias="openOnly")]
 
 
 __all__ = exporting(__name__, ...)

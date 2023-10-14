@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .user_info import UserInfo
@@ -15,7 +15,7 @@ class GetUserInfo200Response(ApiObject):
     """
     GetUserInfo200Response
     """
-    user_info: Optional[UserInfo] = TransportField(None, alias="userInfo")
+    user_info: Annotated[Optional[UserInfo], TransportField(None, alias="userInfo")]
 
 
 __all__ = exporting(__name__, ...)

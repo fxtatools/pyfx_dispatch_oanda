@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .stop_loss_details import StopLossDetails
@@ -20,9 +20,9 @@ class SetTradeDependentOrdersRequest(ApiObject):
     """
     SetTradeDependentOrdersRequest
     """
-    take_profit: Optional[TakeProfitDetails] = TransportField(None, alias="takeProfit")
-    stop_loss: Optional[StopLossDetails] = TransportField(None, alias="stopLoss")
-    trailing_stop_loss: Optional[TrailingStopLossDetails] = TransportField(None, alias="trailingStopLoss")
+    take_profit: Annotated[Optional[TakeProfitDetails], TransportField(None, alias="takeProfit")]
+    stop_loss: Annotated[Optional[StopLossDetails], TransportField(None, alias="stopLoss")]
+    trailing_stop_loss: Annotated[Optional[TrailingStopLossDetails], TransportField(None, alias="trailingStopLoss")]
 
 
 __all__ = exporting(__name__, ...)

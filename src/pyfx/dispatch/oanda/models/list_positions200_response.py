@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .position import Position
@@ -16,11 +16,11 @@ class ListPositions200Response(ApiObject):
     """
     listPositions200Response
     """
-    positions: Optional[list[Position]] = TransportField(None)
+    positions: Annotated[Optional[list[Position]], TransportField(None)]
     """
     The list of Account Positions.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """
     The ID of the most recent Transaction created for the Account
     """

@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .account_changes import AccountChanges
@@ -19,13 +19,13 @@ class GetAccountChanges200Response(ApiObject):
     """
     GetAccountChanges200Response
     """
-    changes: Optional[AccountChanges] = TransportField(None)
+    changes: Annotated[Optional[AccountChanges], TransportField(None)]
     """The changes to the Account’s Orders, Trades and Positions since the specified Transaction ID. Only provided if the sinceTransactionID is supplied to the poll request.
     """
-    state: Optional[AccountChangesState] = TransportField(None)
+    state: Annotated[Optional[AccountChangesState], TransportField(None)]
     """The Account’s current price-dependent state.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """The ID of the last Transaction created for the Account.  This Transaction ID should be used for future poll requests, as the client has already observed all changes up to and including it.
     """
 

@@ -2,7 +2,7 @@
 """model definition for OANDA v20 REST API (3.0.25)"""
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .client_extensions import ClientExtensions
@@ -15,7 +15,7 @@ class SetTradeClientExtensionsRequest(ApiObject):
     """
     SetTradeClientExtensionsRequest
     """
-    client_extensions: Optional[ClientExtensions] = TransportField(None, alias="clientExtensions")
+    client_extensions: Annotated[Optional[ClientExtensions], TransportField(None, alias="clientExtensions")]
 
 
 __all__ = exporting(__name__, ...)

@@ -3,7 +3,7 @@
 
 from pandas import Timestamp
 
-from typing import Optional
+from typing import Annotated, Optional
 
 from ..transport import AbstractApiObject, TransportField
 
@@ -23,22 +23,22 @@ class Order(AbstractApiObject,
     The base Order definition specifies the properties that are common to all Orders.
     """
 
-    id: OrderId = TransportField(...)
+    id: Annotated[OrderId, TransportField(...)]
     """
     The Order's identifier, unique within the Order's Account.
     """
 
-    create_time: Timestamp = TransportField(None, alias="createTime")
+    create_time: Annotated[Timestamp, TransportField(None, alias="createTime")]
     """
     The time when the Order was created.
     """
 
-    state: Optional[OrderState] = TransportField(None)
+    state: Annotated[Optional[OrderState], TransportField(None)]
     """
     The current state of the Order.
     """
 
-    client_extensions: Optional[ClientExtensions] = TransportField(None, alias="clientExtensions")
+    client_extensions: Annotated[Optional[ClientExtensions], TransportField(None, alias="clientExtensions")]
     """
     The client extensions of the Order. Do not set, modify, or delete
     clientExtensions if your account is associated with MT4.

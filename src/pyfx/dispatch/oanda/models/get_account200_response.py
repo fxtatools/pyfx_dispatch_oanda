@@ -4,7 +4,7 @@
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 from .account import Account
@@ -18,10 +18,10 @@ class GetAccount200Response(ApiObject):
     """
     GetAccount200Response
     """
-    account: Optional[Account] = TransportField(None)
+    account: Annotated[Optional[Account], TransportField(None)]
     """The full details of the requested Account.
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """The ID of the most recent Transaction created for the Account.
     """
 

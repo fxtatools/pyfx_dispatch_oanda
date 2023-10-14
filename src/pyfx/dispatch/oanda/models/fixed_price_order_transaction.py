@@ -1,6 +1,6 @@
 """FixedPriceOrderTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from ..transport import TransportField
 
@@ -16,22 +16,22 @@ class FixedPriceOrderTransaction(OrderFillTxn, ClientExtensionsTxn):
     A FixedPriceOrderTransaction represents the creation of a Fixed Price Order in the user's account. A Fixed Price Order is an Order that is filled immediately at a specified price.
     """
 
-    type: Literal[TransactionType.FIXED_PRICE_ORDER] = TransportField(TransactionType.FIXED_PRICE_ORDER)
+    type: Annotated[Literal[TransactionType.FIXED_PRICE_ORDER], TransportField(TransactionType.FIXED_PRICE_ORDER)] = TransactionType.FIXED_PRICE_ORDER
     """
     The Type of the Transaction. Always set to \"FIXED_PRICE_ORDER\
     """
 
-    price: PriceValue = TransportField(...)
+    price: Annotated[PriceValue, TransportField(...)]
     """
     The price specified for the Fixed Price Order. This price is the exact price that the Fixed Price Order will be filled at.
     """
 
-    trade_state: str = TransportField(..., alias="tradeState")
+    trade_state: Annotated[str, TransportField(..., alias="tradeState")]
     """
     The state that the trade resulting from the Fixed Price Order should be set to.
     """
 
-    reason: Optional[FixedPriceOrderReason] = TransportField(None)
+    reason: Annotated[Optional[FixedPriceOrderReason], TransportField(None)]
     """
     The reason that the Fixed Price Order was created
     """

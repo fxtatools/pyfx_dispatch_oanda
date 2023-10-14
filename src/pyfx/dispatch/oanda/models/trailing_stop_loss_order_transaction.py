@@ -1,7 +1,7 @@
 
 """TrailingStopLossOrderTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -16,17 +16,17 @@ class TrailingStopLossOrderTransaction(OrderDistanceStopsTransaction):
     A TrailingStopLossOrderTransaction represents the creation of a TrailingStopLoss Order in the user's Account.
     """
 
-    type: Literal[TransactionType.TRAILING_STOP_LOSS_ORDER] = TransportField(TransactionType.TRAILING_STOP_LOSS_ORDER)
+    type: Annotated[Literal[TransactionType.TRAILING_STOP_LOSS_ORDER], TransportField(TransactionType.TRAILING_STOP_LOSS_ORDER)] = TransactionType.TRAILING_STOP_LOSS_ORDER
     """
     The Type of the Transaction. Always set to \"TRAILING_STOP_LOSS_ORDER\" in a TrailingStopLossOrderTransaction.
     """
 
-    time_in_force: TimeInForce = TransportField(TimeInForce.GTC, alias="timeInForce")
+    time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]
     """
     The time-in-force requested for the TrailingStopLoss Order. Restricted to \"GTC\", \"GFD\" and \"GTD\" for TrailingStopLoss Orders.
     """
 
-    reason: TrailingStopLossOrderReason = TransportField(...)
+    reason: Annotated[TrailingStopLossOrderReason, TransportField(...)]
     """
     The reason that the Trailing Stop Loss Order was initiated
     """

@@ -9,7 +9,7 @@ from pandas import Timestamp
 
 
 
-from typing import Optional
+from typing import Annotated, Optional
 
 
 
@@ -22,15 +22,15 @@ class TransactionHeartbeat(ApiObject):
     """
     A TransactionHeartbeat object is injected into the Transaction stream to ensure that the HTTP connection remains active.
     """
-    type: Optional[str] = TransportField(None)
+    type: Annotated[Optional[str], TransportField(None)]
     """
     The string \"HEARTBEAT\"
     """
-    last_transaction_id: Optional[str] = TransportField(None, alias="lastTransactionID")
+    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
     """
     The ID of the most recent Transaction created for the Account
     """
-    time: Timestamp = TransportField(None)
+    time: Annotated[Timestamp, TransportField(None)]
     """
     The date/time when the TransactionHeartbeat was created.
     """

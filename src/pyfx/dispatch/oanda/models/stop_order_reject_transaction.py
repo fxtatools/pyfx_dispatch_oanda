@@ -1,7 +1,7 @@
 
 """model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from ..transport import TransportField
 
@@ -15,7 +15,7 @@ class StopOrderRejectTransaction(RejectTxn, StopOrderTransaction):
     A StopOrderRejectTransaction represents the rejection of the creation of a Stop Order.
     """
 
-    type: Literal[TransactionType.STOP_ORDER_REJECT] = TransportField(TransactionType.STOP_ORDER_REJECT)
+    type: Annotated[Literal[TransactionType.STOP_ORDER_REJECT], TransportField(TransactionType.STOP_ORDER_REJECT)] = TransactionType.STOP_ORDER_REJECT
     """
     The Type of the Transaction. Always set to \"STOP_ORDER_REJECT\" in a StopOrderRejectTransaction.
     """
