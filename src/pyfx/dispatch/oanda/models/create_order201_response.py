@@ -13,7 +13,8 @@ from .transaction import Transaction
 from .response_mixins import TransactionResponse
 
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

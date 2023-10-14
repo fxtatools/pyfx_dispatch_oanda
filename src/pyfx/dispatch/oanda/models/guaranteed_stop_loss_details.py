@@ -2,7 +2,8 @@
 
 from typing import Annotated, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from .client_extensions import ClientExtensions
 from .common_types import PriceValue, Time
 from .time_in_force import TimeInForce

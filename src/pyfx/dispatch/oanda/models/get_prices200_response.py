@@ -11,7 +11,8 @@ from .client_price import ClientPrice
 from .home_conversions import HomeConversions
 
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

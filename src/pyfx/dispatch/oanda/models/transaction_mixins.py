@@ -3,7 +3,7 @@
 from pandas import Timestamp
 from typing import Annotated, Optional
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .common_types import InstrumentName, PriceValue, LotsValue, OrderId, TransactionId
 from .trade_id_mixin import TradeIdMixin

@@ -13,7 +13,8 @@ from .take_profit_order_reject_transaction import TakeProfitOrderRejectTransacti
 from .trailing_stop_loss_order_reject_transaction import TrailingStopLossOrderRejectTransaction
 
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

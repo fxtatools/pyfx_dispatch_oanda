@@ -3,7 +3,8 @@
 
 from typing import Annotated, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 
 from .candlestick_data import CandlestickData
 from .common_types import Time

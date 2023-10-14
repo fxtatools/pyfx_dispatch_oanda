@@ -7,7 +7,7 @@ from .client_price import ClientPrice
 from .trade_open import TradeOpen
 from .trade_reduce import TradeReduce
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .transaction_mixins import InstrumentTxn
 from .transaction_type import TransactionType

@@ -8,7 +8,8 @@ from typing import Annotated, Optional
 from .price import Price
 
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

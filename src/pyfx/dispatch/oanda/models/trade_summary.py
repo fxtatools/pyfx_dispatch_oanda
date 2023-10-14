@@ -2,7 +2,8 @@
 
 from typing import Annotated, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 
 from .common_types import TradeId, InstrumentName, PriceValue, Time, LotsValue, AccountUnits, TransactionId, OrderId
 from .trade_state import TradeState

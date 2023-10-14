@@ -2,7 +2,7 @@
 
 from typing import Annotated, Optional
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 from .response_mixins import ErrorResponse
 from .client_configure_reject_transaction import ClientConfigureRejectTransaction
 from .common_types import TransactionId

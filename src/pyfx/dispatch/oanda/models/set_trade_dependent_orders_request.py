@@ -11,7 +11,8 @@ from .stop_loss_details import StopLossDetails
 from .take_profit_details import TakeProfitDetails
 from .trailing_stop_loss_details import TrailingStopLossDetails
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

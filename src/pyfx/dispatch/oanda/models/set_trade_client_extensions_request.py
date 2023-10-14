@@ -7,7 +7,8 @@ from typing import Annotated, Optional
 
 from .client_extensions import ClientExtensions
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

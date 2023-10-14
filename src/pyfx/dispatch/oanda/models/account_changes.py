@@ -8,7 +8,8 @@ from .position import Position
 from .trade_summary import TradeSummary
 from .transaction import Transaction
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 
 
 class AccountChanges(ApiObject):

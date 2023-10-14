@@ -3,7 +3,7 @@
 
 from typing import Annotated, Optional
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .account_mixins import AccountSummaryBase
 from .order import Order

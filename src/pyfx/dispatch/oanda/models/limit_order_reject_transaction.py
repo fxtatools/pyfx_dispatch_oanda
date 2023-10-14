@@ -3,7 +3,7 @@
 
 from typing import Annotated, Literal
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .limit_order_transaction import LimitOrderTransaction
 from .transaction_mixins import RejectTxn

@@ -3,7 +3,8 @@
 from typing import Annotated, Optional
 
 from .financing_days_of_week import FinancingDaysOfWeek
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from .common_types import FloatValue
 
 from ..util import exporting

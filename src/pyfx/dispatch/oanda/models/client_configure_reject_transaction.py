@@ -5,7 +5,8 @@ from pandas import Timestamp
 
 from typing import Annotated, Literal, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 from .transaction_type import TransactionType

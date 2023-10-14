@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .order_cancel_reject_transaction import OrderCancelRejectTransaction
 from .response_mixins import TransactionErrorResponse

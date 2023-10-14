@@ -2,7 +2,8 @@
 
 from typing import Annotated, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 
 from .trade_id_mixin import TradeIdMixin
 from .common_types import FloatValue, LotsValue, PriceValue, AccountUnits

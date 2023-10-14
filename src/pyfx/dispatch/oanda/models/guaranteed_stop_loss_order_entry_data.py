@@ -7,7 +7,8 @@ from typing import Annotated, Optional
 
 from .guaranteed_stop_loss_order_level_restriction import GuaranteedStopLossOrderLevelRestriction
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 from .common_types import PriceValue

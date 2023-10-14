@@ -14,7 +14,8 @@ from .take_profit_order_transaction import TakeProfitOrderTransaction
 from .trailing_stop_loss_order_transaction import TrailingStopLossOrderTransaction
 
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

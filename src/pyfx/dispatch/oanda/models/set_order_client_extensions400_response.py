@@ -8,7 +8,8 @@ from typing import Annotated, Optional
 from .order_client_extensions_modify_reject_transaction import OrderClientExtensionsModifyRejectTransaction
 
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

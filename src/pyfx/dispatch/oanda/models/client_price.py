@@ -3,7 +3,8 @@
 
 from typing import Annotated, Literal, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from .common_types import InstrumentName, Time, PriceValue
 from .price_status import PriceStatus
 from .price_bucket import PriceBucket

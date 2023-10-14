@@ -4,7 +4,8 @@ from typing import Optional
 
 from ..util.naming import exporting
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from .common_types import TransactionId
 
 

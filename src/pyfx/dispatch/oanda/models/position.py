@@ -6,7 +6,8 @@ from typing import Annotated, Optional
 from .common_types import AccountUnits
 from .position_side import PositionSide
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 
 
 class Position(ApiObject):

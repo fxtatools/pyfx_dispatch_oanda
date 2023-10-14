@@ -3,7 +3,8 @@
 
 from typing import Annotated, Optional
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from .common_types import InstrumentName, AccountUnits, FloatValue
 from .open_trade_financing import OpenTradeFinancing
 from .home_conversion_factors import HomeConversionFactors

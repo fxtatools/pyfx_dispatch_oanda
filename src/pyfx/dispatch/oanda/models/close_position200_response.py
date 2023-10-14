@@ -2,7 +2,7 @@
 
 from typing import Annotated, Optional
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .market_order_transaction import MarketOrderTransaction
 from .order_cancel_transaction import OrderCancelTransaction

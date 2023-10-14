@@ -5,7 +5,7 @@ from typing import Annotated, Literal, Optional
 from .order_mixins import LimitOrderMixin
 from .order_mixins import ReplacesOrderMixin
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 from .order_type import OrderType
 from .common_types import PriceValue
 from .time_in_force import TimeInForce

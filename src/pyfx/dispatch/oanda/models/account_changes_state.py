@@ -8,7 +8,7 @@ from .calculated_position_state import CalculatedPositionState
 from .calculated_trade_state import CalculatedTradeState
 from .dynamic_order_state import DynamicOrderState
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .account_mixins import AccountStateBase
 

@@ -5,7 +5,7 @@ from typing import Annotated, Literal, Optional
 
 from .client_extensions import ClientExtensions
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 from .transaction import Transaction

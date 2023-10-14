@@ -4,7 +4,7 @@
 
 from typing import Annotated, Literal
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .request_mixins import PriceBoundedRequest, StopsRequestBase
 from .order_type import OrderType

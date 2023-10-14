@@ -5,7 +5,8 @@ from typing import Annotated, Optional
 
 from .units_available_details import UnitsAvailableDetails
 
-from ..transport import ApiObject, TransportField
+from ..transport.data import ApiObject
+from ..transport.transport_fields import TransportField
 from ..util import exporting
 
 

@@ -3,7 +3,7 @@
 from typing import Annotated, Optional
 from ..util.naming import exporting
 
-from ..transport import TransportField
+from ..transport.transport_fields import TransportField
 
 from .common_types import InstrumentName, Time, OrderId, TradeId, TransactionId, LotsValue
 
