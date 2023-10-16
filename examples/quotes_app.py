@@ -5,7 +5,7 @@
 
 import asyncio as aio
 
-from pyfx.dispatch.oanda.models import (
+from pyfx.dispatch.oanda.models import (  # type: ignore
     ListAccounts200Response, AccountProperties,
     GetAccountInstruments200Response, Instrument,
     GetInstrumentCandles200Response
@@ -14,7 +14,7 @@ from pyfx.dispatch.oanda.models import (
 from dataclasses import dataclass, field
 import logging
 import os
-from pyfx.dispatch.oanda import DispatchController
+from pyfx.dispatch.oanda import ApiController  # type: ignore
 import pyfx.dispatch.oanda.util.log as log
 from pyfx.dispatch.oanda.util import expand_path, console_io  # type: ignore
 import sys
@@ -93,7 +93,7 @@ class ExampleController(DispatchController):
         for inst in instruments:
             symbol_name = inst.name
             if symbol_name not in self.instruments_to_process:
-                self.instruments[symbol_name] = inst
+                self.instruments[symbol_name] = inst  # type: ignore
                 async with self.processed_lock:
                     self.instruments_to_process.add(symbol_name)
                 inst_candles_future = aio.Future[GetInstrumentCandles200Response]()
@@ -143,11 +143,11 @@ class ExampleController(DispatchController):
             # - This stateless shell script will request the full account
             #   list and instrument details, on each call.
             #
-            accounts_future: aio.Future[ListAccounts200Response] = aio.Future()
+            accounts_future: aio.Future[ListAccounts200Response] = aio.Future() # type: ignore
             accounts_future.add_done_callback(
                 self.get_future_callback(self.dispatch_accounts_instruments)
             )
-            coro: Awaitable = self.api.list_accounts(accounts_future)
+            coro: Awaitable = self.api.list_accounts(accounts_future)  # type: ignore
             self.add_task(coro)
             ## ensure the application completes before the async stdio
             ## streams will be closed

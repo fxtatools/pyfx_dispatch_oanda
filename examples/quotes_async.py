@@ -57,12 +57,12 @@ class ScriptController(DispatchController):
             tasks = []
 
             async with console_io(loop) as pipe:
-                out: ConsoleStreamWriter = pipe.stdout_writer
+                out: ConsoleStreamWriter = pipe.stdout_writer  # type: ignore
                 req_grp = self.task_group
 
                 ##
-                ## localized task callbacks for instrument->candle*
-                ## and account->instrument* requests
+                ## localized task callbacks for instrument->candle
+                ## and account->instrument requests
                 ##
 
                 async def check_exit():

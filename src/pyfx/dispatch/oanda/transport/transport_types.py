@@ -140,11 +140,11 @@ Tenum = TypeVar("Tenum", bound=Enum)
 class TransportEnum(TransportType[Tenum, To], Generic[Tenum, To]):
 
     @classmethod
-    def parse(cls, serialized: To) -> Union[Tenum, To]:
+    def parse(cls, serialized: To) -> Union[Tenum, To]:  # type: ignore
         storage_cls: type[Enum] = cls.storage_class
         map = storage_cls._member_map_
         if serialized in map:
-            return map[serialized]
+            return map[serialized]  # type: ignore
         else:
             return serialized
 

@@ -325,7 +325,7 @@ def run_fetch(options: ap.Namespace) -> int:
                 if tmpf_ex:
                     ## close the stream on the destination
                     ## for the temporary dest file
-                    tmpname_ex = tmpf_ex.name()
+                    tmpname_ex = tmpf_ex.name  # type: ignore
                     tmpf_ex.close()
                     ## rename the existing dest file
                     os.rename(dest, tmpname_ex)

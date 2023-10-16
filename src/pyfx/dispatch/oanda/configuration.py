@@ -350,7 +350,7 @@ class Configuration(ConfigurationModel):
         if name in model_fields:
             if __debug__:
                 self.__pydantic_validator__.validate_assignment(self, name, value)
-            self._profile_default_map[name] = value
+            self._profile_default_map[name] = value  #  type: ignore
         else:
             raise ValidationError("Configuration field not found", name)
 
@@ -390,7 +390,7 @@ class Configuration(ConfigurationModel):
             defaults = self._profile_default_map
             if name in defaults:
                 value = defaults[name]
-                del defaults[name]
+                del defaults[name]  # type: ignore
                 return value
         else:
             raise ValidationError("Configuration field not found", name)

@@ -110,7 +110,7 @@ class ApiClient(object):
 
         ## send the request and return the API object
         return await self.rest_client.request(
-            method, base_url, response_types_map,
+            method, base_url, response_types_map,  # type: ignore
             headers=header_params,
             body=body, receiver=receiver, 
             future=future)

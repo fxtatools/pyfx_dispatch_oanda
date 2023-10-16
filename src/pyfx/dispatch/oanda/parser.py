@@ -44,30 +44,30 @@ class InstanceBuilder(Generic[T], ABC):
 
     __slots__ = ("instance_class", "instance", "origin", "builder", "finalized", "key")
 
-    instance_class: Optional[type[Tmodel]]
+    instance_class: Optional[type[Tmodel]]  # type: ignore
     '''
     Instance class expected for deserialization with this builder
 
     This value may be None when parsing a mapping under an unrealized abstract type
     '''
 
-    instance: Tmodel
+    instance: Tmodel  # type: ignore
     '''Reference for the deserialized instance, during deserialization'''
 
     key: Optional[str]
     '''Current key to be deserialized, for mapping values'''
 
-    origin: Optional[Self]
+    origin: Optional["InstanceBuilder"]
     '''The containing builder, if any'''
 
-    builder: Self
+    builder: Union["InstanceBuilder" | Self]
     '''The next builder for event forwarding, or this instance itself'''
 
     finalized: bool
     '''Flag for indicating whether the builder has reached end-of-object in the input stream'''
 
     def finalize(self):
-        # proto may be a mapping object, mainy when deserializing
+        # proto may be a mapping object, mainly when deserializing
         # an abstract API object type
         proto = self.instance
         # set the finalized prototype object as the instance
@@ -80,7 +80,7 @@ class InstanceBuilder(Generic[T], ABC):
             self.instance = model_cls.finalize_prototype(proto)
         self.finalized = True
 
-    def __init__(self, cls: type, origin: "Optional[InstanceBuilder]" = None):
+    def __init__(self, cls: Optional[type], origin: "Optional[InstanceBuilder]" = None):
         super().__init__()
         self.builder = self
         self.origin = origin  # the containing builder, if any
@@ -155,7 +155,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
         #
         # when parsing under an unrealized abstract type, returns a generic dict
         key = self.key
-        cls: type[ApiObject] = self.instance_class if key is None else self.get_field_transport_type(key).storage_class
+        cls: type[ApiObject] = self.instance_class if key is None else self.get_field_transport_type(key).storage_class  # type: ignore
         if __debug__:
             model_builder_debug("%s instance_prototype: create %s", self.__class__.__name__, cls.__name__ if cls else "<Abstract>")
         return cls.create_prototype() if cls else {}
@@ -212,7 +212,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
             raise ValueError("Unknown field", key, self.instance_class, set(fields.keys()), self.instance)
 
     def set_field(self, value: Any):
-        key = self.key
+        key: str = self.key  # type: ignore
         if isinstance(self.instance, ApiObject):
             # when not deferring initialization with a dict mapping,
             # ensure field tracking for applications onto Pydantic
@@ -225,7 +225,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
         else:
             # assumption: self.instance is a dictionary, or a dict-like  object
             # such that can be accessed with a string subscript
-            self.instance[key] = value
+            self.instance[key] = value  # type: ignore
 
     def realize_instance(self, type):
         # utility method for application when parsing an abstract API object type
@@ -301,7 +301,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                     # field info
                     inst_cls = self.instance_class
                     ## field may be null when parsing a mapping under an unrealized abstract type
-                    field: TransportFieldInfo = inst_cls.api_fields.get(self.key, None) if inst_cls else None
+                    field: TransportFieldInfo = inst_cls.api_fields.get(self.key, None) if inst_cls else None  # type: ignore
                     member_transport: TransportValues = field.transport_type if field else None
                     builder = SequenceBuilder(member_transport, self)
                     self.builder = builder
@@ -313,7 +313,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                 case 'string':
                     if self.realize_abstract:
                         self.realize_instance(value)
-                    transport = self.get_field_transport_type(self.key)
+                    transport = self.get_field_transport_type(self.key)  # type: ignore
                     parsed = None
                     if __debug__:
                         # the transport type may not be known when parsing a mapping
@@ -436,15 +436,16 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                     exc_response = toplevel
                     break
             ## raise the parsed exception
+            # fmt: off
             raise ApiException(status=status, reason=response_info.reason,
-                               response=exc_response)
+                               response=exc_response)  # type: ignore
+            # fmt: on
 
         ## main parsing for the streaming response
         while not stream.closed():
             model_cls = model_cls_callback(response_info, chunk)
             ## None from model_cls_callback indicates "skip"
             if not model_cls:
-                stream.chunk_done()
                 continue
 
             # assert not stream.closed(), "stream closed before segment read"
@@ -455,7 +456,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                 ## JSON object to be decoded for a single type, with
                 ## that type generally determined per the client/server
                 ## request protocol
-                builder: ModelBuilder = cls[model_cls](model_cls)
+                builder = cls(model_cls)
                 async for event, value in ijson.basic_parse_async(stream, use_float=True):
                     ## Implementation Note: This is where the main parser runs ...
                     await builder.aevent(event, value, callback_wrapper)
@@ -467,7 +468,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                     break
                 await stream.feed('', True)  # indicate EOF in the stream
                 raise ApiException(status=0, reason="Parser: Unexpected value",
-                                   response=unexpected)
+                                   response=unexpected)  # type: ignore
 
     @classmethod
     async def from_receiver_gen(cls, controller: ExecController,
@@ -511,7 +512,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
             await controller.dispatch(thunk)
 
             while chunk:
-                chunk: bytes = yield True
+                chunk = yield True  # type: ignore
                 stream.feed(chunk)
             await stream.aclose()
             return
@@ -529,7 +530,7 @@ class SequenceBuilder(InstanceBuilder[Sequence]):
     def instance_prototype(self) -> Sequence:
         return []
 
-    async def aevent(self, event: str, value: Any):
+    async def aevent(self, event: str, value: Any):  # type: ignore
         builder = self.builder
         if builder is self:
             if __debug__:
@@ -559,13 +560,13 @@ class SequenceBuilder(InstanceBuilder[Sequence]):
                     else:
                         # defer deserialization when parsing under an unrealized abstract type
                         parsed = value
-                    self.instance.append(parsed)
+                    self.instance.append(parsed)  # type: ignore
         else:
             await builder.aevent(event, value)
             if builder.builder is builder:
                 match event:
                     case 'end_map' | 'end_array':
                         if builder.finalized:
-                            self.instance.append(builder.instance)
+                            self.instance.append(builder.instance)  # type: ignore
                             del builder
                             self.builder = self

@@ -249,8 +249,7 @@ class ApiJsonEncoder(JSONEncoder):
 
     def default(self, pyobj: Any) -> Any:
         ocls = pyobj.__class__
-        typ = ocls if isinstance(ocls, TransportType) else JsonTypesRepository.get_transport_type(ocls)
-        print("THUNK unparse for " + repr(typ))
+        typ: TransportType = ocls if isinstance(ocls, TransportType) else JsonTypesRepository.get_transport_type(ocls)  # type: ignore
         rslt = typ.unparse(pyobj, self)
         return rslt
 
@@ -259,7 +258,6 @@ Tobject = TypeVar("Tobject", bound=ApiObject)
 
 
 class TransportObject(TransportType[Tobject, Mapping[str, Any]], Generic[Tobject]):
-
     @classmethod
     def parse(cls, unparsed: Union[ApiObject, Mapping[str, Any]]) -> Tobject:
         if isinstance(unparsed, ApiObject):
