@@ -4,6 +4,10 @@ from .naming import exporting
 
 __all__ = []
 
+from . import log  #  noqa: E402
+__all__.extend(exporting(log, ...))
+from .log import *  #  noqa: F403, E402
+
 from . import naming  # noqa: E402
 __all__.extend(exporting(naming, ...))
 from .naming import *  # noqa: F403, E402

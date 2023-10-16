@@ -14,10 +14,6 @@ from . import util  #  noqa: E402
 __all__.extend(exporting(util, ...))
 from .util import *  #  noqa: F403, E402
 
-from . import logging  #  noqa: E402
-__all__.extend(exporting(logging, ...))
-from .logging import *  #  noqa: F403, E402
-
 from . import request_constants  #  noqa: E402
 __all__.extend(exporting(request_constants, ...))
 from .request_constants import *  #  noqa: F403, E402

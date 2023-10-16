@@ -11,9 +11,9 @@ from io import IOBase
 import logging
 import os
 import pyfx.dispatch.oanda as dispatch
-import pyfx.dispatch.oanda.logging as dispatch_logging
 from pyfx.dispatch.oanda.util import console_io, ConsoleStreamWriter
 from pyfx.dispatch.oanda.api.default_api import DispatchController
+import pyfx.dispatch.oanda.util.log as log
 import pytz
 import re
 from typing_extensions import Protocol, TypeVar
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     ## debug logging will be enabled if DEBUG is set in the environment
     dbg = __debug__ and 'DEBUG' in os.environ
     if dbg:
-        dispatch_logging.configure_debug_logger()
+        log.configure_debug_logger()
     logger = logging.getLogger("pyfx.dispatch.oanda")
     logger.info("Loading configuration")
 

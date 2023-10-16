@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 import logging
 import os
 from pyfx.dispatch.oanda import DispatchController
-import pyfx.dispatch.oanda.logging as dispatch_logging
-from pyfx.dispatch.oanda.util import expand_path, console_io
+import pyfx.dispatch.oanda.util.log as log
+from pyfx.dispatch.oanda.util import expand_path, console_io  # type: ignore
 import sys
 from typing import Awaitable, Mapping
 
@@ -157,7 +157,7 @@ class ExampleController(DispatchController):
 if __name__ == "__main__":
     ## debug logging will be enabled if DEBUG is set in the environment
     if __debug__ and 'DEBUG' in os.environ:
-        dispatch_logging.configure_debug_logger()
+        log.configure_debug_logger()
 
     cfg_file = expand_path("account.ini", os.path.dirname(__file__))
     if not os.path.exists(cfg_file):
