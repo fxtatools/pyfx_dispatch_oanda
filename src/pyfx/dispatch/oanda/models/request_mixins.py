@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 
 from ..util.naming import exporting
 
-from ..transport import TransportField, AbstractApiObject
+from ..transport import TransportField, ApiObject
 
 from .order_type import OrderType
 from .common_types import InstrumentName, PriceValue, LotsValue, Time
@@ -19,9 +19,7 @@ from .order_trigger_condition import OrderTriggerCondition
 from .trade_id_mixin import TradeIdMixin
 
 
-class RequestBase(AbstractApiObject,
-                  designator_key="type",
-                  designator_type=OrderType):
+class RequestBase(ApiObject):
     """Common base class for Request classes"""
 
     type: Annotated[OrderType, TransportField(...)]
@@ -63,7 +61,7 @@ class InstrumentRequestBase(RequestBase):
     """
     TakeProfitDetails specifies the details of a Take Profit Order to be
     created on behalf of a client. This may happen when an Order is filled
-    that opens a Trade requiring a Take Profit, or when a Trade’s dependent
+    that opens a Trade requiring a Take Profit, or when a Trade's dependent
     Take Profit Order is modified directly through the Trade.
     """
 
@@ -71,7 +69,7 @@ class InstrumentRequestBase(RequestBase):
     """
     StopLossDetails specifies the details of a Stop Loss Order to be created
     on behalf of a client. This may happen when an Order is filled that opens
-    a Trade requiring a Stop Loss, or when a Trade’s dependent Stop Loss
+    a Trade requiring a Stop Loss, or when a Trade's dependent Stop Loss
     Order is modified directly through the Trade.
     """
 
@@ -80,7 +78,7 @@ class InstrumentRequestBase(RequestBase):
     GuaranteedStopLossDetails specifies the details of a Guaranteed Stop Loss
     Order to be created on behalf of a client. This may happen when an Order
     is filled that opens a Trade requiring a Guaranteed Stop Loss, or when a
-    Trade’s dependent Guaranteed Stop Loss Order is modified directly through
+    Trade's dependent Guaranteed Stop Loss Order is modified directly through
     the Trade.
     """
 
@@ -89,7 +87,7 @@ class InstrumentRequestBase(RequestBase):
     TrailingStopLossDetails specifies the details of a Trailing Stop Loss
     Order to be created on behalf of a client. This may happen when an Order
     is filled that opens a Trade requiring a Trailing Stop Loss, or when a
-    Trade’s dependent Trailing Stop Loss Order is modified directly through
+    Trade's dependent Trailing Stop Loss Order is modified directly through
     the Trade.
     """
 

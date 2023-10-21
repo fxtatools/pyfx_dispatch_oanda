@@ -1,41 +1,30 @@
+"""TransactionHeartbeat model definition for OANDA v20 Streaming API (3.0.25)"""
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-
-from pandas import Timestamp
-
-
-
-
-
-
-from typing import Annotated, Optional
-
-
+from typing import Annotated, Literal, Optional
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
-from ..util import exporting
-
-
+from .common_types import Time, TransactionId
 
 class TransactionHeartbeat(ApiObject):
     """
     A TransactionHeartbeat object is injected into the Transaction stream to ensure that the HTTP connection remains active.
     """
-    type: Annotated[Optional[str], TransportField(None)]
+
+    type: Annotated[Literal["HEARTBEAT"], TransportField(None)] = "HEARTBEAT"
     """
     The string \"HEARTBEAT\"
     """
-    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
+
+    last_transaction_id: Annotated[Optional[TransactionId], TransportField(..., alias="lastTransactionID")]
     """
     The ID of the most recent Transaction created for the Account
     """
-    time: Annotated[Timestamp, TransportField(None)]
+
+    time: Annotated[Time, TransportField(...)]
     """
     The date/time when the TransactionHeartbeat was created.
     """
 
 
-__all__ = exporting(__name__, ...)
-
+__all__ = ("TransactionHeartbeat",)

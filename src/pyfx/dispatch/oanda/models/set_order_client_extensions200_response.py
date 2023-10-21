@@ -1,31 +1,22 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
+"""SetOrderClientExtensions200Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional
 
-
+from ..transport.transport_fields import TransportField
+from .response_mixins import TransactionResponse
 from .order_client_extensions_modify_transaction import OrderClientExtensionsModifyTransaction
 
 
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
-
-
-class SetOrderClientExtensions200Response(ApiObject):
+class SetOrderClientExtensions200Response(TransactionResponse):
     """
     SetOrderClientExtensions200Response
     """
-    order_client_extensions_modify_transaction: Annotated[Optional[OrderClientExtensionsModifyTransaction], TransportField(None, alias="orderClientExtensionsModifyTransaction")]
-    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
-    """
-    The ID of the most recent Transaction created for the Account
-    """
-    related_transaction_ids: Annotated[Optional[list[str]], TransportField(None, alias="relatedTransactionIDs")]
-    """
-    The IDs of all Transactions that were created while satisfying the request.
+
+    order_client_extensions_modify_transaction: Annotated[
+        Optional[OrderClientExtensionsModifyTransaction],
+        TransportField(None, alias="orderClientExtensionsModifyTransaction")
+    ]
+    """The Transaction that modified the Client Extensions for the Order
     """
 
-
-__all__ = exporting(__name__, ...)
+__all__ = ("SetOrderClientExtensions200Response",)

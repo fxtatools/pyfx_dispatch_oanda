@@ -1,17 +1,6 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
+"""TransactionRejectReason definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
-
-
-
-
-
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
-
 
 
 class TransactionRejectReason(str, Enum):
@@ -19,9 +8,6 @@ class TransactionRejectReason(str, Enum):
     The reason that a Transaction was rejected.
     """
 
-    """
-    allowed enum values
-    """
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR'
     INSTRUMENT_PRICE_UNKNOWN = 'INSTRUMENT_PRICE_UNKNOWN'
     ACCOUNT_NOT_ACTIVE = 'ACCOUNT_NOT_ACTIVE'
@@ -167,6 +153,4 @@ class TransactionRejectReason(str, Enum):
     REPLACING_TRADE_ID_INVALID = 'REPLACING_TRADE_ID_INVALID'
 
 
-
-__all__ = exporting(__name__, ...)
-
+__all__ = ("TransactionRejectReason",)

@@ -1,8 +1,10 @@
 """Currency Pair encoding for applications"""
 
-from typing import Self
-
 from aenum import Enum, extend_enum
+import re
+import string
+from typing import Self
+from typing_extensions import ClassVar
 
 from .currency import Currency
 
@@ -14,16 +16,16 @@ class CurrencyPair(Enum):
     """
     Enum Representation of a Currency pair
 
-    enum member name: a string representation of the currency 
-    pair, in a syntax BBBQQQ, such that BBB represents the 
+    enum member name: a string representation of the currency
+    pair, in a syntax BBBQQQ, such that BBB represents the
     base currency and QQQ represents the quote currency.
-    
+
     enum member value: an integer representing the bitwse `or`
-    of the base currency's three-digit numerical code shifted 
-    leftwards 16 bits and the quote currency's three-digit 
-    numerical code. 
-    
-    The respective currency code values may be accessed with 
+    of the base currency's three-digit numerical code shifted
+    leftwards 16 bits and the quote currency's three-digit
+    numerical code.
+
+    The respective currency code values may be accessed with
     the property accessors `CurrencyPair.base_digits` and
     `CurrencyPair.quote_digits`
 
@@ -36,7 +38,7 @@ class CurrencyPair(Enum):
     - `CurrencyPair.quote_currency` -> Currency enum member representing the quote currency
 
     Class methods:
-    
+
     - `CurrencyPair.from_str_pair(str, str)` : Retrieve a CurrencyPair from `base` and `quote` currency names
 
     - CurrencyPair.from_str(str) :  Retrieve a CurrencyPair for a concatenated currency pair name, e.g `AUDCHF`
@@ -85,7 +87,7 @@ class CurrencyPair(Enum):
     @classmethod
     def from_str_pair(cls, base: str, quote: str) -> Self:
         """Return the CurrencyPair for a set of base and quote currency symbols
-        
+
         base: ISO 4217 three-digit alphabetical code for the base currency
         quote: ISO 4217 three-digit alphabetical code for the quote currency
 
@@ -131,11 +133,14 @@ class CurrencyPair(Enum):
     def from_str(cls, name: str) -> Self:
         """
         Return the CurrencyPair for a concatenated name
-        
+
         name: a concatenated currency pair, e.g \"AUDJPY\"
 
         returns the corresponding CurrencyPair
         """
+        if __debug__:
+            if len(name) != 6:
+                raise AssertionError("Concatenated currency pair not recognized", name)
         return cls.from_str_pair(name[0:3], name[3:])
 
     @classmethod
@@ -143,11 +148,20 @@ class CurrencyPair(Enum):
         """
         Return the CurrencyPair for a delimited name
 
-        name: a delimited currency pair, e.g \"AUD_USD\" or \"CHF/JPY\"
+        name: a delimited currency pair, e.g \"AUD_USD\" or \"CHF/JPY\".
+
+        This function accepts any delimiter character for the currency pair.
 
         returns the corresponding CurrencyPair
         """
+        if __debug__:
+            if len(name) != 7:
+                raise AssertionError("Delimited currency pair not recognized", name)
         return cls.from_str_pair(name[0:3], name[4:])
+
+    @classmethod
+    def get(cls, ident: str):
+        return cls.from_str(ident) if len(ident) == 6 else cls.from_delimited_str(ident)
 
     def __index__(self) -> int:
         return self.value

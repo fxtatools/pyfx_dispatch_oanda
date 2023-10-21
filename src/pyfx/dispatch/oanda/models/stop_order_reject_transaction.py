@@ -15,7 +15,7 @@ class StopOrderRejectTransaction(RejectTxn, StopOrderTransaction):
     A StopOrderRejectTransaction represents the rejection of the creation of a Stop Order.
     """
 
-    type: Annotated[Literal[TransactionType.STOP_ORDER_REJECT], TransportField(TransactionType.STOP_ORDER_REJECT)] = TransactionType.STOP_ORDER_REJECT
+    type: Annotated[Literal[TransactionType.STOP_ORDER_REJECT], TransportField(...)] = TransactionType.STOP_ORDER_REJECT  # type: ignore
     """
     The Type of the Transaction. Always set to \"STOP_ORDER_REJECT\" in a StopOrderRejectTransaction.
     """

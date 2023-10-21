@@ -1,4 +1,3 @@
-
 """CandlestickGranularity definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
@@ -9,9 +8,6 @@ class CandlestickGranularity(str, Enum):
     The granularity of a candlestick
     """
 
-    """
-    allowed enum values
-    """
     S5 = 'S5'
     S10 = 'S10'
     S15 = 'S15'

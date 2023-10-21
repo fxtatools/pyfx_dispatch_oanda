@@ -1,6 +1,6 @@
 """Mixin classes for account model classes"""
 
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Union, Optional
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
@@ -111,7 +111,7 @@ class AccountStateBase(ApiObject):
 
     dividend_adjustment: Annotated[Optional[AccountUnits], TransportField(None, alias="dividendAdjustment")]
     """
-    The total amount of dividend adjustment paid over the lifetime of the Account in the Account’s home currency.
+    The total amount of dividend adjustment paid over the lifetime of the Account in the Account's home currency.
     """
 
     guaranteed_execution_fees: Annotated[Optional[AccountUnits], TransportField(None, alias="guaranteedExecutionFees")]
@@ -154,7 +154,7 @@ class AccountSummaryBase(AccountStateBase):
     alias: Annotated[Optional[str], TransportField(None)]
     "Client-assigned alias for the Account. Only provided if the Account has an alias set"
 
-    currency: Annotated[Optional[Currency], TransportField(...)]
+    currency: Annotated[Currency, TransportField(...)]
     "The home currency of the Account"
 
     created_by_user_id: Annotated[Optional[int], TransportField(None, alias="createdByUserID")]
@@ -171,7 +171,7 @@ class AccountSummaryBase(AccountStateBase):
         None, alias="guaranteedStopLossOrderParameters")]
     """The current guaranteed Stop Loss Order settings of the Account.
 
-    This field will only be present if the guaranteedStopLossOrderMode is not ‘DISABLED’.
+    This field will only be present if the guaranteedStopLossOrderMode is not 'DISABLED'.
 
     [Supplemental to v20 3.25.0]
     """
@@ -180,11 +180,17 @@ class AccountSummaryBase(AccountStateBase):
         None, deprecated=True, alias="guaranteedStopLossOrderMutability")]
     """The current guaranteed Stop Loss Order mutability setting of the Account.
 
-    This field will only be present if the guaranteedStopLossOrderMode is not ‘DISABLED’.
+    This field will only be present if the guaranteedStopLossOrderMode is not 'DISABLED'.
     """
 
-    resettable_pl_time: Annotated[Optional[Time], TransportField(None, alias="resettablePLTime")]
-    "The date/time that the Account's resettablePL was last reset."
+    resettable_pl_time: Annotated[Time, TransportField(0, alias="resettablePLTime")]
+    """The date/time that the Account's resettablePL was last reset.
+
+    ### Implentation Note
+
+    `resettable_pl_time` represents a nullable datetime value. For server responses encoding
+    the value as "0", the value will be processed as `pandas.NaT`
+    """
 
     open_trade_count: Annotated[Optional[int], TransportField(None, alias="openTradeCount")]
     "The number of Trades currently open in the Account."

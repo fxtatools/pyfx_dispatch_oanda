@@ -1,22 +1,19 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
+"""GuaranteedStopLossOrderMode definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
-
-from ..util import exporting
 
 
 class GuaranteedStopLossOrderMode(str, Enum):
     """
     The overall behaviour of the Account regarding guaranteed Stop Loss Orders.
+
+    This class is denoted by the JSON Schema Class `GuaranteedStopLossOrderModeForInstrument`,
+    in the present edition of the fxTrade v20 API
     """
 
-    """
-    allowed enum values
-    """
     DISABLED = 'DISABLED'
     ALLOWED = 'ALLOWED'
     REQUIRED = 'REQUIRED'
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("GuaranteedStopLossOrderMode",)

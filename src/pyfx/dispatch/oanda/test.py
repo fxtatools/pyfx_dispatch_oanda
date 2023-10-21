@@ -20,16 +20,19 @@ from typing import Any, Generic, Literal, Optional, Sequence, Union, Mapping
 from unittest import TestCase
 
 from .credential import Credential
-from .transport import ApiObject, AbstractApiClass, TransportFieldInfo, TransportTypeInfer, ApiJsonEncoder, AbstractApiObject, JsonLiteral
+from .transport import (  # type: ignore
+    ApiObject, AbstractApiClass, TransportFieldInfo,
+    TransportTypeInfer, ApiJsonEncoder, AbstractApiObject
+    )
 from .configuration import Configuration
-from .api import DefaultApi
+from .api.default_api import DefaultApi
 from .parser import ModelBuilder
-from .models import AccountId
-from .util import get_literal_value
+from .models.common_types import AccountId
+from .util.typeref import get_literal_value
 
-from .models import Order, Transaction
+from .models import Order, Transaction, CreateOrderRequest
 
-ABSTRACT_CLASSES: Sequence[type[ApiObject]] = frozenset({Order, Transaction})
+ABSTRACT_CLASSES: frozenset[type[ApiObject]] = frozenset({Order, Transaction, CreateOrderRequest})
 
 __all__ = (
     "MockFactoryClass",
@@ -38,12 +41,12 @@ __all__ = (
     "ModelTest",
 )
 
-Timpl = TypeVar("Timpl", bound=Union[type[ApiObject], type[DefaultApi]])
+Timpl = TypeVar("Timpl", bound=ApiObject)
 
 
 class MockFactoryClass(ABCMeta):
     @staticmethod
-    def __new__(cls, name: str, bases: tuple[str], dct: Mapping[str, Any]):
+    def __new__(cls, name: str, bases: tuple[type], dct: dict[str, Any]):
         overrides = None
         if "__model__" not in dct and "__orig_bases__" in dct:
             ## set the polyfactory.*.pydantic_factory __model__ for the derived class,
@@ -108,11 +111,12 @@ class MockFactory(pydantic_factory.ModelFactory[Timpl], Generic[Timpl], metaclas
         return np.random.rand()
 
     @classmethod
-    def get_provider_map(cls) -> Mapping[type, Any]:
+    def get_provider_map(cls) -> dict[type, Any]:
         map = super().get_provider_map()
         ## add custom type callbacks for the polyfactory mock provider map
         map[Configuration] = cls.gen_config
         map[pd.Timestamp] = cls.gen_timestamp
+        map[datetime] = cls.gen_timestamp
         map[SecretStr] = cls.get_secret_str
         map[Credential] = cls.get_credential
         map[AccountId] = cls.get_account_id
@@ -140,7 +144,7 @@ class ComponentTest(TestCase):
 
 
 class ModelTest(ComponentTest, Generic[Timpl]):
-    __factory__: ClassVar[type[MockFactory[Timpl]]]  # = MockFactory[ApiObject]
+    __factory__: ClassVar[type[MockFactory]]
 
     json_encoder: ApiJsonEncoder
 
@@ -164,7 +168,6 @@ class ModelTest(ComponentTest, Generic[Timpl]):
     def assert_recursive_eq(cls, inst_a, inst_b):
         acls = inst_a.__class__
 
-        # ? TBD testing compatible types  @ test_data-model and main tests
         assert_that(issubclass(acls, inst_b.__class__)).is_true()
 
         if issubclass(acls, ApiObject):
@@ -190,7 +193,7 @@ class ModelTest(ComponentTest, Generic[Timpl]):
 
     @classmethod
     def get_model_class(cls) -> type[ApiObject]:
-        factory_cls: MockFactory = cls.__factory__
+        factory_cls: type[MockFactory] = cls.__factory__
         # using generic type parameters, determine the model class
         # applied for the test class' mock factory
         for base in get_original_bases(factory_cls):
@@ -205,12 +208,19 @@ class ModelTest(ComponentTest, Generic[Timpl]):
 
     @classmethod
     def gen_mock(cls, to_mock: Optional[type[ApiObject]] = None):
+        is_mapped: bool = False
         if to_mock:
             model_cls = to_mock
+        elif cls.__class__ is ModelTest:
+            return
         else:
-            if cls.__class__ is ModelTest:
-                return
-            model_cls = cls.get_model_class()
+            base_cls = cls.get_model_class()
+            if base_cls in TYPE_MAPPING:
+                ## base_cls is an abstract model class - see TYPE_MAPPING hacks, above
+                model_cls = TYPE_MAPPING[base_cls]  # type: ignore
+                is_mapped = True
+            else:
+                model_cls = cls.get_model_class()
 
         mock_initargs = {}
         if isinstance(model_cls, AbstractApiClass):
@@ -226,12 +236,11 @@ class ModelTest(ComponentTest, Generic[Timpl]):
                 else:
                     raise ValueError("key_field does not provide a Literal annotation", key_field, annot, model_cls)
             else:
-                ## not an abstract class - no default args to add
-                pass
-        if to_mock:
-            ## not as yet tested - see previous
-            class MockTest(ModelTest[to_mock]):
-                class Factory(MockFactory[to_mock]):
+                raise Exception("Abstract key field not found for implementation class", key_field, model_cls)
+        if to_mock or is_mapped:
+            mock_base = to_mock or model_cls
+            class MockTest(ModelTest[mock_base]):  # type: ignore ## FIXME provide to_mock as a class param
+                class Factory(MockFactory[mock_base]):  # type:ignore ## FIXME provide to_mock as a class param
                     pass
                 __factory__ = Factory
             return MockTest.__factory__.build(True, **mock_initargs)
@@ -276,8 +285,8 @@ class ModelTest(ComponentTest, Generic[Timpl]):
         if cls is ModelTest:
             return
 
-        inst = self.__class__.gen_mock()
-        assert_that(inst).is_equal_to(inst)
+        inst: Timpl = self.__class__.gen_mock()
+        self.assert_recursive_eq(inst, inst)
 
         dct = inst.to_dict()
         assert_that(isinstance(dct, Mapping)).is_true()
@@ -294,8 +303,14 @@ class ModelTest(ComponentTest, Generic[Timpl]):
 
         encoder = self.json_encoder
 
-        inst = self.__class__.gen_mock()
-        assert_that(inst).is_equal_to(inst)
+        inst: Timpl = self.__class__.gen_mock()
+        self.assert_recursive_eq(inst, inst)
+
+        icls = inst.__class__
+
+        if  issubclass(icls, AbstractApiObject):
+            key = icls.designator_key
+            assert_that(hasattr(inst, key)).is_true()
 
         j_str: str = inst.to_json_str(encoder)
         assert_that(isinstance(j_str, str)).is_true()
@@ -307,13 +322,13 @@ class ModelTest(ComponentTest, Generic[Timpl]):
         self.__class__.assert_recursive_eq(inst, j_inst)
 
 
-def run_tests(*files: Sequence[PathLike]):
+def run_tests(*files: str):
     ## general assumption: if run_tests is called, it's usually for interactive
     ## test debugging, thus adding --pdb to args
-    if "NO_PDB" in os.environ:
-        argv = list(files)
-    else:
-        argv = ["--pdb", *files]
+    argv = []
+    if "NO_PDB" not in os.environ:
+        argv.append("--pdb")
+    argv.extend(files)
     stdout = sys.stdout
     stderr = sys.stderr
     stdin = sys.stdin

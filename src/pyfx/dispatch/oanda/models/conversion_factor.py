@@ -9,7 +9,7 @@ from .common_types import FloatValue
 
 class ConversionFactor(ApiObject):
     """
-    A ConversionFactor contains information used to convert an amount from an Instrument’s base or quote currency to the home currency of an Account.
+    A ConversionFactor contains information used to convert an amount from an Instrument's base or quote currency to the home currency of an Account.
 
     supplemental to the fxTrade v20 API 3.0.25
     """

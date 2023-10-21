@@ -13,7 +13,7 @@ from assertpy import assert_that
 from polyfactory.factories.attrs_factory import AttrsFactory
 from pyfx.dispatch.oanda.models.common_types import AccountUnits
 
-from pyfx.dispatch.oanda.test import ComponentTest, ModelTest, MockFactory, run_tests
+from pyfx.dispatch.oanda.test import ModelTest, MockFactory, run_tests
 from pyfx.dispatch.oanda.transport.transport_fields import TransportField
 from pyfx.dispatch.oanda.transport.transport_types import TransportBool, TransportTimestamp, TransportFloatStr, TransportInt, TransportStr
 from pyfx.dispatch.oanda.transport.data import ApiObject

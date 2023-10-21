@@ -1,4 +1,3 @@
-
 """CancellableOrderType definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
@@ -9,9 +8,6 @@ class CancellableOrderType(str, Enum):
     The type of the Order.
     """
 
-    """
-    allowed enum values
-    """
     LIMIT = 'LIMIT'
     STOP = 'STOP'
     MARKET_IF_TOUCHED = 'MARKET_IF_TOUCHED'

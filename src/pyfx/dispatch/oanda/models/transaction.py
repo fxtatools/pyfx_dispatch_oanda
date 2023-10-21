@@ -1,11 +1,11 @@
-"""Transaction model definition for OANDA v20 REST API (3.0.25)"""
+"""Transaction model definition for OANDA v20 REST and Streaming APIs (3.0.25)"""
 
 from BTrees import IOBTree
 from persistent import Persistent
 
 from typing import Annotated, Optional
 
-from ..transport import AbstractApiObject, TransportField
+from ..transport import AbstractApiObject, TransportField  # type: ignore[attr-defined]
 
 from .common_types import TransactionId, AccountId, ClientRequestId, Time
 from .transaction_type import TransactionType
@@ -13,7 +13,7 @@ from .transaction_type import TransactionType
 
 class Transaction(AbstractApiObject,
                   designator_key="type",
-                  designator_type=TransactionType):
+                  designator_type=TransactionType):  # type: ignore[call-arg]
     """
     The base Transaction specification.
     """
@@ -28,7 +28,7 @@ class Transaction(AbstractApiObject,
     The date/time when the Transaction was created.
     """
 
-    user_id: Annotated[int, TransportField(..., alias="userID")]
+    user_id: Annotated[Optional[int], TransportField(None, alias="userID")]
     """
     The ID of the user that initiated the creation of the Transaction.
     """

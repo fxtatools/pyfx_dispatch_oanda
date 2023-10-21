@@ -3,12 +3,14 @@
 from .naming import exporting
 
 from types import NoneType
-from typing import Literal, Union
+from typing import Annotated, Literal, Union
 from typing_extensions import ForwardRef, TypeAlias, TypeVar, get_args, get_origin
 
 
 def get_literal_value(spec: TypeAlias):
-    if get_origin(spec) == Literal:
+    if get_origin(spec) == Annotated:
+        return get_literal_value(get_args(spec)[0])
+    elif get_origin(spec) == Literal:
         return get_args(spec)[0]
     else:
         raise ValueError("Not a literal type reference", spec)

@@ -1,15 +1,13 @@
-
-"""Unit test definition for pyfx.dispatch.oanda"""
-
+"""Unit test definition for the abstract Order class"""
 
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
-from pyfx.dispatch.oanda.models.market_order import MarketOrder
+from pyfx.dispatch.oanda.models.order import Order
 
 
 class TestOrder(ModelTest):
     """Order unit test stubs"""
 
-    class Factory(MockFactory[MarketOrder]):
+    class Factory(MockFactory[Order]):
         pass
 
     __factory__ = Factory

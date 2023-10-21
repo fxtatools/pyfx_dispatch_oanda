@@ -42,7 +42,7 @@ class OrderBase(Order):
     ID of the Transaction that filled this Order (only provided when the Order's state is FILLED)
     """
 
-    filled_time: Annotated[Time, TransportField(None, alias="filledTime")]
+    filled_time: Annotated[Optional[Time], TransportField(None, alias="filledTime")]
     """
     Date/time when the Order was filled (only provided when the Order's state is FILLED)
     """
@@ -67,7 +67,7 @@ class OrderBase(Order):
     ID of the Transaction that cancelled the Order (only provided when the Order's state is CANCELLED)
     """
 
-    cancelled_time: Annotated[Time, TransportField(None, alias="cancelledTime")]
+    cancelled_time: Annotated[Optional[Time], TransportField(None, alias="cancelledTime")]
     """
     Date/time when the Order was cancelled (only provided when the state of the Order is CANCELLED)
     """
@@ -79,7 +79,7 @@ class LimitOrderMixin(OrderBase):
     """
     ## subclasses: all Order classes except FixedPriceOrder, MarketOrder
 
-    gtd_time: Annotated[Time, TransportField(None, alias="gtdTime")]
+    gtd_time: Annotated[Optional[Time], TransportField(None, alias="gtdTime")]
     """
     The date/time when the Limit Order will be cancelled if its timeInForce is \"GTD\".
     """
@@ -133,7 +133,7 @@ class UnitsOrderBase(OrderBase):
     """
     TakeProfitDetails specifies the details of a Take Profit Order to be
     created on behalf of a client. This may happen when an Order is filled
-    that opens a Trade requiring a Take Profit, or when a Trade’s dependent
+    that opens a Trade requiring a Take Profit, or when a Trade's dependent
     Take Profit Order is modified directly through the Trade.
     """
 
@@ -141,7 +141,7 @@ class UnitsOrderBase(OrderBase):
     """
     StopLossDetails specifies the details of a Stop Loss Order to be created
     on behalf of a client. This may happen when an Order is filled that opens
-    a Trade requiring a Stop Loss, or when a Trade’s dependent Stop Loss
+    a Trade requiring a Stop Loss, or when a Trade's dependent Stop Loss
     Order is modified directly through the Trade.
     """
 
@@ -150,7 +150,7 @@ class UnitsOrderBase(OrderBase):
     GuaranteedStopLossDetails specifies the details of a Guaranteed Stop Loss
     Order to be created on behalf of a client. This may happen when an Order
     is filled that opens a Trade requiring a Guaranteed Stop Loss, or when a
-    Trade’s dependent Guaranteed Stop Loss Order is modified directly through
+    Trade's dependent Guaranteed Stop Loss Order is modified directly through
     the Trade.
     """
 
@@ -159,7 +159,7 @@ class UnitsOrderBase(OrderBase):
     TrailingStopLossDetails specifies the details of a Trailing Stop Loss
     Order to be created on behalf of a client. This may happen when an Order
     is filled that opens a Trade requiring a Trailing Stop Loss, or when a
-    Trade’s dependent Trailing Stop Loss Order is modified directly through
+    Trade's dependent Trailing Stop Loss Order is modified directly through
     the Trade.
     """
 

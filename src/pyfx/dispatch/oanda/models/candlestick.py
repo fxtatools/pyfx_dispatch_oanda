@@ -1,4 +1,3 @@
-
 """Candlestick model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional
@@ -15,7 +14,7 @@ class Candlestick(ApiObject):
     The Candlestick representation
     """
 
-    time: Annotated[Time, TransportField(None)]
+    time: Annotated[Time, TransportField(...)]
     """
     The start time of the candlestick
     """
@@ -35,7 +34,7 @@ class Candlestick(ApiObject):
     The candlestick data based on bids. Only provided if bid-based candles were requested.
     """
 
-    volume: Annotated[Optional[int], TransportField(None)]
+    volume: Annotated[int, TransportField(...)]
     """
     The number of prices created during the time-range represented by the candlestick.
     """

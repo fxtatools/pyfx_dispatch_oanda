@@ -1,7 +1,5 @@
-
 """AccountChangesState model definition for OANDA v20 REST API (3.0.25)"""
 
-from pandas import Timestamp
 from typing import Annotated, Optional
 
 from .calculated_position_state import CalculatedPositionState
@@ -15,7 +13,10 @@ from .account_mixins import AccountStateBase
 
 class AccountChangesState(AccountStateBase):
     """
-    An AccountState Object is used to represent an Account's current price-dependent state. Price-dependent Account state is dependent on OANDA's current Prices, and includes things like unrealized PL, NAV and Trailing Stop Loss Order state.
+    An AccountState Object is used to represent an Account's current price-dependent state. 
+
+    Price-dependent Account state is dependent on OANDA's current Prices, and includes things like 
+    unrealized PL, NAV and Trailing Stop Loss Order state.
     """
 
     orders: Annotated[Optional[list[DynamicOrderState]], TransportField(None)]

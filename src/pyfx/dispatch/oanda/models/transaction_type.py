@@ -1,11 +1,6 @@
-
 """TransactionType definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
-
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
 
 
 class TransactionType(str, Enum):
@@ -48,6 +43,12 @@ class TransactionType(str, Enum):
     DELAYED_TRADE_CLOSURE = 'DELAYED_TRADE_CLOSURE'
     DAILY_FINANCING = 'DAILY_FINANCING'
     RESET_RESETTABLE_PL = 'RESET_RESETTABLE_PL'
+
+    GUARANTEED_STOP_LOSS_ORDER = 'GUARANTEED_STOP_LOSS_ORDER'
+    """Supplemental to v20 API 3.0.25"""
+
+    GUARANTEED_STOP_LOSS_ORDER_REJECT = "GUARANTEED_STOP_LOSS_ORDER_REJECT"
+    """Supplemental to v20 API 3.0.25"""
 
 
 __all__ = ("TransactionType",)

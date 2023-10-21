@@ -16,7 +16,7 @@ from .market_order_reason import MarketOrderReason
 
 class MarketOrderTransaction(PriceBoundEntryTransaction):
     """
-    A MarketOrderTransaction represents the creation of a Market Order in the user’s account. A Market Order is an Order that is filled immediately at the current market price. Market Orders can be specialized when they are created to accomplish a specific task: to close a Trade, to closeout a Position or to participate in in a Margin closeout.
+    A MarketOrderTransaction represents the creation of a Market Order in the user's account. A Market Order is an Order that is filled immediately at the current market price. Market Orders can be specialized when they are created to accomplish a specific task: to close a Trade, to closeout a Position or to participate in in a Margin closeout.
     """
 
     type: Annotated[Literal[TransactionType.MARKET_ORDER], TransportField(TransactionType.MARKET_ORDER)] = TransactionType.MARKET_ORDER

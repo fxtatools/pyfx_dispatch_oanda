@@ -11,6 +11,14 @@ from .price import Price
 class GetInstrumentPrice200Response(ApiObject):
     """
     GetInstrumentPrice200Response
+
+    [**Deprecated**]
+
+    This class was defined for an API endpoint in the fxTrade v20 API 3.0.25.
+    That endpoint may have been deprecated
+
+    See also:
+    - DefaultApi.get_prices()
     """
     price: Annotated[Optional[Price], TransportField(None)]
 

@@ -1,13 +1,6 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
+"""TransactionFilter definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
-
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
-
 
 
 class TransactionFilter(str, Enum):
@@ -15,9 +8,6 @@ class TransactionFilter(str, Enum):
     A filter that can be used when fetching Transactions
     """
 
-    """
-    allowed enum values
-    """
     ORDER = 'ORDER'
     FUNDING = 'FUNDING'
     ADMIN = 'ADMIN'
@@ -60,6 +50,4 @@ class TransactionFilter(str, Enum):
     RESET_RESETTABLE_PL = 'RESET_RESETTABLE_PL'
 
 
-
-__all__ = exporting(__name__, ...)
-
+__all__ = ("TransactionFilter",)

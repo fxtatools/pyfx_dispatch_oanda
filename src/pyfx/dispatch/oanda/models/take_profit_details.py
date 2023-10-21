@@ -19,12 +19,12 @@ class TakeProfitDetails(ApiObject):
     The price that the Take Profit Order will be triggered at. Only one of the price and distance fields may be specified.
     """
 
-    time_in_force: Annotated[Optional[TimeInForce], TransportField(TimeInForce.GTC, alias="timeInForce")]
+    time_in_force: Annotated[Optional[TimeInForce], TransportField(..., alias="timeInForce")] = TimeInForce.GTC
     """
     The time in force for the created Take Profit Order. This may only be GTC, GTD or GFD.
     """
 
-    gtd_time: Annotated[Time, TransportField(None, alias="gtdTime")]
+    gtd_time: Annotated[Optional[Time], TransportField(None, alias="gtdTime")]
     """
     The date when the Take Profit Order will be cancelled on if timeInForce is GTD.
     """

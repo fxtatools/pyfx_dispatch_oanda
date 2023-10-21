@@ -107,7 +107,7 @@ class TradeSummary(ApiObject):
 
     guaranteed_stop_loss_order_id: Annotated[Optional[OrderId], TransportField(None, alias="guaranteedStopLossOrderID ")]
     """
-    ID of the Trade’s Guaranteed Stop Loss Order, only provided if such an Order exists.
+    ID of the Trade's Guaranteed Stop Loss Order, only provided if such an Order exists.
 
     supplemental to v20 3.0.25
     """

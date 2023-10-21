@@ -7,8 +7,6 @@ from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 from .common_types import FloatValue
 
-from ..util import exporting
-
 
 class InstrumentFinancing(ApiObject):
     """
@@ -29,7 +27,7 @@ class InstrumentFinancing(ApiObject):
 
     financing_days_of_week: Annotated[Optional[list[FinancingDaysOfWeek]], TransportField(None, alias="financingDaysOfWeek")]
     """
-    The days of the week to debit or credit financing charges; the exact time of day at which to charge the financing is set in the DivisionTradingGroup for the client’s account.
+    The days of the week to debit or credit financing charges; the exact time of day at which to charge the financing is set in the DivisionTradingGroup for the client's account.
     """
 
 

@@ -47,7 +47,7 @@ class PositionFinancing(ApiObject):
 
     home_conversion_factors: Annotated[Optional[HomeConversionFactors], TransportField(None, alias="homeConversionFactors")]
     """
-    The HomeConversionFactors in effect for the Position’s Instrument at the time of the DailyFinancing.
+    The HomeConversionFactors in effect for the Position's Instrument at the time of the DailyFinancing.
 
     supplemental to the fxTrade v20 API 3.0.25
     """

@@ -1,5 +1,5 @@
 
-"""ClientPrice model definition for OANDA v20 REST API (3.0.25)"""
+"""ClientPrice model definition for OANDA v20 REST and Streaming APIs (3.0.25)"""
 
 from typing import Annotated, Literal, Optional
 
@@ -17,7 +17,7 @@ class ClientPrice(ApiObject):
     The specification of an Account-specific Price.
     """
 
-    type: Annotated[str, TransportField("PRICE")]
+    type: Annotated[Literal["PRICE"], TransportField(...)] = "PRICE"
     """
     The string \"PRICE\". Used to identify a Price object when found in a stream.
     """
@@ -27,7 +27,7 @@ class ClientPrice(ApiObject):
     The Price's Instrument.
     """
 
-    time: Annotated[Time, TransportField(None, alias="timestamp")]
+    time: Annotated[Time, TransportField(..., alias="timestamp")]
     """
     The date/time when the Price was created
     """

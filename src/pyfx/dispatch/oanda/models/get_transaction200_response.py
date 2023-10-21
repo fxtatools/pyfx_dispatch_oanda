@@ -1,29 +1,21 @@
+"""GetTransaction200Response model definition for OANDA v20 REST API (3.0.25)"""
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
+from typing import Annotated
 
-
-from typing import Annotated, Optional
-
-
+from ..transport.transport_fields import TransportField
+from .response_mixins import LastTransactionResponse
 from .transaction import Transaction
 
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
 
-
-class GetTransaction200Response(ApiObject):
+class GetTransaction200Response(LastTransactionResponse):
     """
     GetTransaction200Response
     """
-    transaction: Annotated[Optional[Transaction], TransportField(None)]
+
+    transaction: Annotated[Transaction, TransportField(...)]
     """
     The details of the Transaction requested
     """
-    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
-    """
-    The ID of the most recent Transaction created for the Account
-    """
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("GetTransaction200Response",)

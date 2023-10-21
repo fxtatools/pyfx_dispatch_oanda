@@ -27,9 +27,9 @@ class GuaranteedStopLossOrderRequest(StopsRequestBase):
 
     distance: Annotated[Optional[PriceValue], TransportField(None)]
     """
-    Specifies the distance (in price units) from the Account’s current price
+    Specifies the distance (in price units) from the Account's current price
     to use as the Guaranteed Stop Loss Order price. If the Trade is short the
-    Instrument’s bid price is used, and for long Trades the ask is used.
+    Instrument's bid price is used, and for long Trades the ask is used.
     """
 
     time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]

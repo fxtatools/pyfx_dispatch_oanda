@@ -19,7 +19,7 @@ class GuaranteedStopLossDetails(ApiObject):
 
     distance: Annotated[Optional[PriceValue], TransportField(None)]
     """
-    Specifies the distance (in price units) from the Trade’s open price to
+    Specifies the distance (in price units) from the Trade's open price to
     use as the Guaranteed Stop Loss Order price. Only one of the distance and
     price fields may be specified.
     """

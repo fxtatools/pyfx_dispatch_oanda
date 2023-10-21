@@ -1,14 +1,13 @@
+"""CreateOrderRequest model definition for OANDA v20 REST API (3.0.25)"""
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
+from ..transport.data import AbstractApiObject
 
-from typing import Any, Optional
-
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
+from .order_type import OrderType
 
 
-class CreateOrderRequest(ApiObject):
+class CreateOrderRequest(AbstractApiObject, 
+                         designator_key="type",
+                         designator_type=OrderType):
     """
     CreateOrderRequest (abstract REST API class, fxTrade v20)
     
@@ -22,11 +21,11 @@ class CreateOrderRequest(ApiObject):
     - GuaranteedStopLossOrderRequest
     - TrailingStopLossOrderRequest
     """
-    ## dict is a diffiult type here
+
     # order: Optional[dict[str, Any]] = TransportField(None)
     # """
     # The base Order specification used when requesting that an Order be created. Each specific Order-type extends this definition.
     # """
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("CreateOrderRequest",)

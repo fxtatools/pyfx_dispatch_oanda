@@ -1,35 +1,28 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-
-
+"""GetAccountChanges200Response definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional
 
+from ..transport.transport_fields import TransportField
 
+from .response_mixins import LastTransactionResponse
 from .account_changes import AccountChanges
 from .account_changes_state import AccountChangesState
 
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
 
-
-
-class GetAccountChanges200Response(ApiObject):
+class GetAccountChanges200Response(LastTransactionResponse):
     """
     GetAccountChanges200Response
     """
-    changes: Annotated[Optional[AccountChanges], TransportField(None)]
-    """The changes to the Account’s Orders, Trades and Positions since the specified Transaction ID. Only provided if the sinceTransactionID is supplied to the poll request.
+
+    changes: Annotated[AccountChanges, TransportField(...)]
+    """The changes to the Account's Orders, Trades and Positions since the specified Transaction ID.
+
+    Only provided if the sinceTransactionID is supplied to the poll request.
     """
-    state: Annotated[Optional[AccountChangesState], TransportField(None)]
-    """The Account’s current price-dependent state.
-    """
-    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
-    """The ID of the last Transaction created for the Account.  This Transaction ID should be used for future poll requests, as the client has already observed all changes up to and including it.
+
+    state: Annotated[AccountChangesState, TransportField(...)]
+    """The Account's current price-dependent state.
     """
 
 
-__all__ = exporting(__name__, ...)
-
+__all__ = ("GetAccountChanges200Response",)

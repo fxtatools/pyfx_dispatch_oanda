@@ -1,4 +1,3 @@
-
 """Unit test definition for pyfx.dispatch.oanda"""
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.account import Account

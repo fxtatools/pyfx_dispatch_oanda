@@ -1,26 +1,20 @@
+"""ListAccounts200Response model definition for OANDA v20 REST API (3.0.25)"""
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-from typing import Annotated, Optional
-
-
-from .account_properties import AccountProperties
-from typing import Annotated, Optional
-
+from typing import Annotated
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
-from ..util import exporting
+from .account_properties import AccountProperties
 
 
 class ListAccounts200Response(ApiObject):
     """
     listAccounts200Response
     """
-    accounts: Annotated[Optional[list[AccountProperties]], TransportField(None)]
+    accounts: Annotated[list[AccountProperties], TransportField(...)]
     """
     The list of Accounts the client is authorized to access and their associated properties.
     """
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("ListAccounts200Response",)

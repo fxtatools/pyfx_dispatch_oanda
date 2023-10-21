@@ -1,4 +1,3 @@
-
 """AccountChanges model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional

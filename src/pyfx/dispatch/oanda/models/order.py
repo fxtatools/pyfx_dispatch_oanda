@@ -1,24 +1,20 @@
 
 """model definition for OANDA v20 REST API (3.0.25)"""
 
-from pandas import Timestamp
-
 from typing import Annotated, Optional
 
-from ..transport import AbstractApiObject, TransportField
+from ..transport.data import AbstractApiObject
+from ..transport.transport_fields import TransportField
 
-from .common_types import OrderId
+from .common_types import OrderId, Time
 from .client_extensions import ClientExtensions
 
 from .order_state import OrderState
-
 from .order_type import OrderType
 
-class Order(AbstractApiObject,
+class Order(AbstractApiObject, # type: ignore
             designator_key="type",
             designator_type=OrderType):
-
-
     """
     The base Order definition specifies the properties that are common to all Orders.
     """
@@ -28,12 +24,12 @@ class Order(AbstractApiObject,
     The Order's identifier, unique within the Order's Account.
     """
 
-    create_time: Annotated[Timestamp, TransportField(None, alias="createTime")]
+    create_time: Annotated[Time, TransportField(..., alias="createTime")]
     """
     The time when the Order was created.
     """
 
-    state: Annotated[Optional[OrderState], TransportField(None)]
+    state: Annotated[OrderState, TransportField(...)]
     """
     The current state of the Order.
     """

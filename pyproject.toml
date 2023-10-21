@@ -31,6 +31,9 @@ dependencies = [
     "python-dateutil >=2.8.2",
     "pyyaml",
     "typing_extensions",
+    "immutables >= 0.20",
+    "BTrees >= 5.1.0",
+    "ZODB >= 5.8.1",
 ]
 requires-python = ">= 3.11.0, < 3.12"
 
@@ -44,16 +47,23 @@ app-pyqt6 = ["pyfx.dispatch.oanda[app-common]", "PyQt6"]
 app-pyside2 = ["pyfx.dispatch.oanda[app-common]", "PySide2"]
 app-pyside6 = ["pyfx.dispatch.oanda[app-common]", "PySide6"]
 dev = [
+    "autopep8",
+    "black",
     "line_profiler",
     "pytest >= 7.2.1",
     "assertpy",
     "pytest-dependency",
     "flake8 >=4.0.0",
+    "Flake8-pyproject",
+    "ipython",
+    "jedi>=0.19.1",
     "polyfactory",
-    # attrs: implicit dependency for polyfactory (19.6.2)
+    # attrs: a dependency for polyfactory (19.6.2)
     "attrs",
-    "autopep8",
     "pip-tools",
+    "mypy",
+    "types-pytz",
+    "types-PyYAML",
 ]
 
 [tool.setuptools.packages.find]
@@ -66,3 +76,15 @@ testpaths = ["test"]
 
 [tool.pylint.'MESSAGES CONTROL']
 extension-pkg-whitelist = "pydantic"
+max_line_length = 127
+# ...
+disable = """
+    consider-using-dict-items,
+    wrong-import-order
+"""
+
+[tool.flake8]
+ignore = [
+    "E117","E127","E128","E203","E251","E252","E261",
+    "E262", "E266","W291","E302","E303","E402","E501"
+    ]

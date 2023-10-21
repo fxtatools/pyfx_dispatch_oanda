@@ -1,4 +1,3 @@
-
 """OrderFillTransaction model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Literal, Optional
@@ -77,7 +76,7 @@ class OrderFillTransaction(InstrumentTxn, OrderIdentifier):
 
     quote_pl: Annotated[Optional[FloatValue], TransportField(None, alias="quotePL")]
     """
-    The profit or loss incurred when the Order was filled, in the Instrument’s quote currency.
+    The profit or loss incurred when the Order was filled, in the Instrument's quote currency.
 
     supplemental to the fxTrade v20 API 3.0.25
     """
@@ -89,12 +88,12 @@ class OrderFillTransaction(InstrumentTxn, OrderIdentifier):
 
     base_financing: Annotated[Optional[FloatValue], TransportField(None, alias="baseFinancing")]
     """
-    The financing paid or collected when the Order was filled, in the Instrument’s base currency.
+    The financing paid or collected when the Order was filled, in the Instrument's base currency.
     """
 
     quote_financing: Annotated[Optional[FloatValue], TransportField(None, alias="quoteFinancing")]
     """
-    The financing paid or collected when the Order was filled, in the Instrument’s quote currency.
+    The financing paid or collected when the Order was filled, in the Instrument's quote currency.
     """
 
     commission: Annotated[Optional[AccountUnits], TransportField(None)]
@@ -111,7 +110,7 @@ class OrderFillTransaction(InstrumentTxn, OrderIdentifier):
     """
     The total guaranteed execution fees charged for all Trades opened, closed
     or reduced with guaranteed Stop Loss Orders, expressed in the
-    Instrument’s quote currency.
+    Instrument's quote currency.
 
     supplemental to the fxTrade v20 API 3.0.25
     """

@@ -2,7 +2,6 @@
 """Unit test definition for pyfx.dispatch.oanda"""
 
 
-import pyfx.dispatch.oanda
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.create_order400_response import CreateOrder400Response
 

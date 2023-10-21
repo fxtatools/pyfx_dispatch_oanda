@@ -1,11 +1,11 @@
 # pyfx.dispatch.oanda.models
 
-from collections.abc import Mapping, Sequence
-from types import MappingProxyType
+from collections.abc import Mapping
+from immutables.map import Map
 
 from ..util.naming import exporting
 
-__all__ = []
+__all__ = [] # type: ignore
 
 from . import accept_datetime_format  # noqa: E402
 __all__.extend(exporting(accept_datetime_format, ...))
@@ -275,9 +275,21 @@ from . import guaranteed_stop_loss_order_parameters  # noqa: E402
 __all__.extend(exporting(guaranteed_stop_loss_order_parameters, ...))
 from .guaranteed_stop_loss_order_parameters import *  # noqa: F403, E402
 
+from . import guaranteed_stop_loss_order_reason  # noqa: E402
+__all__.extend(exporting(guaranteed_stop_loss_order_reason, ...))
+from .guaranteed_stop_loss_order_reason import *  # noqa: F403, E402
+
 from . import guaranteed_stop_loss_order_request  # noqa: E402
 __all__.extend(exporting(guaranteed_stop_loss_order_request, ...))
 from .guaranteed_stop_loss_order_request import *  # noqa: F403, E402
+
+from . import guaranteed_stop_loss_order_transaction  # noqa: E402
+__all__.extend(exporting(guaranteed_stop_loss_order_transaction, ...))
+from .guaranteed_stop_loss_order_transaction import *  # noqa: F403, E402
+
+from . import guaranteed_stop_loss_order_reject_transaction  # noqa: E402
+__all__.extend(exporting(guaranteed_stop_loss_order_reject_transaction, ...))
+from .guaranteed_stop_loss_order_reject_transaction import *  # noqa: F403, E402
 
 from . import guaranteed_stop_loss_order_entry_data  # noqa: E402
 __all__.extend(exporting(guaranteed_stop_loss_order_entry_data, ...))
@@ -894,13 +906,40 @@ __all__.extend(exporting(transaction_mixins, ...))
 from .transaction_mixins import *  # noqa: F403, E402
 
 
-##
-## additional mappings
-##
+#
+# Bindings for concrete implementations of abstract responsde model classes
+#
 
-from ..transport import ApiObject
+from ..transport.data import ApiObject
 
-ORDER_TYPE_MAP: Mapping[OrderType, type[ApiObject]] = MappingProxyType({
+from .order_type import OrderType
+
+from .create_order_request import CreateOrderRequest
+
+
+#
+# CreateOrderRequest - bind implementing classes
+#
+
+ORDER_REQUEST_TYPES_MAP: Mapping[OrderType, type[ApiObject]] = Map({ # type: ignore
+    OrderType.MARKET: MarketOrderRequest,
+    OrderType.LIMIT: LimitOrderRequest,
+    OrderType.STOP: StopOrderRequest,
+    OrderType.MARKET_IF_TOUCHED: MarketIfTouchedOrderRequest,
+    OrderType.TAKE_PROFIT: TakeProfitOrderRequest,
+    OrderType.STOP_LOSS: StopLossOrderRequest,
+    OrderType.GUARANTEED_STOP_LOSS: GuaranteedStopLossOrderRequest,
+    OrderType.TRAILING_STOP_LOSS: TrailingStopLossOrderRequest
+})
+CreateOrderRequest.bind_types(ORDER_REQUEST_TYPES_MAP)  # type: ignore
+
+#
+# Order - bind implementing classes
+#
+
+from .order import Order
+
+ORDER_TYPE_MAP: Mapping[OrderType, type[ApiObject]] = Map({ # type: ignore
     OrderType.MARKET: MarketOrder,
     OrderType.LIMIT: LimitOrder,
     OrderType.STOP: StopOrder,
@@ -917,27 +956,23 @@ Mapping of supported order classes and fixed order type values,
 for order placement with the fxTrade v20 API
 """
 
-Order.bind_types(ORDER_TYPE_MAP)
+Order.bind_types(ORDER_TYPE_MAP)  # type: ignore
 
-REQUEST_TYPES_MAP: Mapping[OrderType, type[ApiObject]] = MappingProxyType({
-    OrderType.MARKET: MarketOrderRequest,
-    OrderType.LIMIT: LimitOrderRequest,
-    OrderType.STOP: StopOrderRequest,
-    OrderType.MARKET_IF_TOUCHED: MarketIfTouchedOrderRequest,
-    OrderType.TAKE_PROFIT: TakeProfitOrderRequest,
-    OrderType.STOP_LOSS: StopLossOrderRequest,
-    OrderType.GUARANTEED_STOP_LOSS: GuaranteedStopLossOrderRequest,
-    OrderType.TRAILING_STOP_LOSS: TrailingStopLossOrderRequest
-})
+#
+# Transaction - bind implementing classes
+#
 
-RequestBase.bind_types(REQUEST_TYPES_MAP)
+from .transaction_type import TransactionType
+from .transaction import Transaction
 
-TRANSACTION_TYPES_MAP = MappingProxyType({
+TRANSACTION_TYPES_MAP: Mapping[TransactionType, type[ApiObject]] = Map({  # type: ignore
     TransactionType.CREATE: CreateTransaction,
     TransactionType.CLOSE: CloseTransaction,
     TransactionType.REOPEN: ReopenTransaction,
     TransactionType.CLIENT_CONFIGURE: ClientConfigureTransaction,
     TransactionType.CLIENT_CONFIGURE_REJECT: ClientConfigureRejectTransaction,
+    TransactionType.GUARANTEED_STOP_LOSS_ORDER: GuaranteedStopLossOrderTransaction,
+    TransactionType.GUARANTEED_STOP_LOSS_ORDER_REJECT: GuaranteedStopLossOrderRejectTransaction,
     TransactionType.TRANSFER_FUNDS: TransferFundsTransaction,
     TransactionType.TRANSFER_FUNDS_REJECT: TransferFundsRejectTransaction,
     TransactionType.MARKET_ORDER: MarketOrderTransaction,
@@ -972,4 +1007,5 @@ TRANSACTION_TYPES_MAP = MappingProxyType({
 
 Transaction.bind_types(TRANSACTION_TYPES_MAP)
 
-__all__ = tuple(__all__)
+
+__all__ = tuple(__all__)  # type: ignore

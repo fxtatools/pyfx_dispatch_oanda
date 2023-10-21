@@ -1,13 +1,6 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
+"""OrderCancelReason definition for OANDA v20 REST API (3.0.25)"""
 
 from enum import Enum
-
-
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
 
 
 class OrderCancelReason(str, Enum):
@@ -15,9 +8,6 @@ class OrderCancelReason(str, Enum):
     The reason that an Order was cancelled.
     """
 
-    """
-    allowed enum values
-    """
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR'
     ACCOUNT_LOCKED = 'ACCOUNT_LOCKED'
     ACCOUNT_NEW_POSITIONS_LOCKED = 'ACCOUNT_NEW_POSITIONS_LOCKED'
@@ -67,4 +57,4 @@ class OrderCancelReason(str, Enum):
     STOP_LOSS_ON_FILL_GUARANTEED_ASK_HALTED = 'STOP_LOSS_ON_FILL_GUARANTEED_ASK_HALTED'
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("OrderCancelReason",)

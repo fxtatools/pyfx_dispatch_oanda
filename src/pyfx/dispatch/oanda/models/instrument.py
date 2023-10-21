@@ -101,12 +101,12 @@ class Instrument(ApiObject):
 
     guaranteed_stop_loss_order_execution_premium: Annotated[Optional[PriceValue], TransportField(None, alias="guaranteedStopLossOrderExecutionPremium")]
     """
-    The amount that is charged to the account if a guaranteed Stop Loss Order is triggered and filled. The value is in price units and is charged for each unit of the Trade. This field will only be present if the Account’s guaranteedStopLossOrderMode for this Instrument is not ‘DISABLED’.
+    The amount that is charged to the account if a guaranteed Stop Loss Order is triggered and filled. The value is in price units and is charged for each unit of the Trade. This field will only be present if the Account's guaranteedStopLossOrderMode for this Instrument is not 'DISABLED'.
     """
 
     guaranteed_stop_loss_order_level_restriction: Annotated[Optional[GuaranteedStopLossOrderLevelRestriction], TransportField(None, alias="guaranteedStopLossOrderLevelRestriction")]
     """
-    The guaranteed Stop Loss Order level restriction for this instrument. This field will only be present if the Account’s guaranteedStopLossOrderMode for this Instrument is not ‘DISABLED’.
+    The guaranteed Stop Loss Order level restriction for this instrument. This field will only be present if the Account's guaranteedStopLossOrderMode for this Instrument is not 'DISABLED'.
     """
 
     financing: Annotated[Optional[InstrumentFinancing], TransportField(None)]

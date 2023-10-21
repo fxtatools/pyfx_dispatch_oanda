@@ -1,30 +1,21 @@
-
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
+"""ListOpenTrades200Response model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional
 
-
+from ..transport.transport_fields import TransportField
+from .response_mixins import LastTransactionResponse
 from .trade import Trade
 
 
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from ..util import exporting
-
-
-class ListOpenTrades200Response(ApiObject):
+class ListOpenTrades200Response(LastTransactionResponse):
     """
     listOpenTrades200Response
     """
+
     trades: Annotated[Optional[list[Trade]], TransportField(None)]
     """
     The Account's list of open Trades
     """
-    last_transaction_id: Annotated[Optional[str], TransportField(None, alias="lastTransactionID")]
-    """
-    The ID of the most recent Transaction created for the Account
-    """
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("ListOpenTrades200Response",)

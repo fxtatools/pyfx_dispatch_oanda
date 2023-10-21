@@ -1,6 +1,6 @@
 """MT4TransactionHeartbeat model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Annotated, Optional
+from typing import Annotated, Literal
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
@@ -11,15 +11,19 @@ class MT4TransactionHeartbeat(ApiObject):
     """
     A TransactionHeartbeat object is injected into the Transaction stream to ensure that the HTTP connection remains active.
 
-    This class was defined in the v20 REST API 3.0.25. In its present release, the documentation for the fxTrade API does not describe any usage for this class.
+    [**Deprecated**]
+
+    This class was produced from definitions in the fxTrade v20 API 3.0.25.
+
+    In its present release, the documentation for the fxTrade API does not describe any usage for this class.
     """
 
-    type: Annotated[Optional[str], TransportField(None)]
+    type: Annotated[Literal["HEARTBEAT"], TransportField(None)] = "HEARTBEAT"
     """
     The string \"HEARTBEAT\"
     """
 
-    time: Annotated[Time, TransportField(None)]
+    time: Annotated[Time, TransportField(...)]
     """
     The date/time when the TransactionHeartbeat was created.
     """

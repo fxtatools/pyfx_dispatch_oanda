@@ -1,4 +1,3 @@
-
 """Trade model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional
@@ -34,7 +33,7 @@ class Trade(ApiObject):
     The execution price of the Trade.
     """
 
-    open_time: Annotated[Time, TransportField(None, alias="openTime")]
+    open_time: Annotated[Time, TransportField(..., alias="openTime")]
     """
     The date/time when the Trade was opened.
     """
@@ -89,7 +88,7 @@ class Trade(ApiObject):
     The financing paid/collected for this Trade.
     """
 
-    close_time: Annotated[Time, TransportField(None, alias="closeTime")]
+    close_time: Annotated[Optional[Time], TransportField(None, alias="closeTime")]
     """
     The date/time when the Trade was fully closed. Only provided for Trades whose state is CLOSED.
     """
@@ -101,17 +100,17 @@ class Trade(ApiObject):
 
     take_profit_order: Annotated[Optional[TakeProfitOrder], TransportField(None, alias="takeProfitOrder")]
     """
-    Full representation of the Trade’s Take Profit Order, only provided if such an Order exists.
+    Full representation of the Trade's Take Profit Order, only provided if such an Order exists.
     """
 
     stop_loss_order: Annotated[Optional[StopLossOrder], TransportField(None, alias="stopLossOrder")]
     """
-    Full representation of the Trade’s Stop Loss Order, only provided if such an Order exists.
+    Full representation of the Trade's Stop Loss Order, only provided if such an Order exists.
     """
 
     trailing_stop_loss_order: Annotated[Optional[TrailingStopLossOrder], TransportField(None, alias="trailingStopLossOrder")]
     """
-    Full representation of the Trade’s Trailing Stop Loss Order, only provided if such an Order exists.
+    Full representation of the Trade's Trailing Stop Loss Order, only provided if such an Order exists.
     """
 
 

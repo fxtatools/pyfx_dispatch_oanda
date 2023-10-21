@@ -1,22 +1,18 @@
+"""InstrumentsInstrumentPositionBookGet200Response model definition for OANDA v20 REST API (3.0.25)"""
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
-
-
-from typing import Annotated, Optional
-
+from typing import Annotated
 
 from .position_book import PositionBook
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
-from ..util import exporting
 
 
 class InstrumentsInstrumentPositionBookGet200Response(ApiObject):
     """
     InstrumentsInstrumentPositionBookGet200Response
     """
-    position_book: Annotated[Optional[PositionBook], TransportField(None, alias="positionBook")]
+    position_book: Annotated[PositionBook, TransportField(..., alias="positionBook")]
 
 
-__all__ = exporting(__name__, ...)
+__all__ = ("InstrumentsInstrumentPositionBookGet200Response",)

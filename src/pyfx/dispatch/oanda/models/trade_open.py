@@ -58,7 +58,7 @@ class TradeOpen(ApiObject):
 
     quote_guaranteed_execution_fee: Annotated[Optional[FloatValue], TransportField(None, alias="quoteGuaranteedExecutionFee")]
     """
-    This is the fee charged for opening the trade if it has a guaranteed Stop Loss Order attached to it, expressed in the Instrument’s quote currency.
+    This is the fee charged for opening the trade if it has a guaranteed Stop Loss Order attached to it, expressed in the Instrument's quote currency.
 
     supplemental to v20 API 3.0.25
     """

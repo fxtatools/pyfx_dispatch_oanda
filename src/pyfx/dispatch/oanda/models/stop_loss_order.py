@@ -49,4 +49,13 @@ class StopLossOrder(LimitOrderMixin, TradeIdMixin, ReplacesOrderMixin):
     The premium that will be charged if the Stop Loss Order is guaranteed and the Order is filled at the guaranteed price. It is in price units and is charged for each unit of the Trade.
     """
 
+
+    trigger_mode: Annotated[Optional[str], TransportField(None, alias="triggerMode")]
+    """
+    This field is supplemental to the fxTrade v20 API 3.0.25.
+    Value type has been inferred from server response.
+
+    Known values: `"TOP_OF_BOOK"`
+    """
+
 __all__ = ("StopLossOrder",)

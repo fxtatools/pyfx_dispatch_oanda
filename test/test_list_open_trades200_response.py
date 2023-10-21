@@ -1,4 +1,3 @@
-
 """Unit test definition for pyfx.dispatch.oanda"""
 
 
