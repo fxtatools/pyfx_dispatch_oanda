@@ -60,7 +60,8 @@ test: tests
 ${PYVENV_DIR}/pyvenv.cfg:
 	if ! [ -e "${PYVENV_DIR}" ]; then \
 		${PYTHON} ${PROJECT_PY} ensure_env ${PYVENV_DIR}; \
-		${PYVENV_BINDIR}/pip ${PIP_ARGS} install --upgrade pip wheel; \
+		test -e ${PYVENV_DIR}; \
+		${PYVENV_BINDIR}/python -m pip ${PIP_ARGS} install --upgrade pip wheel; \
 	fi
 
 ${PYVENV_BINDIR}/pip-compile: ${PYVENV_DIR}/pyvenv.cfg

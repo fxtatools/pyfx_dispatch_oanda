@@ -54,6 +54,7 @@ import io
 import os
 import re
 import shlex
+import shutil
 from subprocess import Popen
 import platform
 import sys
@@ -192,7 +193,7 @@ def ensure_env(options: ap.Namespace) -> int:
                     return rc
             pip_install_opts = options.pip_install_opts
             tmp_scripts_dir = guess_env_scripts_dir(tmpenv_dir)
-            pip_cmd = os.path.join(tmp_scripts_dir, "pip")
+            pip_cmd = shutil.which("pip", path=tmp_scripts_dir)
             # notify("using pip %s", pip_cmd)
             rc = 11
             notify("Installing virtualenv in bootstrap venv")
@@ -223,7 +224,7 @@ def ensure_env(options: ap.Namespace) -> int:
                 return rc
             ## running vitualenv to initialize the project environment
             env_dir = options.env_dir
-            virtualenv_cmd = os.path.join(tmpenv_dir, tmp_scripts_dir, "virtualenv")
+            virtualenv_cmd = shutil.which("virtualenv", path=tmp_scripts_dir)
             virtualenv_opts = options.virtualenv_opts
             notify("Creating primary virtual environment in %s", env_dir)
             virtualenv_argv = [virtualenv_cmd, *virtualenv_opts, env_dir]
