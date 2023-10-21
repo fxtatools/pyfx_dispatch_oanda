@@ -1,3 +1,5 @@
+"""arg parser support"""
+
 import argparse as ap
 import re
 from contextlib import contextmanager

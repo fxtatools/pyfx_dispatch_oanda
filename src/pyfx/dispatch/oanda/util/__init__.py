@@ -2,7 +2,11 @@
 
 from .naming import exporting
 
-__all__ = []
+__all__ = []  # type: ignore
+
+from . import args  #  noqa: E402
+__all__.extend(exporting(args, ...))
+from .args import *  #  noqa: F403, E402
 
 from . import log  #  noqa: E402
 __all__.extend(exporting(log, ...))
