@@ -194,6 +194,12 @@ def ensure_env(options: ap.Namespace) -> int:
             pip_install_opts = options.pip_install_opts
             tmp_scripts_dir = guess_env_scripts_dir(tmpenv_dir)
             pip_cmd = shutil.which("pip", path=tmp_scripts_dir)
+            if not pip_cmd:
+                # bracing for process/path peculiarities on windows platforms
+
+                notify("pip command not found in bootstrap scripts dir %s", tmp_scripts_dir)
+                return 1
+
             # notify("using pip %s", pip_cmd)
             rc = 11
             notify("Installing virtualenv in bootstrap venv")
@@ -225,6 +231,9 @@ def ensure_env(options: ap.Namespace) -> int:
             ## running vitualenv to initialize the project environment
             env_dir = options.env_dir
             virtualenv_cmd = shutil.which("virtualenv", path=tmp_scripts_dir)
+            if not virtualenv_cmd:
+                notify("virtualenv command not found in bootstrap scripts dir %s", tmp_scripts_dir)
+                return 1
             virtualenv_opts = options.virtualenv_opts
             notify("Creating primary virtual environment in %s", env_dir)
             virtualenv_argv = [virtualenv_cmd, *virtualenv_opts, env_dir]
