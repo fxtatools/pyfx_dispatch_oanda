@@ -14,7 +14,7 @@ endif
 ifndef PYTHON
 PYTHON:=		$(shell if python3 --version 1>/dev/null 2>/dev/null; then echo python3; else echo python; fi)
 endif
-PYVENV_DIR?=		env
+PYVENV_DIR?=		${CURDIR}/env
 REQUIREMENTS_IN?=	requirements.in
 REQUIREMENTS_TXT?=	requirements.txt
 REQUIREMENTS_DEPS?=	pyproject.toml ${REQUIREMENTS_IN} $(wildcard requirements.local)
