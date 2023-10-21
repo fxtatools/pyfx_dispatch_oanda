@@ -36,7 +36,7 @@ dependencies = [
     "typing_extensions",
     "immutables >= 0.20",
     "BTrees >= 5.1.0",
-    "uvloop, platform_system != 'Windows'",
+    "uvloop; platform_system != 'Windows'",
     "ZODB >= 5.8.1",
     "zope.password",
 ]
