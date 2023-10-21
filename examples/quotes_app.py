@@ -18,6 +18,7 @@ from pyfx.dispatch.oanda.api.price_component import PriceComponent
 
 from contextlib import contextmanager
 import logging
+import platform
 import os
 from pyfx.dispatch.oanda.api.default_api import ApiController
 import pyfx.dispatch.oanda.util.log as log
@@ -211,6 +212,10 @@ if __name__ == "__main__":
 
     logger.info("Initialzing application")
 
+    if platform.system != "Windows":
+        print("Installing uvloop")
+        import uvloop
+        uvloop.install() # type: ignore[attr-defined]
     with ExampleController.from_args(sys.argv, loop = False).run_context() as controller:
         # set a custom datetime format, used in the example
         controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"

@@ -1,6 +1,7 @@
 """Asynchronous Console I/O Support with aioconsole"""
 
 import aioconsole
+import atexit
 import asyncio as aio
 from contextlib import asynccontextmanager
 import os
@@ -96,7 +97,7 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
     stdin = sys.stdin
     stdin_fd = os.dup(stdin.fileno())
     try:
-        aio_loop = loop if loop else aio.get_running_loop()
+        aio_loop = loop or aio.get_running_loop()
         s_in, s_out, s_err = await aioconsole.stream.create_standard_streams(sys.stdin, sys.stdout, sys.stderr, loop=aio_loop)
         pipe = ConsoleIO(loop, s_in, s_out, s_err)
         sys.stderr = pipe.stderr_writer
@@ -118,8 +119,14 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
         # properties of the original streams
         #
         sys.stdout = open(stdout_fd, encoding=stdout.encoding, mode=stdout.mode)
-        sys.stderr = open(stderr_fd, encoding=stdout.encoding, mode=stderr.mode) if stderr_fd else sys.stdout
+        atexit.register(sys.stdout.close)
+        if stderr_fd:
+            sys.stderr = open(stderr_fd, encoding=stdout.encoding, mode=stderr.mode)
+            atexit.register(sys.stderr.close)
+        else:
+            sys.stderr = sys.stdout
         sys.stdin = open(stdout_fd, encoding=stdout.encoding, mode=stdin.mode)
+        atexit.register(sys.stdin.close)
         if pipe:
             try:
                 await pipe.aclose()

@@ -278,7 +278,7 @@ class ExecController(ABC):
         if not hasattr(self, "task_group"):
             self.task_group = aio.TaskGroup()
         if not hasattr(self, "exit_future"):
-            self.exit_future = aio.Future()
+            self.exit_future = self.main_loop.create_future()
         if not hasattr(self, "logger"):
             self.logger = logger
 
@@ -423,7 +423,8 @@ class ExecController(ABC):
         the default implementation of `ExecController.run_trampoline()`
         """
         try:
-            await self.exit_future
+            async with self.exit_future:
+                pass
         except:  # nosec B110
             pass
 
