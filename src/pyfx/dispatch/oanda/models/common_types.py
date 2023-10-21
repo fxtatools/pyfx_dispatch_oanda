@@ -35,6 +35,19 @@ class AccountId(Credential, metaclass=TransportCredential):
     Runtime encoding: Credential
     """
 
+    @classmethod
+    def create_deferred(cls) -> "AccountId":
+        return cls('')
+
+    def deferred(self) -> bool:
+        return self._secret_value == '' if hasattr(self, "_secret_value") else True
+
+    def __repr__(self) -> str:
+        if self.deferred():
+            return super().__repr__()
+        else:
+            return self.__class__.__name__ + "(<deferred>)"
+
 
 class InstrumentName(str, metaclass=TransportStr):  # type: ignore
     """
