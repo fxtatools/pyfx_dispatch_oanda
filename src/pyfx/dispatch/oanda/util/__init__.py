@@ -28,5 +28,8 @@ from . import typeref  # noqa: E402
 __all__.extend(exporting(typeref, ...))
 from .typeref import *  # noqa: F403, E402
 
+from . import dist  # noqa: E402
+__all__.extend(exporting(dist, ...))
+from .dist import *  # noqa: F403, E402
 
 __all__ = tuple(__all__)  # type: ignore

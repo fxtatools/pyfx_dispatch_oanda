@@ -18,7 +18,7 @@ classifiers = [
     "Private :: Do not Upload",
 ]
 dependencies = [
-    "aenum >=3.1.11",
+    "aenum >= 3.1.11",
     "aioconsole",
     "certifi",
     "httpcore[http2]",
@@ -28,7 +28,7 @@ dependencies = [
     "isocodes",
     "numpy",
     "pandas",
-    "prompt_toolkit>=3.0.0",
+    "prompt_toolkit >= 3.0.0",
     "pydantic >2, <3",
     "python-dateutil >= 2.8.2",
     "pyyaml",
@@ -37,6 +37,7 @@ dependencies = [
     "immutables >= 0.20",
     "BTrees >= 5.1.0",
     "ZODB >= 5.8.1",
+    "zope.password",
 ]
 requires-python = ">= 3.11.0, < 3.12"
 
