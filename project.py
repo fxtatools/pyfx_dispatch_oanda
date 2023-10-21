@@ -138,11 +138,14 @@ def guess_env_scripts_dir(env_dir: str) -> str:
     ## in character case, on operating systems utilizing a case-folding
     ## syntax in filesystem pathnames
     ##
-    if platform.system == "Windows":
+    if platform.system() == "Windows":
         ## referenced onto venv ___init__.py, Python 3.9
-        return os.path.join(env_dir, "Scripts")
-    else:
-        return os.path.join(env_dir, "bin")
+        scripts_dir = os.path.join(env_dir, "Scripts")
+        if os.path.exists(scripts_dir):
+            return scripts_dir
+    bin_dir = os.path.join(env_dir, "bin")
+    if os.path.exists(bin_dir):
+        return bin_dir
 
 
 def ensure_env(options: ap.Namespace) -> int:
@@ -195,8 +198,6 @@ def ensure_env(options: ap.Namespace) -> int:
             tmp_scripts_dir = guess_env_scripts_dir(tmpenv_dir)
             pip_cmd = shutil.which("pip", path=tmp_scripts_dir)
             if not pip_cmd:
-                # bracing for process/path peculiarities on windows platforms
-
                 notify("pip command not found in bootstrap scripts dir %s", tmp_scripts_dir)
                 return 1
 
