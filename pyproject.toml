@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "aenum >= 3.1.11",
+    "appdirs",
     "aioconsole",
     "certifi",
     "httpcore[http2]",
