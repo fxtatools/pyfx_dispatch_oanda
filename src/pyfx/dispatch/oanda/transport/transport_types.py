@@ -2,13 +2,14 @@
 
 from enum import Enum
 from json import JSONEncoder
+from datetime import datetime
 from numbers import Real
 import numpy as np
 import pandas as pd
 from pydantic import SecretStr
 
 from types import NoneType
-from typing import Union
+from typing import Literal, Optional, Union
 from typing_extensions import ClassVar, Generic, TypeVar
 
 from .transport_base import TransportType, To
@@ -16,7 +17,7 @@ from .transport_base import TransportType, To
 from ..util.naming import exporting
 
 
-class TransportNone(TransportType[NoneType, NoneType]):
+class TransportNone(TransportType[None, None]):
 
     # this assumes a convention of parsing JSON null as None,
     # conversely encoding None as JSON null within the input
@@ -24,11 +25,11 @@ class TransportNone(TransportType[NoneType, NoneType]):
     # internally and for the intemediate representaion
 
     @classmethod
-    def parse(cls, unparsed: NoneType) -> NoneType:
+    def parse(cls, unparsed: None) -> None:
         return unparsed
 
     @classmethod
-    def unparse(cls, value: NoneType, encoder: JSONEncoder) -> NoneType:
+    def unparse(cls, value: None, encoder: JSONEncoder) -> None:
         return value
 
 
@@ -38,7 +39,7 @@ class TransportBool(TransportType[bool, str]):
 
     @classmethod
     def unparse(cls, value: bool,
-                encoder: JSONEncoder) -> str:
+                encoder: Optional[JSONEncoder] = None) -> str:
         if value is True:
             return cls.literal_true
         elif value is False:
@@ -59,14 +60,24 @@ class TransportBool(TransportType[bool, str]):
 
 
 class TransportFloatStr(TransportType[np.double, str]):
-    ## the v20 fxTrade API uses a quoted string encoding for decimal values,
-    ## rather than an unquoted JSON float encoding, throughout the API.
+    ## Caveats:
+    ## - the fxTrade v20 API uses a quoted string encoding for non-integer
+    ##   decimal values (no JSON float encoding)
+    ## - NaN values are not supported in the fxTrade v20 API. Although supported
+    ##   for internal storage and accepted by the parse() method here, NaN values
+    ##   should not be serialized
     @classmethod
-    def parse(cls, value: Union[str, Real]) -> float:
-        return np.double(value)
+    def parse(cls, value: Union[str, Real]) -> np.double:
+        if isinstance(value, np.double):
+            return value
+        else:
+            return np.double(value)
 
     @classmethod
-    def unparse(cls, value: np.double, encoder: JSONEncoder) -> str:
+    def unparse(cls, value: np.double, encoder: Optional[JSONEncoder] = None) -> str:
+        if __debug__:
+            if value == np.nan:
+                raise AssertionError("Not serializable for transport", value)
         return str(value)
 
 
@@ -75,7 +86,7 @@ class TransportInt(TransportType[int, int]):
     ## without quoting on the transport values
     @classmethod
     def unparse(cls, value: int,
-                encoder: JSONEncoder) -> int:
+                encoder: Optional[JSONEncoder] = None) -> int:
         return value
 
     @classmethod
@@ -88,7 +99,7 @@ class TransportIntStr(TransportType[int, str]):
     ## e.g TradeID
     @classmethod
     def unparse(cls, value: int,
-                encoder: JSONEncoder) -> str:
+                encoder: Optional[JSONEncoder] = None) -> str:
         return str(value)
 
     @classmethod
@@ -99,7 +110,7 @@ class TransportIntStr(TransportType[int, str]):
 class TransportStr(TransportType[str, str]):
     @classmethod
     def unparse(cls, value: str,
-                encoder: JSONEncoder) -> str:
+                encoder: Optional[JSONEncoder] = None) -> str:
         return value
 
     @classmethod
@@ -110,7 +121,7 @@ class TransportStr(TransportType[str, str]):
 class TransportSecretStr(TransportType[SecretStr, str]):
     @classmethod
     def unparse(cls, value: SecretStr,
-                encoder: JSONEncoder) -> str:
+                encoder: Optional[JSONEncoder] = None) -> str:
         return value.get_secret_value()
 
     @classmethod
@@ -118,26 +129,62 @@ class TransportSecretStr(TransportType[SecretStr, str]):
         return SecretStr(value)
 
 
-class TransportTimestamp(TransportType[pd.Timestamp, str]):
-    @classmethod
-    def unparse(cls, value: pd.Timestamp,
-                encoder: JSONEncoder) -> str:
-        return value.isoformat()
+class TransportTimestamp(TransportType[datetime, str]):
+    """Nullable datetime transport type
+
+    Storage Type: Union[pd.Timestamp, Literal[pd.NaT]]
+    Storage Class: datetime.datetime
+    Transport Value Class: str
+    """
+
+    ## case study: GetAccountSummary200Response => AccountSummary => resettable_pl_time
+    ## - transmitted sometimes as "0".
+    ## - when present in the response, the resettable_pl_time must be parsed nonetheless
+    ## - when parsed as a timestamp string, the usage of "0" may lead to unexpected data
+    ##   in deserialization
+    ##
+
+    storage_class = pd.Timestamp
 
     @classmethod
-    def parse(cls, dtstr: str) -> pd.Timestamp:
-        try:
-            ## assumption: ISO format
-            return pd.to_datetime(dtstr, unit='ns')
-        except:
-            ## assumption: Epoch format
-            return pd.to_datetime(float(dtstr), unit='s')
+    def unparse(cls, value: datetime,
+                encoder: Optional[JSONEncoder] = None) -> str:
+        if value == pd.NaT:
+            return "0"
+        else:
+            return value.isoformat()
 
+    @classmethod
+    def parse(cls, dt: Union[str, datetime]) -> datetime:
+        if isinstance(dt, pd.Timestamp):
+            return dt
+        elif isinstance(dt, datetime):
+            return pd.to_datetime(dt)
+        else:
+            if __debug__:
+                if not isinstance(dt, str):
+                    raise AssertionError("Not a string", dt)
+            dtlen = len(dt)
+            if dtlen is int(1):
+                if __debug__:
+                    if dt != "0":
+                        raise AssertionError("Unrecognized value", dt)
+                return pd.NaT
+            else:
+                try:
+                    ## assumption: ISO format
+                    return pd.to_datetime(dt, unit='ns')
+                except:
+                    ## assumption: Epoch format
+                    try:
+                        return pd.to_datetime(float(dt), unit='s')
+                    except:
+                        return pd.NaT
 
 Tenum = TypeVar("Tenum", bound=Enum)
 
 
-class TransportEnum(TransportType[Tenum, To], Generic[Tenum, To]):
+class TransportEnum(TransportType[Tenum, To]):
 
     @classmethod
     def parse(cls, serialized: To) -> Union[Tenum, To]:  # type: ignore
@@ -150,7 +197,7 @@ class TransportEnum(TransportType[Tenum, To], Generic[Tenum, To]):
 
     @classmethod
     def unparse(cls, venum: Tenum,
-                encoder: JSONEncoder) -> To:
+                encoder: Optional[JSONEncoder] = None) -> To:
         return venum.value
 
 

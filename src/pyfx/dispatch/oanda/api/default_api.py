@@ -1,24 +1,25 @@
 # DefaultApi definition, based on code generated with OpenAPI Generator
 
 from contextlib import asynccontextmanager
-from ..exec_controller import ExecController
-from ..transport.data import ApiObject
 from types import CoroutineType, FunctionType
 from typing import Literal
 import asyncio as aio
-from enum import StrEnum
 from datetime import datetime
-from dataclasses import dataclass
-from typing import Any, AsyncIterator, AsyncGenerator, Awaitable
+from typing import (
+    Any, AsyncIterator, AsyncGenerator, Awaitable,
+    Callable, Optional, Union, Mapping, Sequence
+)
 
-from typing import Awaitable, Callable, Optional, Union, Mapping, Sequence
 from typing_extensions import Annotated
 
 from pydantic import Field
 
 from ..util import exporting
-from ..transport import ApiObject
+from ..exec_controller import ExecController
+from ..transport.data import ApiObject
 from .. import models
+from ..models.response_mixins import ErrorResponse
+
 from ..models import (
     AccountId,
     InstrumentName,
@@ -63,8 +64,11 @@ from ..models import (
     SetTradeClientExtensionsRequest,
     SetTradeDependentOrders200Response,
     SetTradeDependentOrdersRequest,
-    StreamPricing200Response,
-    StreamTransactions200Response)
+    StreamTransactions200Response,
+    DayOfWeek
+    ) # type: ignore
+
+from ..models.common_types import Time
 
 
 from ..api_client import ApiClient
@@ -72,6 +76,7 @@ from ..request_constants import RequestMethod
 from ..response_common import ResponseInfo
 from ..parser import ModelBuilder
 
+from .price_component import PriceComponent, ensure_price_component, PriceComponentExpr
 
 def validate_request(func: Callable):
     ## conditional dispatch for enabling validation in
@@ -88,19 +93,10 @@ def validate_request(func: Callable):
 ## additional base types, constants
 ##
 
-
-class PriceComponent(StrEnum):
-    ## enum for candlestick requests.
-    Ask = "A"  # ask price
-    Bid = "B"  # bid price
-    Median = "M"  # median of ask and bid
-
-
 DT_ORDINAL_ONE: datetime = datetime.fromordinal(1)
 
 
-@dataclass(eq=False, order=False)
-class DispatchController(ExecController):
+class ApiController(ExecController):
     """
     API integration for ExecController
 
@@ -113,9 +109,9 @@ class DispatchController(ExecController):
 
     Given a subclass implementing `run_async()`,
     the subclass can be used with the ExecController
-    `run_context()` context manager, as illustrated
-    in the `ExecController.run_context()` documentation
-    string.
+    `run_context()` context manager. A brief illustration
+    is provided in the documentation string for
+    `ExecController.run_context()`
 
     Example are provided in `quotes_app.py` and
     `quotes_async.py` within the `examples`
@@ -132,13 +128,13 @@ class DispatchController(ExecController):
 
         ## Usage
 
-        It's assumed that the configuration property will have been
+        It's assumed that the `configuration` property will have been
         set, before this method is called.
 
         The generalized constructor `from_config_ini()` will provide
         a configuration object to the initialized controller.
 
-        This configuration object is required for normal API client
+        This `configuration` object is required for normal API client
         initialization.
         """
         super().initialize_defaults()
@@ -149,7 +145,7 @@ class DispatchController(ExecController):
         """
         Close this controller
 
-        close() will close the REST client for this controller,
+        `close()` will close the REST client for this controller,
         then dispatching to `ExecController.close()`
         """
         self.main_loop.run_until_complete(self.api_client.rest_client.aclose())
@@ -176,14 +172,12 @@ class DefaultApi(object):
     API Client for this API manager
     """
 
-    # types_repository: TransportTypesRepository = JsonTypesRepository
-
-    controller: DispatchController
+    controller: ApiController
     """
-    Thread dispatch controller for this API manager
+    Application dispatch controller for this API manager
     """
 
-    def __init__(self, controller: DispatchController):
+    def __init__(self, controller: ApiController):
         """
         Initialize the controller and API Client for this API manager
         """
@@ -193,7 +187,7 @@ class DefaultApi(object):
     @classmethod
     def get_streaming_type_callback(self, response_map: Mapping[int, type[ApiObject]],
                                     callback_heartbeat: bool = False
-                                    ) -> Callable[[ResponseInfo, str], Optional[type[ApiObject]]]:
+                                    ) -> Callable[[ResponseInfo, bytes], Optional[type[ApiObject]]]:
         heartbeat_cls = response_map[0]
         primary_cls = response_map[200]
         initial_chunk = True
@@ -244,7 +238,8 @@ class DefaultApi(object):
 
     @classmethod
     def get_rest_type_callback(self, response_map: Mapping[int, type[ApiObject]]
-                               ) -> Callable[[ResponseInfo, str], Optional[type[ApiObject]]]:
+                               ) -> Callable[[ResponseInfo, bytes], Optional[type[ApiObject]]]:
+
 
         def rest_type_callback(info: ResponseInfo, chunk: bytes
                                ) -> Optional[type[ApiObject]]:
@@ -290,7 +285,6 @@ class DefaultApi(object):
 
         return await self.api_client.call_api(
             '/accounts/{accountID}/orders/{orderSpecifier}/cancel', RequestMethod.PUT,
-            RequestMethod.PUT,
             path_params=_path_params,
             header_params=_header_params,
             response_types_map=_response_types_map, future=future)
@@ -491,15 +485,20 @@ class DefaultApi(object):
 
         :param account_id: Account Identifier (required)
         :type account_id: AccountId
+
         :param since_transaction_id: ID of the Transaction to get Account changes since.
         :type since_transaction_id: str
-        :return: Returns the response object.
+
+        :param future
+        :type Optional[asyncio.Future[GetAccountChanges200Response]]
+
+        :return: Returns the response object, or None if a future was provided
         :rtype: tuple(GetAccountChanges200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
         _path_params = {'accountID': account_id}
 
-        _query_params = (('sinceTransactionID', since_transaction_id),) if since_transaction_id else None
+        _query_params: Optional[dict[str, Any]] = {'sinceTransactionID': since_transaction_id} if since_transaction_id else None
 
         _response_types_map = {
             200: models.GetAccountChanges200Response
@@ -533,7 +532,7 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-        _query_params = (('instruments', instruments),) if instruments else None
+        _query_params: Optional[dict[str, Any]] = {'instruments': instruments} if instruments else None
         _collection_formats = {'instruments': 'csv'} if instruments else None
 
         _response_types_map = {
@@ -601,7 +600,7 @@ class DefaultApi(object):
         :rtype: tuple(GetInstrumentPriceRange200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-        _query_params = (('time', time),) if time else None
+        _query_params: Optional[dict[str, Any]] = {'time': time} if time else None
 
         _response_types_map = {
             200: models.GetInstrumentPriceRange200Response
@@ -643,16 +642,16 @@ class DefaultApi(object):
     @validate_request
     async def get_instrument_candles(self,
                                      instrument: InstrumentName,
-                                     price: Optional[Union[PriceComponent, str]] = None,
-                                     granularity: Optional[models.CandlestickGranularity] = None,
+                                     price: Optional[PriceComponentExpr] = None,
+                                     granularity: Optional[models.CandlestickGranularity] = models.CandlestickGranularity.S5,
                                      count: Optional[int] = None,
-                                     var_from: Optional[str] = None,
-                                     to: Optional[str] = None,
+                                     var_from: Optional[Time] = None,
+                                     to: Optional[Time] = None,
                                      smooth: Optional[bool] = None,
                                      include_first: Optional[bool] = None,
                                      daily_alignment: Optional[int] = None,
                                      alignment_timezone: Optional[str] = None,
-                                     weekly_alignment: Optional[str] = None,
+                                     weekly_alignment: Optional[DayOfWeek] = None,
                                      future: Optional[aio.Future[GetInstrumentCandles200Response]] = None
                                      ) -> Awaitable[GetInstrumentCandles200Response]:
         """Get Candlesticks
@@ -689,36 +688,36 @@ class DefaultApi(object):
 
         _path_params = {'instrument': instrument}
 
-        _query_params = []
+        _query_params: dict[str, Any] = dict()
         if price:
-            _query_params.append(('price', price))
+            _query_params['price'] = ensure_price_component(price)
 
         if granularity:
-            _query_params.append(('granularity', granularity))
+            _query_params['granularity'] = granularity
 
         if count:
-            _query_params.append(('count', count))
+            _query_params['count'] = count
 
         if var_from:
-            _query_params.append(('from', var_from))
+            _query_params['from'] = var_from
 
         if to:
-            _query_params.append(('to', to))
+            _query_params['to'] = to
 
         if smooth:
-            _query_params.append(('smooth', smooth))
+            _query_params['smooth'] = smooth
 
         if include_first:
-            _query_params.append(('includeFirst', include_first))
+            _query_params['includeFirst'] = include_first
 
         if daily_alignment:
-            _query_params.append(('dailyAlignment', daily_alignment))
+            _query_params['dailyAlignment'] = daily_alignment
 
         if alignment_timezone:
-            _query_params.append(('alignmentTimezone', alignment_timezone))
+            _query_params['alignmentTimezone'] = alignment_timezone
 
         if weekly_alignment:
-            _query_params.append(('weeklyAlignment', weekly_alignment))
+            _query_params['weeklyAlignment'] = weekly_alignment
 
         _response_types_map = {
             200: models.GetInstrumentCandles200Response
@@ -754,7 +753,7 @@ class DefaultApi(object):
     async def get_instrument_candles_by_account(self,
                                                 account_id: AccountId,
                                                 instrument: InstrumentName,
-                                                price: Optional[Union[PriceComponent, str]] = None,
+                                                price: Optional[PriceComponentExpr] = None,
                                                 granularity: Optional[models.CandlestickGranularity] = None,
                                                 count: Optional[int] = None,
                                                 var_from: Optional[str] = None,
@@ -809,39 +808,39 @@ class DefaultApi(object):
             "accountID": account_id
         }
 
-        _query_params = []
+        _query_params: dict[str, Any] = dict()
         if price:
-            _query_params.append(('price', price))
+            _query_params['price'] = ensure_price_component(price)
 
         if granularity:
-            _query_params.append(('granularity', granularity))
+            _query_params['granularity'] = granularity
 
         if count:
-            _query_params.append(('count', count))
+            _query_params['count'] = count
 
         if var_from:
-            _query_params.append(('from', var_from))
+            _query_params['from'] = var_from
 
         if to:
-            _query_params.append(('to', to))
+            _query_params['to'] = to
 
         if smooth:
-            _query_params.append(('smooth', smooth))
+            _query_params['smooth'] = smooth
 
         if include_first:
-            _query_params.append(('includeFirst', include_first))
+            _query_params['includeFirst'] = include_first
 
         if daily_alignment:
-            _query_params.append(('dailyAlignment', daily_alignment))
+            _query_params['dailyAlignment'] = daily_alignment
 
         if alignment_timezone:
-            _query_params.append(('alignmentTimezone', alignment_timezone))
+            _query_params['alignmentTimezone'] = alignment_timezone
 
         if weekly_alignment:
-            _query_params.append(('weeklyAlignment', weekly_alignment))
+            _query_params['weeklyAlignment'] = weekly_alignment
 
         if units:
-            _query_params.append(('units', units))
+            _query_params['units'] = units
 
         _response_types_map = {
             200: models.GetInstrumentCandles200Response
@@ -854,19 +853,19 @@ class DefaultApi(object):
             response_types_map=_response_types_map, future=future)
 
     @validate_request
-    async def candles(self,
-                      account_id: AccountId,
-                      instrument: InstrumentName,
-                      price: Optional[Union[PriceComponent, str]] = None,
-                      granularity: Optional[models.CandlestickGranularity] = None,
-                      count: Optional[int] = None,
-                      var_from: Optional[str] = None,
-                      to: Optional[str] = None,
-                      smooth: Optional[bool] = None,
-                      include_first: Optional[bool] = None,
-                      daily_alignment: Optional[int] = None,
-                      alignment_timezone: Optional[str] = None,
-                      weekly_alignment: Optional[str] = None
+    async def candles_by_account(self,
+                                 account_id: AccountId,
+                                 instrument: InstrumentName,
+                                 price: Optional[Union[PriceComponent, str]] = None,
+                                 granularity: Optional[models.CandlestickGranularity] = None,
+                                 count: Optional[int] = None,
+                                 var_from: Optional[str] = None,
+                                 to: Optional[str] = None,
+                                 smooth: Optional[bool] = None,
+                                 include_first: Optional[bool] = None,
+                                 daily_alignment: Optional[int] = None,
+                                 alignment_timezone: Optional[str] = None,
+                                 weekly_alignment: Optional[str] = None
                       ) -> AsyncIterator[models.Candlestick]:
         api_response = await self.get_instrument_candles_by_account(account_id, instrument, price, granularity, count, var_from, to, smooth, include_first, daily_alignment, alignment_timezone, weekly_alignment)
         candles = api_response.candles
@@ -881,6 +880,12 @@ class DefaultApi(object):
                                    future: Optional[aio.Future[GetInstrumentPrice200Response]] = None
                                    ) -> Awaitable[GetInstrumentPrice200Response]:
         """Price
+
+        [**Deprecated**]
+
+        This endpoint was defined in the fxTrade v20 API release 3.0.25, and may not be supported at this time.
+
+        See alternately: DefaultApi.get_prices(), DefaultApi.stream_pricing()
 
 
         Fetch a price for an instrument. Accounts are not associated in any way with this endpoint.
@@ -897,7 +902,7 @@ class DefaultApi(object):
 
         _path_params = {'instrument': instrument}
 
-        _query_params = (('time', time),) if time else None
+        _query_params: Optional[dict[str, Any]] = {'time': time} if time else None
 
         _response_types_map = {
             200: models.GetInstrumentPrice200Response
@@ -918,6 +923,13 @@ class DefaultApi(object):
                                          ) -> Awaitable[GetInstrumentPriceRange200Response]:
         """Get Prices
 
+        [**Deprecated**]
+
+        This endpoint was defined in the fxTrade v20 API release 3.0.25, and may not be supported at this time.
+
+        See alternately: DefaultApi.get_prices(), DefaultApi.stream_pricing()
+
+
         Fetch a range of prices for an instrument. Accounts are not associated in any way with this endpoint.
 
         >>> response = api.get_instrument_price_range(instrument, var_from, to)
@@ -934,10 +946,10 @@ class DefaultApi(object):
 
         _path_params = {'instrument': instrument}
 
-        _query_params = [('from', var_from)]
+        _query_params: dict[str, Any] = {'from': var_from}
 
         if to:
-            _query_params.append(('to', to))
+            _query_params['to'] = to
 
         _response_types_map = {
             200: models.GetInstrumentPriceRange200Response
@@ -1042,12 +1054,12 @@ class DefaultApi(object):
 
         _path_params = {'instrument': instrument}
 
-        _query_params = []
+        _query_params: dict[str, Any] = dict()
         if var_from:
-            _query_params.append(('from', var_from))
+            _query_params['from'] = var_from
 
         if to:
-            _query_params.append(('to', to))
+            _query_params['to'] = to
 
         _response_types_map = {
             200: models.GetInstrumentPriceRange200Response
@@ -1091,17 +1103,17 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-        _query_params = [('instruments', instruments)]
+        _query_params: dict[str, Any] = {'instruments': instruments}
         _collection_formats = {'instruments': 'csv'}
 
         if since:
-            _query_params.append(('since', since))
+            _query_params['since'] = since
 
         if include_units_available:
-            _query_params.append(('includeUnitsAvailable', include_units_available))
+            _query_params['includeUnitsAvailable'] = include_units_available
 
         if include_home_conversions:
-            _query_params.append(('includeHomeConversions', include_home_conversions))
+            _query_params['includeHomeConversions'] = include_home_conversions
 
         _response_types_map = {
             200: models.GetPrices200Response
@@ -1210,15 +1222,15 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-        _query_params = []
+        _query_params: dict[str, Any] = dict()
         if var_from:
-            _query_params.append(('from', var_from))
+            _query_params['from'] = var_from
 
         if to:
-            _query_params.append(('to', to))
+            _query_params['to'] = to
 
         if type_filter:
-            _query_params.append(('type', type_filter))
+            _query_params['type'] = type_filter
 
         _collection_formats = {'type': 'csv'} if type_filter else None
 
@@ -1255,7 +1267,7 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-        _query_params = (('id', txn_id),)
+        _query_params: dict[str, Any] = (('id', txn_id),)
 
         _response_types_map = {
             200: models.GetTransactionRange200Response
@@ -1273,6 +1285,10 @@ class DefaultApi(object):
                             future: Optional[aio.Future[GetUserInfo200Response]] = None
                             ) -> Awaitable[GetUserInfo200Response]:
         """User Info
+
+        [**Deprecated**]
+
+        This endpoint was defined in the fxTrade v20 API release 3.0.25, and may not be supported at this time.
 
         Fetch the user information for the specified user. This endpoint is intended to be used by the user themself to obtain their own information.
 
@@ -1303,7 +1319,9 @@ class DefaultApi(object):
                                                     ) -> Awaitable[InstrumentsInstrumentOrderBookGet200Response]:
         """Get Order Book
 
-        [Endpoint may not be available for FX Instruments]
+        [**Limited Availability**]
+
+        This endploint may not be available in fxPractice profiles.
 
         Fetch an order book for an instrument.
 
@@ -1319,7 +1337,7 @@ class DefaultApi(object):
 
         _path_params = {'instrument': instrument}
 
-        _query_params = (('time', time),) if time else None
+        _query_params: Optional[dict[str, Any]] = {'time': time} if time else None
 
         _response_types_map = {
             200: models.InstrumentsInstrumentOrderBookGet200Response
@@ -1375,6 +1393,10 @@ class DefaultApi(object):
                                                        ) -> Awaitable[InstrumentsInstrumentPositionBookGet200Response]:
         """Get Position Book
 
+        [**Limited Availability**]
+
+        This endploint may not be available in fxPractice profiles.
+
         Fetch a position book for an instrument.
 
         >>> response = api.instruments_instrument_position_book_get(instrument, time)
@@ -1389,7 +1411,7 @@ class DefaultApi(object):
 
         _path_params = {'instrument': instrument}
 
-        _query_params = (('time', time),) if time else None
+        _query_params: Optional[dict[str, Any]] = {'time': time} if time else None
 
         _response_types_map = {
             200: models.InstrumentsInstrumentPositionBookGet200Response
@@ -1509,20 +1531,20 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-        _query_params = [('ids', ids)] if ids else []
+        _query_params: dict[str, Any] = {'ids': ids} if ids else {}
         _collection_formats = {'ids': 'csv'} if ids else None
 
         if state:
-            _query_params.append(('state', state))
+            _query_params['state'] = state
 
         if instrument:
-            _query_params.append(('instrument', instrument))
+            _query_params['instrument'] = instrument
 
         if count:
-            _query_params.append(('count', count))
+            _query_params['count'] = count
 
         if before_id:
-            _query_params.append(('beforeID', before_id))
+            _query_params['beforeID'] = before_id
 
         _response_types_map = {
             200: models.ListOrders200Response
@@ -1655,20 +1677,20 @@ class DefaultApi(object):
 
         _path_params = {'accountID': account_id}
 
-        _query_params = [('ids', ids)] if ids else []
+        _query_params: dict[str, Any] = {'ids': ids} if ids else {}
         _collection_formats = {'ids': 'csv'} if ids else None
 
         if state:
-            _query_params.append(('state', state))
+            _query_params['state'] = state
 
         if instrument:
-            _query_params.append(('instrument', instrument))
+            _query_params['instrument'] = instrument
 
         if count:
-            _query_params.append(('count', count))
+            _query_params['count'] = count
 
         if before_id:
-            _query_params.append(('beforeID', before_id))
+            _query_params['beforeID'] = before_id
 
         _response_types_map = {
             200: models.ListTrades200Response
@@ -1724,21 +1746,20 @@ class DefaultApi(object):
         :rtype: tuple(ListTransactions200Response, status_code(int), headers(HTTPHeaderDict))
         """
 
-
         _path_params = {'accountID': account_id}
 
-        _query_params = []
+        _query_params: dict[str, Any] = dict()
         if var_from:
-            _query_params.append(('from', var_from))
+            _query_params['from'] = var_from
 
         if to:
-            _query_params.append(('to', to))
+            _query_params['to'] = to
 
         if page_size:
-            _query_params.append(('pageSize', page_size))
+            _query_params['pageSize'] = page_size
 
         if type_filter:
-            _query_params.append(('type', type_filter))
+            _query_params['type'] = type_filter
 
         _collection_formats = {'type': 'csv'} if type_filter else None
 
@@ -1837,7 +1858,9 @@ class DefaultApi(object):
                                           ) -> Awaitable[SetOrderClientExtensions200Response]:
         """Set Order Extensions
 
-        Update the Client Extensions for an Order in an Account. Do not set, modify, or delete clientExtensions if your account is associated with MT4.
+        Update the Client Extensions for an Order in an Account.
+
+        Do not set, modify, or delete clientExtensions if your account is associated with MT4.
 
         >>> response = api.set_order_client_extensions(account_id, order_specifier, set_order_client_extensions_body)
 
@@ -1999,15 +2022,15 @@ class DefaultApi(object):
         Exceptions: TBD
         """
 
-        assert len(instruments) is not int(0), "No instruments provided in request"
+        assert len(instruments) is not int(0), "No instruments provided in request" # nosec B101
 
         _path_params = {'accountID': account_id}
 
-        _query_params = [('instruments', instruments)]
+        _query_params: dict[str, Any] = {'instruments': instruments}
         _collection_formats = {'instruments': 'csv'}
 
         if snapshot:
-            _query_params.append(('snapshot', snapshot))
+            _query_params['snapshot'] = snapshot
 
         _response_types_map = {
             0: models.PricingHeartbeat,

@@ -104,8 +104,10 @@ class RESTClientObject():
         ## throughout each application session, mainly to ensure HTTP/2
         ## support can be implemented in a "Most optimal" way, e.g
         ## for connection reuse if not also for request pipelining
-        await self.transport.aclose()
-        await self.client.aclose()
+        if hasattr(self, "transport"):
+            await self.transport.aclose()
+        if hasattr(self, "client"):
+            await self.client.aclose()
 
     async def request(self, method: RequestMethod, url: str,
                       response_types_map: Mapping[int, type[ApiObject]], *,
@@ -240,7 +242,7 @@ class RESTClientObject():
                     await stream.feed(chunk)
                 ## feed EOF
                 await stream.feed(b'', True)
-                response_future.add_done_callback(lambda _: stream.close_sync())
+                response_future.add_done_callback(lambda _: stream.close())
                 if __debug__:
                     logger.debug("process_response: dispatch to parse_response thread")
                 rslt = await self.controller.dispatch(self.parse_response, response_future, stream, content_type, response_type, client_response)
@@ -290,7 +292,7 @@ class RESTClientObject():
                     logger.debug("parse_response_async: parsed %r", response)
             elif content_type == REST_CONTENT_TYPE:
                 ## parse any response content for an unexpected JSON-typed response
-                for toplevel in ijson.items(stream, ''):
+                async for toplevel in ijson.items_async(stream, ''):
                     response = toplevel
                     break
                 if __debug__:

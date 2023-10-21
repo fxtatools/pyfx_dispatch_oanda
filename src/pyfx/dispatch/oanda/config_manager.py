@@ -6,22 +6,20 @@
 import configparser as cf
 import logging
 import os
-# import yaml
-
 
 import yaml
-from typing import Mapping, Optional, Union, Self
+from typing import Any, Mapping, Optional, Union, Self
 from typing_extensions import TypeAlias
 
 from .configuration import Configuration
-from .util import expand_path
+from .util.paths import expand_path, Pathname
 
 
 class ConfigError(RuntimeError):
     """Common Configuration Error"""
     pass
 
-def load_config(path: os.PathLike) -> Configuration:
+def load_config(path: Pathname, overrides: Optional[Mapping[str, Any]] = None) -> Configuration:
     '''Parse and return the contents of a configuration file,
 as a Configuration object for the API client.
 
@@ -62,8 +60,12 @@ limiting all file operations to the creating user.
         raise ConfigError("File not found", abspath)
     parser = cf.ConfigParser()
     parser.read(abspath)
+    cfgopts = parser['Configuration']
+    if overrides:
+        for opt, value in overrides.items():
+            cfgopts[opt] = value
     if 'Configuration' in parser.keys():
-        return Configuration(**parser['Configuration'])
+        return Configuration(**cfgopts)
     else:
         logger = logging.getLogger(__name__)
         logger.warn("No Configuration section in INI file %s",

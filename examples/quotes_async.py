@@ -4,6 +4,7 @@
 #
 # see also: ./quotes_app.py
 
+import argparse as ap
 import asyncio as aio
 
 from abc import abstractmethod
@@ -11,14 +12,16 @@ from io import IOBase
 import logging
 import os
 import pyfx.dispatch.oanda as dispatch
-from pyfx.dispatch.oanda.util import console_io, ConsoleStreamWriter
-from pyfx.dispatch.oanda.api.default_api import DispatchController
+from pyfx.dispatch.oanda.transport.data import ApiObject
+from pyfx.dispatch.oanda.models import GetAccountInstruments200Response, GetInstrumentCandles200Response
 import pyfx.dispatch.oanda.util.log as log
+from pyfx.dispatch.oanda.util.console_io import console_io, ConsoleStreamWriter
+from pyfx.dispatch.oanda.api.default_api import ApiController
 import pytz
 import re
 from typing_extensions import Protocol, TypeVar
 
-T = TypeVar("T", bound=dispatch.ApiObject)
+T = TypeVar("T", bound=ApiObject)
 
 
 class ConsoleContext(Protocol[T]):
@@ -37,19 +40,22 @@ class ConsoleContext(Protocol[T]):
 ## Async Console Example - function-chain approach
 ##
 
-class ScriptController(DispatchController):
+class ScriptController(ApiController):
+
+    def process_args(self, namespace: ap.Namespace, unparsed: list[str]):
+        pass
 
     async def run_async(self):
         '''print latest quotes for each available instrument in each Account'''
-        controller = self
         loop = aio.get_running_loop()
-        config = controller.config
-        api_instance = controller.api
+        config = self.config
+        api_instance = self.api
         n_instruments = 0
         n_processed = 0
         processed_lock = aio.Lock()
 
-        async for account_props in api_instance.accounts(controller):
+
+        async for account_props in api_instance.accounts(self):
             account_id = account_props.id
             dt_format = config.datetime_format
             tz_str = os.environ['TZ'] if 'TZ' in os.environ else config.timezone
@@ -82,7 +88,7 @@ class ScriptController(DispatchController):
                     exc = reqftr.exception()
                     if exc:
                         raise exc
-                    api_response: dispatch.GetInstrumentCandles200Response = reqftr.result()
+                    api_response: GetInstrumentCandles200Response = reqftr.result()
                     out.write(re.sub("_", "/", api_response.instrument, count=1))
                     print(file=out)
                     for quote in api_response.candles:
@@ -100,6 +106,7 @@ class ScriptController(DispatchController):
                                         name, o, h, l, c
                                     ),
                                     file=out
+
                                 )
                     self.add_task(check_exit())
 
@@ -111,7 +118,7 @@ class ScriptController(DispatchController):
                     exc = reqftr.exception()
                     if exc:
                         raise exc
-                    api_response: dispatch.GetAccountInstruments200Response = reqftr.result()
+                    api_response: GetAccountInstruments200Response = reqftr.result()
 
                     logger.info("response class: %r", api_response.__class__)
 
@@ -125,7 +132,7 @@ class ScriptController(DispatchController):
                                                                             count=5,
                                                                             # granularity = "M1",
                                                                             smooth=False,
-                                                                            price="ABM"
+                                                                            price=("A", "B", "M",)
                                                                             ))
                         inst_task.add_done_callback(candles_cb)
                         last = inst_task
@@ -136,7 +143,10 @@ class ScriptController(DispatchController):
 
                 acct_task = self.add_task(api_instance.get_account_instruments(account_id))
                 acct_task.add_done_callback(acct_instrument_cb)
-                await self.exit_future
+                try:
+                    await self.exit_future
+                except aio.CancelledError:
+                    pass
 
 
 if __name__ == "__main__":
@@ -148,7 +158,7 @@ if __name__ == "__main__":
     logger.info("Loading configuration")
 
     examples_path = dispatch.util.paths.expand_path("account.ini", os.path.dirname(__file__))
-    with ScriptController.from_config_ini(examples_path).run_context() as controller:
+    with ScriptController.from_args([]).run_context() as controller:
         ## set a custom datetime format, used in the example
         controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
         logger.info("Running example")

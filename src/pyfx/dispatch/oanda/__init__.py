@@ -62,4 +62,4 @@ from . import config_manager  #  noqa: E402
 __all__.extend(exporting(config_manager, ...))
 from .config_manager import *  #  noqa: F403, E402
 
-__all__ = tuple(__all__)
+__all__ = tuple(__all__)  # type: ignore

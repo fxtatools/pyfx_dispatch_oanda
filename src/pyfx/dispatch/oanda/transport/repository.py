@@ -4,6 +4,7 @@ from json import JSONEncoder
 from enum import Enum
 from collections.abc import Sequence, Set, Mapping
 from datetime import datetime
+
 # import logging
 from numpy import datetime64, double
 from pandas import Timestamp
@@ -14,30 +15,39 @@ from typing_extensions import TypeAlias, TypeVar
 from ..util.typeref import get_type_class
 
 from .transport_base import (
-    TransportFieldInfo, TransportType, TransportValues,
+    TransportFieldInfo,
+    TransportType,
+    TransportValues,
     get_sequence_member_class,
 )
 from .data import ApiObject, AbstractApiClass
 from .transport_types import (
-    TransportNone, TransportBool, TransportTimestamp,
-    TransportInt, TransportFloatStr, TransportStr,
+    TransportNone,
+    TransportBool,
+    TransportTimestamp,
+    TransportInt,
+    TransportFloatStr,
+    TransportStr,
     TransportEnum,
-    TransportEnumString, TransportEnumInt
+    TransportEnumString,
+    TransportEnumInt,
 )
 
 from ..util.naming import exporting
 
 
-class TransportTypesRepository():
+SEQUENCE_LIKE: tuple[type, ...] = (list, tuple, set,)
 
+
+class TransportTypesRepository:
     @property
     def direct_types_map(self) -> Mapping[type, TransportType]:
-        '''mapping of internal value types to transport types for non-sequence, non-set types'''
+        """mapping of internal value types to transport types for non-sequence, non-set types"""
         return self._direct_types_map
 
     @property
     def member_types_map(self) -> Mapping[type, TransportType]:
-        '''mapping of Sequence and Set member types to values-typed transport types'''
+        """mapping of Sequence and Set member types to values-typed transport types"""
         return self._member_types_map
 
     @property
@@ -57,7 +67,7 @@ class TransportTypesRepository():
         self._member_types_map = dict()
         self.bind_map(bindings)
 
-    def bind(self, type: type[Any], transport_type: type[TransportType]):
+    def bind(self, type: type[Any], transport_type: TransportType):
         self.direct_types_map[type] = transport_type
 
     def bind_map(self, map: Mapping[type, TransportType]):
@@ -80,8 +90,9 @@ class TransportTypesRepository():
 
         def init_ns(ns: Mapping[str, Any]):
             nonlocal etyp, styp
-            ns['storage_class'] = etyp
-            ns['storage_type'] = etyp
+            ns["storage_class"] = etyp
+            ns["storage_type"] = etyp
+
         if issubclass(etyp, str):
             styp = str
             typ = new_class(name, (TransportEnumString[etyp, str],), None, init_ns)
@@ -95,8 +106,11 @@ class TransportTypesRepository():
         typ.initialize_attrs()
         return typ
 
-    def make_values_transport_type(self, decl: TypeAlias, member_class: type,
-                                   ) -> TransportType:
+    def make_values_transport_type(
+        self,
+        decl: TypeAlias,
+        member_class: type,
+    ) -> TransportType:
         if __debug__:
             if not isinstance(member_class, type):
                 raise AssertionError("member_class is not a type", member_class)
@@ -108,23 +122,28 @@ class TransportTypesRepository():
 
         def init_values_ns(attrs: Mapping[str, Any]):
             nonlocal member_class
-            attrs['member_transport_type'] = member_transport_type
-            attrs['storage_type'] = storage_cls
-            attrs['storage_class'] = storage_cls
+            attrs["member_transport_type"] = member_transport_type
+            attrs["storage_type"] = storage_cls
+            attrs["storage_class"] = storage_cls
             ## using the list representation, for JSON lists
-            attrs['serialization_class'] = list
-            attrs['serialization_type'] = list
+            attrs["serialization_class"] = list
+            attrs["serialization_type"] = list
 
-        cls = new_class(name, (TransportValues[member_class, member_class],),
-                        {"member_class": member_transport_type,
-                         'storage_class': storage_cls},
-                        init_values_ns)
+        cls = new_class(
+            name,
+            (TransportValues[member_class, member_class],),
+            {"member_class": member_transport_type, "storage_class": storage_cls},
+            init_values_ns,
+        )
         cls.initialize_attrs()
         return cls
 
-    def get_values_transport_type(self, value_type: Union[type, TypeAlias], *,
+    def get_values_transport_type(self, # fmt: off
+                                  value_type: Union[type, TypeAlias], *,
                                   type_class: Optional[type] = None,
-                                  no_define: bool = False) -> type[TransportValues]:
+                                  no_define: bool = False,
+                                  ) -> type[TransportValues]:
+        # fmt: on
         if __debug__:
             _type_class = type_class if type_class else get_type_class(value_type)
             if not issubclass(_type_class, Sequence):
@@ -138,7 +157,8 @@ class TransportTypesRepository():
             vmap[member_type] = typ
             return typ
 
-    def get_transport_type(self, value_type: Union[type, TypeAlias]
+    def get_transport_type(self, # fmt: off
+                           value_type: Union[type, TypeAlias]
                            ) -> type[TransportType]:
         ## compute the transport type for a provided value type
         ## application: mainly for TransportFieldInfo initialization
@@ -146,12 +166,14 @@ class TransportTypesRepository():
         ## raises ValueError if no transport type is declared and none can be inferred,
         ## or if a non-type value_type is provided, such that no concrete type class
         ## can be inferred
-
-        type_class = value_type if isinstance(value_type, type) else get_type_class(value_type)
+        type_class = (value_type if isinstance(value_type, type) else get_type_class(value_type))
+        # fmt: on
         mapping = self.direct_types_map
         if isinstance(type_class, TransportType):
             return type_class
-        elif not issubclass(type_class, Enum) and (type_class is Sequence or issubclass(type_class, list) or issubclass(type_class, tuple) or issubclass(type_class, Set)):
+        elif not issubclass(type_class, Enum) and (
+            type_class is Sequence or issubclass(type_class, SEQUENCE_LIKE)
+        ):
             return self.get_values_transport_type(value_type, type_class=type_class)
         elif issubclass(type_class, ApiObject):
             # Create a new transport type for the ApiObject class
@@ -205,7 +227,9 @@ class TransportTypesRepository():
 
             if len(mro_map) is int(0):
                 if len(no_mro) is int(0):
+                    # fmt: off
                     raise ValueError("No transport type declared, none inferred", type_class)
+                    # fmt: on
                 else:
                     # no matching type was found by method resolution order, though
                     # matching type was found by way of subclass test
@@ -216,7 +240,9 @@ class TransportTypesRepository():
                     last = no_mro[-1]
                     transport_t = mapping[last]
                     if len(no_mro) > 1:
+                        # fmt: off
                         raise ValueError("Ambiguous field type mapping", value_type, no_mro)
+                        # fmt: on
                     return transport_t
             else:
                 # return the transport type for a base class of the original type_class,
@@ -227,18 +253,20 @@ class TransportTypesRepository():
 
 
 JsonTypesRepository: TransportTypesRepository = TransportTypesRepository()
-JsonTypesRepository.bind_map({
-    ## initialize some literal transport types
-    bool: TransportBool,
-    NoneType: TransportNone,
-    str: TransportStr,
-    int: TransportInt,
-    float: TransportFloatStr,
-    double: TransportFloatStr,
-    datetime: TransportTimestamp,
-    datetime64: TransportTimestamp,
-    Timestamp: TransportTimestamp
-})
+JsonTypesRepository.bind_map(
+    {
+        ## initialize transport types for scalar values
+        bool: TransportBool,
+        NoneType: TransportNone,
+        str: TransportStr,
+        int: TransportInt,
+        float: TransportFloatStr,
+        double: TransportFloatStr,
+        datetime: TransportTimestamp,
+        datetime64: TransportTimestamp,
+        Timestamp: TransportTimestamp,
+    }
+)
 
 
 class ApiJsonEncoder(JSONEncoder):
@@ -260,9 +288,9 @@ Tobject = TypeVar("Tobject", bound=ApiObject)
 class TransportObject(TransportType[Tobject, Mapping[str, Any]], Generic[Tobject]):
     @classmethod
     def parse(cls, unparsed: Union[ApiObject, Mapping[str, Any]]) -> Tobject:
-        if isinstance(unparsed, ApiObject):
+        if isinstance(unparsed, cls.storage_class):
             # handle partial deserialization under the initial parse from stream
-            return unparsed
+            return unparsed  # type: ignore
         else:
             assert isinstance(unparsed, Mapping), "Not a mapping value"
             model_cls: type[ApiObject] = cls.storage_class
@@ -275,7 +303,7 @@ class TransportObject(TransportType[Tobject, Mapping[str, Any]], Generic[Tobject
             inst = model_cls.__new__(model_cls)
             for key, inteval in unparsed.items():
                 if key in fields:
-                    info: TransportFieldInfo = fields[key]
+                    info = fields[key]
                 else:
                     raise ValueError("Unknown field", key, model_cls)
                 ttyp = info.transport_type
@@ -291,8 +319,11 @@ class TransportObject(TransportType[Tobject, Mapping[str, Any]], Generic[Tobject
         cls = o.__class__
         fields = cls.model_fields
         json_names = cls.json_field_names
-        for f in o.__pydantic_fields_set__.union(cls.always_serialize_fields):
+        for f in o.__pydantic_fields_set__.union(cls.api_transport_fields):
             field_info: TransportFieldInfo = fields[f]
+            if __debug__:
+                if not isinstance(field_info, TransportFieldInfo):
+                    raise AssertionError("Not a TransportFieldInfo", field_info)
             # name: str = json_names[f]
             name: str = json_names.get(f)
             transport_type: TransportType = field_info.transport_type

@@ -1,10 +1,13 @@
 ## path utilities
 
 import os
-from typing_extensions import Optional
+from typing import Optional, Union
+from typing_extensions import TypeAlias
 from .naming import exporting
 
-def expand_path(path: os.PathLike, basedir: Optional[os.PathLike] = None) -> os.PathLike:
+Pathname: TypeAlias = Union[os.PathLike, str]
+
+def expand_path(path: Pathname, basedir: Optional[Pathname] = None) -> Pathname:
     '''Return an absolute pathname for `path`
 
 The provided `path` and `basedir` components will be processed as follows:
@@ -31,5 +34,5 @@ The provided `path` and `basedir` components will be processed as follows:
     dir_exp = os.path.expanduser(basedir) if basedir else os.getcwd()
     return os.path.abspath(os.path.join(dir_exp, path_exp))
 
-__all__ = exporting(__name__, ...)
+__all__ = exporting(__name__, ..., "Pathname")
 

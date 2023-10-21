@@ -15,8 +15,8 @@ from ..util.naming import exporting
 ## memoization for ApiClient.sanitize_for_serialization
 JsonLiteral: TypeAlias = Union[float, bool, bytes, str, int]
 
-Ti = TypeVar("Ti", bound=JsonLiteral)
-To = TypeVar("To", bound=JsonLiteral)
+Ti = TypeVar("Ti")
+To = TypeVar("To")
 
 InitArg = TypeVar("InitArg")
 
@@ -43,7 +43,7 @@ def get_sequence_member_class(spec: TypeAlias) -> type:
         raise ValueError("Unable to determine a concrete member class for sequence type declaration", spec)
 
 
-class TransportTypeBase(Generic[Ti, To], type):
+class TransportTypeBase(type, Generic[Ti, To]):
     ## initialization shim for TransportType processing in TransportTypeClass.__new__
     ##
     ## in effect, defines a named union type
@@ -80,8 +80,35 @@ class TransportTypeClass(type):
 
 class TransportType(TransportTypeBase[Ti, To], Generic[Ti, To], metaclass=TransportTypeClass):
 
-    storage_type: ClassVar[Union[type, TypeAlias]]  # input type for the field definition, may or may not represent a single class
-    storage_class: ClassVar[type]  # generally represented in the field annotation, but here as a single input value class
+    storage_type: ClassVar[Union[type, TypeAlias]]
+    """Effective storage type for values of this transport type"""
+
+    storage_class: ClassVar[type]
+    """Storage interface class for values of this transport type
+
+
+    The default `parse()` method will apply this class name as
+    a constructor function. The function will be provided with the
+    intermediate transport value received by `parse()
+    """
+
+    serialization_type: ClassVar[Union[type, TypeAlias]]
+    """Intermediate serialization type for protocol data encoding
+
+    For a transport type serialized to JSON, this type would typically
+    denote the type of value processed by the JSON encoder or decoder.
+    """
+
+    serialization_class: ClassVar[type]
+    """Intermediate serialization class for protocol data encoding
+
+    For a transport type serialized to JSON, this class would typically
+    denote the class of value processed by the JSON encoder or decoder.
+
+    The default `unparse()` method will apply this class name as a constructor
+    function to the value provided to `unparse()`. The object returned by the
+    constructor will be passed to the transport encoder provided to `unparse()`
+    """
 
     @classmethod
     def unparse(cls, value: Ti, encoder: JSONEncoder) -> To:
@@ -90,14 +117,14 @@ class TransportType(TransportTypeBase[Ti, To], Generic[Ti, To], metaclass=Transp
 
         The return value should be produced in a type compatible with
         this transport type's serialization encoding. Structurally, the
-        value should have a syntax generally similar to the syntax for 
+        value should have a syntax generally similar to the syntax for
         the return value of json.JSONEncoder.default()
 
         Params:
         value: the value to unparse
         decoder: a JSONEncoder instance.
 
-        Returns: the encoded object, in this transport type's 
+        Returns: the encoded object, in this transport type's
         serialization encoding
         """
 
@@ -116,10 +143,8 @@ class TransportType(TransportTypeBase[Ti, To], Generic[Ti, To], metaclass=Transp
 
     @classmethod
     def parse(cls, unparsed: To) -> Ti:
-        ## generic TransportType has no storage class defined ...
-        ## seen for a bug in transport type initialization for enum values
-        ## given the buggy enum value type definitions in .models, etc
         if __debug__:
+            ## generalized TransportType has no storage class defined
             if not hasattr(cls, "storage_class"):
                 raise AssertionError("No storage_class defined", cls)
         return cls.storage_class(unparsed)
@@ -140,7 +165,7 @@ class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
     defining_class: type[BaseModel]
     deprecated: bool
 
-    __slots__: ClassVar[frozenset[str]] = frozenset(list(FieldInfo.__slots__) + ["transport_type", "defining_class", "field_name", "storage_class", "deprecated"])
+    __slots__  = tuple(frozenset(list(FieldInfo.__slots__) + ["transport_type", "defining_class", "field_name", "storage_class", "deprecated"]))
 
     def __init__(self, default, transport_type: TransportType[Ti, To], deprecated=None, **kw):
         # implementation note: the field's transport type will be
@@ -153,7 +178,7 @@ class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
         super().__init__(default=default, **kw)
 
     @classmethod
-    def from_field(cls, default, transport_type: TransportType[Ti, To], **kw):
+    def from_field(cls, default, transport_type: TransportType[Ti, To], **kw):  # type: ignore
         return cls(default, transport_type=transport_type, **kw)
 
     def __repr__(self):
@@ -162,17 +187,17 @@ class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
         return "<%s [%s.%s]>" % (self.__class__.__qualname__, defining, field)
 
 
-class TransportTypeInfer(TransportType[object, object]):
+class TransportTypeInfer(TransportType[None, None]):
     """Intemerdiate TransportType
 
-    The presence of the class TransportTypeInfer as the transport type for a 
-    TransportFieldInfo definition will indicate that the transport type for 
+    The presence of the class TransportTypeInfer as the transport type for a
+    TransportFieldInfo definition will indicate that the transport type for
     the corresponding class field should be inferred from field annotations.
     """
     pass
 
 
-TRANSPORT_VALUES_STORAGE_CLASS: type[Collection] = list
+TRANSPORT_VALUES_STORAGE_CLASS: TypeAlias = list
 """Storage class for internal representation of JSON array values"""
 
 

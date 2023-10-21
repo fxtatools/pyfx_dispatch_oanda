@@ -1,7 +1,9 @@
 ## base types for transport data model
 
 from collections.abc import Mapping
+
 # from reprlib import repr
+import immutables
 from json import JSONEncoder
 import logging
 from pydantic import ConfigDict, BaseModel
@@ -16,7 +18,12 @@ from ..util.typeref import get_type_class, get_literal_value
 
 from ..util.naming import exporting
 
-from .transport_base import TransportFieldInfo, TransportTypeInfer, TransportType, TransportValues
+from .transport_base import (
+    TransportFieldInfo,
+    TransportTypeInfer,
+    TransportType,
+    TransportValues,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,34 +32,34 @@ FieldName: TypeAlias = str
 
 class ApiClass(ModelMetaclass):
 
-    api_fields: MappingProxyType[str, TransportFieldInfo]
-    '''Mapping of instance field names and alias JSON field names to field
-       information objects'''
+    api_fields: Mapping[str, TransportFieldInfo]
+    """Mapping of instance field names and alias JSON field names to field
+       information objects"""
 
-    json_field_names: MappingProxyType[str, str]
-    '''Mapping of each instance field name to its JSON field name'''
+    json_field_names: Mapping[str, str]
+    """Mapping of each instance field name to its JSON field name"""
 
-    always_serialize_fields: type[frozenset[str]]
-    '''
-    Field names for fields that should always be serialized, whether or not directly set
-    within an instance.
+    api_transport_fields: frozenset[str]
+    """This field is Documented as a class variable in ApiObject"""
 
-    Each field in this frozen set must be either set or provided with a default value,
-    in each serialized instance.
-    '''
+    api_storage_fields: frozenset[str]
+    """This field is Documented as a class variable in ApiObject"""
 
     @classmethod
     def default_model_config(cls):
-        return ConfigDict(populate_by_name=True, arbitrary_types_allowed=True, validate_assignment=False,
-                          alias_priority=2
-                          )
+        return ConfigDict(
+            populate_by_name=True,
+            arbitrary_types_allowed=True,
+            validate_assignment=False,
+            alias_priority=2,
+        )
 
     @staticmethod
-    def __new__(cls, cls_name: str, bases: Tuple[type[Any]], namespace: Mapping[str, Any]):
+    def __new__(cls, cls_name: str, bases: Tuple[type[Any]], namespace: dict[str, Any]):
         overrides = dict()
 
         if "model_config" not in namespace:
-            overrides['model_config'] = cls.default_model_config()
+            overrides["model_config"] = cls.default_model_config()
 
         if "api_fields" not in namespace:
             ## if a api_fields arg is provided in the dict component to __new__
@@ -63,12 +70,13 @@ class ApiClass(ModelMetaclass):
         if "json_field_names" not in namespace:
             overrides["json_field_names"] = dict()
 
-        serialize = set(namespace.get("always_serialize_fields", ()))
+        # fmt: off
+        serialize = set(namespace.get("api_transport_fields", ()))
         for base in bases:
-            if hasattr(base, "always_serialize_fields"):
-                serialize = serialize.union(base.always_serialize_fields)
-        serialize = frozenset(serialize)
-        overrides["always_serialize_fields"] = serialize
+            if hasattr(base, "api_transport_fields"):
+                serialize = serialize.union(base.api_transport_fields)
+        serialize = set(serialize)
+        overrides["api_transport_fields"] = serialize
 
         ## add class variables to annotations
         annotations = namespace["__annotations__"] if "__annotations__" in namespace else {}
@@ -77,28 +85,30 @@ class ApiClass(ModelMetaclass):
         if "json_field_names" not in annotations:
             annotations["json_field_names"] = ClassVar[MappingProxyType[str, str]]
         overrides["__annotations__"] = annotations
+        # fmt: on
 
         namespace.update(overrides)
-        new_cls: Self = super().__new__(cls, cls_name, bases, namespace)
+        new_cls: "type[ApiObject]" = super().__new__(cls, cls_name, bases, namespace)
 
         repository = sys.modules[__package__].__dict__.get("JsonTypesRepository")
         if __debug__:
             if not repository:
+                # fmt: off
                 logger.debug("JSON Types Repository not found when initiaizliaing %s", new_cls.__name__)
 
         hints = get_type_hints(new_cls)
-        api_fields = new_cls.api_fields
-        json_field_names = new_cls.json_field_names
-        serialize_post = set(new_cls.always_serialize_fields)
+        api_fields = dict(new_cls.api_fields)
+        json_field_names = dict(new_cls.json_field_names)
+        serialize_post = set(new_cls.api_transport_fields)
 
         # this assumes that the class' type hints are all resolvable at the time when the ApiClass[ApiObject] class is initialized.
 
         for field_name, info in new_cls.model_fields.items():
             ## update the name_map
-            api_fields[field_name] = info
+            api_fields[field_name] = info  # type: ignore
             alias = info.alias
             if alias:
-                api_fields[alias] = info
+                api_fields[alias] = info  # type: ignore
                 json_field_names[field_name] = alias
             else:
                 json_field_names[field_name] = field_name
@@ -117,6 +127,7 @@ class ApiClass(ModelMetaclass):
                 ttype = info.transport_type
                 if __debug__:
                     if not isinstance(ttype, type):
+                        # fmt: off
                         raise AssertionError("Not a type", ttype, info, cls)
                 if issubclass(ttype, TransportTypeInfer) or not ttype:
                     field_hint = hints.get(field_name)
@@ -125,12 +136,12 @@ class ApiClass(ModelMetaclass):
                         # the field's concrete type is a transport type
                         #
                         # generally for types defined in ..common_types
-                        field_type: TransportType
                         info.transport_type = field_type
                         info.storage_class = field_type.storage_class
                     elif field_hint:
-                        typ = repository.get_transport_type(field_hint)
+                        typ = repository.get_transport_type(field_hint)  # type: ignore
                         if not typ:
+                            # fmt: off
                             raise ValueError("Repository produced a null transport type", field_hint, field_name, cls)
                         info.transport_type = typ
                         info.storage_class = get_type_class(field_hint)
@@ -139,7 +150,12 @@ class ApiClass(ModelMetaclass):
                         pass
         new_cls.api_fields = MappingProxyType(api_fields)
         new_cls.json_field_names = MappingProxyType(json_field_names)
-        new_cls.always_serialize_fields = frozenset(serialize_post)
+        f_serialize = frozenset(serialize_post)
+        new_cls.api_transport_fields = f_serialize
+        new_cls.api_storage_fields = f_serialize.union(
+            {"__pydantic_fields_set__", "__pydantic_extra__", "__pydantic_private__"}
+        )
+
 
         if repository:
             ## preload the transport type storage, by side effect
@@ -151,18 +167,54 @@ class ApiClass(ModelMetaclass):
 class ApiObject(BaseModel, metaclass=ApiClass):
 
     validate_fields: ClassVar[bool] = __debug__
-    always_serialize_fields: ClassVar[frozenset[str]]
+    """Configuration property for Pydantic 2"""
+
+    api_transport_fields: ClassVar[frozenset[str]]
+    """Fields to serialize for transport
+
+    A set-wise listing of field names, for fields that should always be serialized
+    to a transport  stream.
+
+    Values for these fields will be serialized, whether or not the field is denoted
+    in `__pydantic_fields_set__` for the instance. Each correspnding field must
+    therefore be set in the instance, or must have been defined with a default
+    value or default facdtory.
+    """
+
+    api_storage_fields: ClassVar[frozenset[str]]
+    """Fields to serialize for storage
+
+    Memoized storage for field names, denoting the set of fields that should be
+    processed for serialization to storage.
+
+    Similar to the value of `api_transport_fields`, this would be supplemental
+    to the instance-scoped set of field names `__pydantic_fields_set__` for
+    each ApiObject instance.
+
+    Each field denoted in this set must be set in the instance, or the field
+    must have been defined with a default value or default factory.
+    """
+
+    __state__: immutables.Map[str, Any]
+    """State value for this ApiObject.
+
+    Once this attribute has been set on an ApiObject,
+    the object may then be considered immutable.
+    """
 
     @staticmethod
     def __new__(cls, **kw):
         """construct an ApiObject without field validation
 
+        `kw`: Optional mapping of field names and field values for the new instance
+
         Known Limitations:
-        - The new instance will not have been validated for required model fields
-        - Default field values will not have been set in the new instance. This
-          limitation may be at least partly mitigated for default field value access,
-          with the  definition of `ApiObject.__getattr__()`. No similar extension
-          method has been defined for `hasattr()`"""
+        - The new instance will not have been validated for whether all required model
+          fields have been set
+        - Field values provided in `kw` will not have been validated for syntax
+        - Default field values will not have been set in the new instance. Each default
+          value should nonethless be accessible via `getattr()` for the instance
+        """
         inst = super().__new__(cls)
         object.__setattr__(inst, "__pydantic_extra__", None)
         for arg, value in kw.items():
@@ -176,55 +228,56 @@ class ApiObject(BaseModel, metaclass=ApiClass):
         """construct an ApiObject with field validation"""
         return cls.model_construct(**kw)
 
+    def __getstate__(self) -> immutables.Map[str, Any]: # type: ignore
+        """Return an immutable mapping, representative of the object for
+        applications in serialization for storage
+
+        The object may be considered immutable after this method has been
+        called.
+        """
+        if hasattr(self, "__state__"):
+            return self.__state__
+        else:
+            keys = self.__class__.api_storage_fields.union(self.__pydantic_fields_set__)
+            values = tuple(getattr(self, attr) for attr in keys)
+            state = immutables.Map(zip(keys, values))
+            self.__state__ = state
+            return state
+
+    def __setstate__(self, state: Mapping[str, Any]):
+        # utility method for object initialization under ZODB
+        #
+        # Implementation Note: This will dispatch to object.setattr()
+        #
+        # - This avoids a call to BaseModel.__setattr__() such that may fail
+        #   when __pydantic_private__ has not yet been set
+        #
+        # - It's assumed that the `state`  data would be from a trusted and
+        #   API-compatible source
+        #
+        for attr, value in state.items():
+            object.__setattr__(self, attr, value)
+        self.__state__ = state # type: ignore
+
     def __hash__(self) -> int:
-        s = {}
-        for field in self.__pydantic_fields_set__.union(self.__class__.always_serialize_fields):
-            t = (field, hash(getattr(self, field)),)
-            s.add(t)
-        return hash(frozenset(s))
+        return hash(self.__getstate__())
 
-    def __eq__(self, other) -> bool:
-        # defined mainly for application under tests.
-        #
-        # To be __eq__ in this implementation:
-        # - self and other must be of the same class
-        # - the same fields must have been set in self and other,
-        #   for the set of fields recorded in __pydantic_fields_set__
-        # - each value on each set field must be __eq__ for each
-        #   instance
-        #
-        # On event of error, this will dispatch generally to
-        # object.__eq__() which may then apply an 'is' test
-        # for object equivalence
-        try:
-            if self.__class__ is not other.__class__:
-                return False
-            fields = self.__pydantic_fields_set__.union(self.__class__.always_serialize_fields)
-            for f in fields:
-                if getattr(self, f) != getattr(other, f):
-                    return False
-            return True
-        except Exception:
-            return super().__eq__(other)
-
-    def to_str(self) -> str:
-        """Returns a string representation of the object, without field alias names"""
-        return self.model_dump(by_alias=False, exclude_none=True, exclude_unset=False)
+    def __eq__(self, other: Any) -> bool:
+        if self.__class__ is not other.__class__:
+            return False
+        return self.__getstate__() == other.__getstate__()
 
     def to_json_str(self, encoder: JSONEncoder) -> str:
         """Returns a JSON string representation of the object, using field alias names
 
         See also: ApiJsonEncoder"""
-        ## repeated occurrence: ValueError: Circular reference detected
         return encoder.encode(self)
-        ## this does not deserialize SecretStr values correctly - it is a type-based issue, not of any one field
-        # return self.model_dump_json(by_alias=True)
 
-    def to_json_bytes(self) -> bytes:
-        return self.to_json_str().encode()
+    def to_json_bytes(self, encoder: JSONEncoder) -> bytes:
+        return self.to_json_str(encoder).encode()
 
     @classmethod
-    def from_json(cls, json_str: str, context: Optional[Mapping[str, Any]] = None) -> Self:
+    def from_json(cls, json_str: str, context: Optional[dict[str, Any]] = None) -> Self:
         """Creates an instance of the ApiObject class from a JSON string"""
         return cls.model_validate_json(json_str, context=context)
 
@@ -233,17 +286,21 @@ class ApiObject(BaseModel, metaclass=ApiClass):
         """Creates an instance of the ApiObject class from a mapping value"""
         return cls.model_validate(obj)
 
-    def to_transport_dict(self, by_alias: bool = False, encoder: Optional[JSONEncoder] = None):
+    def to_transport_dict(self, encoder: JSONEncoder, by_alias: bool = False):
         """Returns a dictionary representation of the object encoded in tranport syntax for each value, optionally using field alias names"""
-        enc = encoder if encoder else JSONEncoder(check_circular=False, ensure_ascii=False)
+        enc = (
+            encoder
+            if encoder
+            else JSONEncoder(check_circular=False, ensure_ascii=False)
+        )
         cls = self.__class__
         fields = cls.model_fields
         dct = {}
-        for field_name in self.model_fields_set.union(cls.always_serialize_fields):
-            field: TransportFieldInfo = fields[field_name]
+        for field_name in self.model_fields_set.union(cls.api_transport_fields):
+            field: TransportFieldInfo = fields[field_name]  # type: ignore
             typ = field.transport_type
             value = getattr(self, field_name)
-            unparsed = typ.unparse(value, encoder)  # TBD storing the unparsed value here, or the internal value here
+            unparsed = typ.unparse(value, encoder)
             # determine the field name for the output mapping
             alias = field.alias if by_alias else None
             name = alias if alias and by_alias else field_name
@@ -251,14 +308,22 @@ class ApiObject(BaseModel, metaclass=ApiClass):
             dct[name] = unparsed
         return dct
 
-    def to_dict(self, by_alias: bool = False):
-        """Returns a dictionary representation of field names and internal field values for the object,
-        optionally using field alias names"""
+    def to_dict(self,
+                by_alias: bool = False) -> dict[str, Any]:
+        """Return a dictionary representation of the ApiObject
+
+        returns a mapping of transport field names to field values for the
+        object.
+
+        by_alias: If a truthly value, the return value will use JSON field
+        alias names
+        """
         cls = self.__class__
         fields = cls.model_fields
         dct = {}
-        for field_name in self.model_fields_set.union(cls.always_serialize_fields):
-            field: TransportFieldInfo = fields[field_name]
+        dict_fields = cls.api_transport_fields.union(self.model_fields_set)
+        for field_name in dict_fields:
+            field: TransportFieldInfo = fields[field_name] # type: ignore
             typ = field.transport_type
             value = getattr(self, field_name)
             if isinstance(typ, TransportValues):
@@ -293,16 +358,17 @@ class ApiObject(BaseModel, metaclass=ApiClass):
         fields = self.__class__.model_fields
         if attr in fields:
             if attr in self.model_fields_set:
-                return super().__getattr__(attr)
+                return super().__getattr__(attr)  # type: ignore
             else:
                 field = fields[attr]
                 default = field.get_default()
                 if default is PydanticUndefined:
+                    # fmt: off
                     raise AttributeError("Field is unset and has no default value", attr)
                 else:
                     return default
         else:
-            return super().__getattr__(attr)
+            return super().__getattr__(attr)  # type: ignore
 
     def __getitem__(self, key: str, assume_model: bool = False) -> Any:
         """Set the value for the attribute `key`, if `key` denotes a model field.
@@ -328,6 +394,9 @@ class ApiObject(BaseModel, metaclass=ApiClass):
         Known Limitations:
         - Not thread-safe for concurrent read and modification of model fields
         """
+        if __debug__:
+            if hasattr(self, "__state__"):
+                raise ValueError("Object is immutable", self)
         if assume_model or key in self.__class__.model_fields:
             return setattr(self, key, value)
         else:
@@ -361,9 +430,11 @@ class ApiObject(BaseModel, metaclass=ApiClass):
             raise KeyError("Model field not found", key)
 
     def __repr__(self, cache: Optional[list] = None):
+        # fmt: off
         return self.__class__.__qualname__ + "(" + ", ".join({field + "=" + repr(getattr(self, field)) for field in self.model_fields_set}) + ")"
 
     def __str__(self):
+        # fmt: off
         return self.__class__.__qualname__ + "(" + ", ".join({field + "=" + str(getattr(self, field)) for field in self.model_fields_set}) + ")"
 
     #
@@ -383,7 +454,7 @@ class ApiObject(BaseModel, metaclass=ApiClass):
         if key in fields:
             info: TransportFieldInfo = fields[key]
             mcls: "type[ApiObject]" = info.transport_type.storage_class
-            return mcls.initialize_prototype()
+            return mcls.create_prototype()
         else:
             raise ValueError("Not a known field name", key, cls)
 
@@ -395,34 +466,40 @@ class ApiObject(BaseModel, metaclass=ApiClass):
 
 Td = TypeVar("Td", bound=ApiObject)
 
-TypesMap: TypeAlias = Mapping[Td, type[Self]]
+TypesMap: TypeAlias = dict[Td, type[ApiObject]]  ## ?
 
 
 class AbstractApiClass(ApiClass):
     @staticmethod
-    def __new__(cls, cls_name: str, bases: Tuple[type[Any]], namespace: Mapping[str, Any],
+    def __new__(
+        cls,
+        cls_name: str,
+        # fmt: off
+                bases: Tuple[type[Any]], namespace: dict[str, Any],
                 designator_key: Optional[str] = None,
-                designator_type: Optional[type[ApiObject]] = None):
-
-        annotations = namespace["__annotations__"] if "__annotations__" in namespace else {}
+                designator_type: Optional[type[ApiObject]] = None
+    ):
+        annotations = (
+            namespace["__annotations__"] if "__annotations__" in namespace else {}
+        )
 
         if designator_key:
-            namespace['designator_key'] = designator_key
-            annotations['designator_key'] = ClassVar[str]
+            namespace["designator_key"] = designator_key
+            annotations["designator_key"] = ClassVar[str]
 
         if designator_type:
-            namespace['designator_type'] = designator_type
-            annotations['designator_type'] = ClassVar[type[designator_type]]
+            namespace["designator_type"] = designator_type
+            annotations["designator_type"] = ClassVar[type[designator_type]]  # type: ignore
 
-        if 'types_map' not in namespace:
-            namespace['types_map'] = {}
+        if "types_map" not in namespace:
+            namespace["types_map"] = {}
 
         namespace["__annotations__"] = annotations
 
         return super().__new__(cls, cls_name, bases, namespace)
 
 
-class AbstractApiObject (ApiObject, Generic[Td], metaclass=AbstractApiClass):
+class AbstractApiObject(ApiObject, Generic[Td], metaclass=AbstractApiClass):
     ## for Request, Order, Transaction
 
     types_map: ClassVar[TypesMap]
@@ -430,20 +507,29 @@ class AbstractApiObject (ApiObject, Generic[Td], metaclass=AbstractApiClass):
     designator_type: ClassVar[type[ApiObject]]
 
     @classmethod
-    def __init_subclass__(cls, *args, **kw):
-        super().__init_subclass__(*args, **kw)
-        if AbstractApiObject not in cls.__bases__:
+    def __init_subclass__(cls, *,
+                            designator_key: Optional[str] = None,
+                            designator_type: Optional[type[ApiObject]] = None,
+                            **kw):
+        super().__init_subclass__(**kw)
+        if designator_key:
+            cls.designator_key = designator_key
+        if designator_type:
+            cls.designator_type = designator_type
+        if not (designator_key or designator_type): # and AbstractApiObject not in cls.__bases__:
+            ## initialize a subclass representing an abstract API object class
             base = cls.get_abstract_base()
             key = base.designator_key
-            serialize = set(cls.always_serialize_fields)
+            serialize = set(cls.api_transport_fields)
             serialize.add(key)
-            cls.always_serialize_fields = frozenset(serialize)
+            cls.api_transport_fields = frozenset(serialize)
             if hasattr(cls, key):
                 hints = cls.__annotations__
                 if key not in hints:
+                    # fmt: off
                     raise ValueError("Subclass has no type hints for key attribute", key, cls, base)
                 key_hint = hints[key]
-                if key_hint is cls.designator_type:
+                if key_hint is designator_type:
                     # an intermediate abstract class may not have provided a binding
                     # for the designator key - not an error
                     return
@@ -474,18 +560,18 @@ class AbstractApiObject (ApiObject, Generic[Td], metaclass=AbstractApiClass):
         return map
 
     @classmethod
-    def class_for_designator(cls, designator: Td) -> type[Self]:
-        ## of course the types map is empty for a concrete subclass of the abstract base class....
-        ##
-        ## TBD mapping from each such concrete class to a single abstract base class
+    def class_for_designator(cls, designator: Td) -> type[ApiObject]:
+        ## return the implementation class defined for a given designator value
         if __debug__:
             if len(cls.types_map) is int(0):
                 raise AssertionError("Types map is empty", cls)
             elif not designator:
+                # fmt: off
                 raise AssertionError("Abstract instance designator not provided", designator, cls.designator_key, cls)
         if designator in cls.types_map:
             return cls.types_map[designator]
         else:
+            # fmt: off
             raise ValueError("No class found for abstract instance designator", designator, cls)
 
     @classmethod
@@ -531,19 +617,19 @@ class AbstractApiObject (ApiObject, Generic[Td], metaclass=AbstractApiClass):
     def finalize_prototype(cls, value: Union[dict, Self]) -> Self:
         inst = None
 
-
         if isinstance(value, dict):
-            designator = value.get(cls.designator_key)
+            designator: Td = value.get(cls.designator_key)  # type:ignore
             model_cls = cls.class_for_designator(designator)
             if __debug__:
                 if not model_cls:
+                    # fmt: off
                     raise AssertionError("No model class found", designator, cls)
             inst = model_cls.__new__(model_cls)
             fields = model_cls.api_fields
-            info = None
+            info: Optional[TransportFieldInfo] = None
             for key, inteval in value.items():
                 if key in fields:
-                    info: TransportFieldInfo = fields[key]
+                    info = fields[key]
                 else:
                     raise ValueError("Unknown field", key, model_cls)
                 ttyp = info.transport_type

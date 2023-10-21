@@ -2,6 +2,7 @@
 
 from abc import abstractmethod, ABC
 import asyncio as aio
+import concurrent.futures as cofutures
 import inspect
 import ijson
 import logging
@@ -11,15 +12,18 @@ from typing import Any, AsyncGenerator, Callable, Generic, Mapping, Optional, Se
 from typing_extensions import Generic, TypeVar
 
 from .io import AsyncSegmentChannel, DataError
-from .transport import ApiObject, AbstractApiObject, AbstractApiClass, ApiClass,  TransportFieldInfo, TransportType, TransportValues, JsonTypesRepository
+from .transport import (   # type: ignore
+    ApiObject, AbstractApiObject, AbstractApiClass, ApiClass,
+    TransportFieldInfo, TransportType, TransportValues, JsonTypesRepository
+)
 from .response_common import ResponseInfo
 from .exceptions import ApiException
 from .response_common import REST_CONTENT_TYPE
-from .exec_controller import ExecController
+from .exec_controller import ExecController, thread_loop
 
 
-class NoResponse:
-    DataError
+class NoResponse(DataError):
+    pass
 
 ##
 ## The builder model for applying ijson with the ApiObject model
@@ -344,10 +348,11 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                             self.builder = self
 
     @classmethod
-    async def from_text_async(cls, model_cls: type[Tmodel], data: Union[bytes, str]) -> Tmodel:
-        async with AsyncSegmentChannel() as stream:
+    async def from_text_async(cls, model_cls: type[Tmodel], data: Union[bytes, str],
+                              loop: Optional[aio.AbstractEventLoop] = None) -> Tmodel:
+        async with AsyncSegmentChannel(loop=loop or aio.get_running_loop()) as stream:
             await stream.feed(data, True)
-            builder = cls[model_cls](model_cls)
+            builder = cls(model_cls)
             async for event, value in ijson.basic_parse_async(stream, use_float=True):
                 await builder.aevent(event, value)
             return builder.instance
@@ -404,11 +409,13 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
             ## Known Limitation: this may serve to embed a proxy response
             ## page within the exception message. Applications may be able
             ## to unparse this content into a meaningful representation,
-            ## upon handling the exception within some calling context
+            ## when handling the exception.
             ##
+            # fmt: off
             response_text = chunk.decode(content_encoding) if content_encoding else chunk.decode()
             raise ApiException(status=status, reason=response_info.reason,
-                               response=response_text)
+                               response=response_text, content_type = content_type)  # type: ignore
+            # fmt: on
         elif status > 299:
             ## as one convention in the fxTrade v20 API, every streaming 'success'
             ## response uses 200 as a response code. Other codes would indicate
@@ -420,9 +427,11 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
             if model_cls:
                 ## the response represents an expected response for the
                 ## related endpoint
-                builder: ModelBuilder = cls[model_cls](model_cls)
+                builder: ModelBuilder = cls(model_cls)
+                # fmt: off
                 async for event, value in ijson.basic_parse_async(stream, use_float=True):
                     await builder.aevent(event, value)
+                # fmt: on
                 exc_response = builder.instance
             else:
                 async for toplevel in ijson.items(stream, ''):
@@ -473,7 +482,8 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
     @classmethod
     async def from_receiver_gen(cls, controller: ExecController,
                                 model_cls_callback: Callable[[ResponseInfo, bytes], Optional[type[ApiObject]]],
-                                model_callback: Callable[[ApiObject], Any]
+                                model_callback: Callable[[ApiObject], Any],
+                                loop: Optional[aio.AbstractEventLoop] = None
                                 ) -> AsyncGenerator[ApiObject, Union[ResponseInfo, bytes, None]]:
         ## read a server response from an fxTrade v20 streaming endpoint,
         ## via async generator.
@@ -481,21 +491,26 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
         ## This generator will be provided to the REST client, which will feed
         ## a sequence of byte chunks, each generally containing a complete
         ## JSON string or a complete non-JSON response
-        async with AsyncSegmentChannel[bytes]() as stream:
-            response_info: ResponseInfo = yield
+        async with AsyncSegmentChannel[bytes](loop = loop or aio.get_running_loop()) as stream:
+            response_info: ResponseInfo = yield  # type: ignore
             if __debug__:
                 model_builder_debug("from_receiver_gen: Received response info %r", response_info)
 
             assert isinstance(response_info, ResponseInfo), "Received unexpected value"
 
-            def thunk():
-                loop = aio.get_event_loop_policy().new_event_loop()
-                aio.set_event_loop(loop)
+            def parse_response():
+                nonlocal cls, response_info, stream, model_cls_callback, model_callback
+                global thread_loop
+                loop = thread_loop.get()
                 coro = cls.from_response_async(response_info, stream, model_cls_callback, model_callback)
-                rslt = loop.run_until_complete(coro)
-                loop.close()
+                task = loop.create_task(coro)
+                # ensure the thread stays open until processing is complete.
+                # generally, this should run until the stream is closed
+                cofuture = cofutures.Future
+                task.add_done_callback(lambda _: cofuture.set_result(True))
+                _ = cofuture.result()
 
-            chunk: Optional[bytes] = yield
+            chunk: Optional[bytes] = yield  # type: ignore
             if not chunk:
                 ## effective EOF
                 await stream.aclose()
@@ -509,7 +524,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
 
             ## assumption: The caller will have provided a model_callback that will handle
             ## any response object(s) in a manner suitable for the request
-            await controller.dispatch(thunk)
+            await controller.dispatch(parse_response)
 
             while chunk:
                 chunk = yield True  # type: ignore
@@ -534,7 +549,7 @@ class SequenceBuilder(InstanceBuilder[Sequence]):
         builder = self.builder
         if builder is self:
             if __debug__:
-                model_builder_debug("SequenceBuilder.aevent %s %s (%s)", self.key, event, self.instance_class.__name__)
+                model_builder_debug("SequenceBuilder.aevent %s %s (%s)", self.key, event, self.instance_class.__name__ if self.instance_class else None)
             match event:
                 case 'start_array':
                     self.instance = []
@@ -544,9 +559,9 @@ class SequenceBuilder(InstanceBuilder[Sequence]):
                 case 'map_key':
                     raise ValueError("map_key not supported in SequenceBuilder", self)
                 case 'start_map':
-                    member_type_class = Optional[ApiClass]
+                    member_type_class: Optional[ApiClass]
                     if self.transport_type:
-                        member_type_class: ApiClass = self.transport_type.member_transport_type.storage_class
+                        member_type_class = self.transport_type.member_transport_type.storage_class
                     else:
                         ## parsing a mapping under an unrealized abstract type
                         member_type_class = None

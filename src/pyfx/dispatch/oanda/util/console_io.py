@@ -3,7 +3,9 @@
 import aioconsole
 import asyncio as aio
 from contextlib import asynccontextmanager
+import os
 import sys
+import traceback
 from typing_extensions import TypeAlias, Optional, Union
 
 from .naming import exporting
@@ -40,11 +42,17 @@ class ConsoleIO:
     async def aclose(self):
         stdout = self.stdout_writer
         stdout.close()
-        await stdout.wait_closed()
+        try:
+            await stdout.wait_closed()
+        except:  # nosec B110
+            pass
         stderr = self.stderr_writer
         if stderr is not stdout:
             stderr.close()
-            await stderr.wait_closed()
+            try:
+                await stderr.wait_closed()
+            except:  # nosec B110
+                pass
 
 
 @asynccontextmanager
@@ -82,8 +90,11 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
     '''
     pipe = None
     stdout = sys.stdout
+    stdout_fd = os.dup(stdout.fileno())
     stderr = sys.stderr
+    stderr_fd = None if stderr is stdout else os.dup(stderr.fileno())
     stdin = sys.stdin
+    stdin_fd = os.dup(stdin.fileno())
     try:
         aio_loop = loop if loop else aio.get_running_loop()
         s_in, s_out, s_err = await aioconsole.stream.create_standard_streams(sys.stdin, sys.stdout, sys.stderr, loop=aio_loop)
@@ -93,11 +104,28 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
         sys.stdin = pipe.stdin_reader
         yield pipe
     finally:
-        sys.stderr = stderr
-        sys.stdout = stdout
-        sys.stdin = stdin
+        # Open fallback streams for the original file descriptors
+        #
+        # This should serve to ensure normal I/O is available before sys.exit()
+        #
+        # Known Limitations:
+        #
+        # It's assumed that the original sys streams are each bound to some object
+        # having a fileno(), furthermore assumed that the dup'd file descriptors
+        # are each accepting I/O at this time
+        #
+        # Not a complete stream dup-lication, this does not restore buffering or other
+        # properties of the original streams
+        #
+        sys.stdout = open(stdout_fd, encoding=stdout.encoding, mode=stdout.mode)
+        sys.stderr = open(stderr_fd, encoding=stdout.encoding, mode=stderr.mode) if stderr_fd else sys.stdout
+        sys.stdin = open(stdout_fd, encoding=stdout.encoding, mode=stdin.mode)
         if pipe:
-            await pipe.aclose()
+            try:
+                await pipe.aclose()
+            except:
+                print("Error during ConsoleIO.aclose()", file = stderr)
+                traceback.print_exception(*sys.exc_info(), file = stderr)
 
 
 __all__ = exporting(__name__, ..., annotations=True)

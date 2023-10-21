@@ -4,17 +4,23 @@ from abc import abstractmethod
 import enum
 import sys
 from types import ModuleType
-from typing import Any, Callable, Generator, Iterable, Iterator, Optional, Union
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Optional,
+    Union,
+)
+from typing_extensions import Protocol, runtime_checkable, TypeAlias, TypeVar
 import typing
-from typing_extensions import final, Protocol, runtime_checkable, TypeAlias, TypeVar
-import typing_extensions
 
 Tname = TypeVar("Tname", bound=str)
 
 
-@final
 @runtime_checkable
-class SupportsName(Protocol[Tname]):
+class SupportsName(Protocol[Tname]):  # type: ignore
     @abstractmethod
     def __name__(self) -> Tname:
         raise NotImplementedError(self.__name__)
@@ -30,19 +36,23 @@ def is_type_var(value) -> bool:
             return True
         else:
             return False
-    if isinstance(value, typing_extensions.TypeVar):
-        return isinstance(value, typing_extensions.TypeVar)
+    elif isinstance(value, TypeVar):
+        return isinstance(value, TypeVar)
+    else:
+        return False
 
 
 def is_enum_member(value) -> bool:
     if isinstance(value, enum.Enum):
-        ## generally this should also address the case of aenum.Enum 
+        ## generally this should also address the case of aenum.Enum
         return True
     return False
 
-def names_iter(first: Union[NameLike, Iterable[NameLike]],
-               *rest: Iterable[Union[NameLike, Iterable[NameLike]]]
-               ) -> Iterator[str]:
+
+def names_iter(first: Union[NameLike, Iterable[NameLike]], # fmt: off
+    *rest: Iterable[Union[NameLike, Iterable[NameLike]]],
+    ) -> Iterator[str]:
+    # fmt: on
     if isinstance(first, str):
         yield first
     ## checking for the generator type, before returning a generator's name
@@ -53,7 +63,7 @@ def names_iter(first: Union[NameLike, Iterable[NameLike]],
         yield first.__qualname__
     ## StrEnum members will be presented by value, shortly
     elif isinstance(first, SupportsName):
-        yield first.__name__
+        yield first.__name__  # type: ignore
     elif isinstance(first, Iterable):
         ## Python enums are iterable and classes,
         ## thus this is checked after
@@ -77,14 +87,14 @@ def get_module(qual: Union[str, ModuleType]) -> ModuleType:
         raise ValueError("Unknown module", qual)
 
 
-def module_defines_iter(module: Union[str, ModuleType], *,
+def module_defines_iter(module: Union[str, ModuleType], *, # fmt: off
                         predicate: Optional[Callable[[Any], bool]] = None,
                         exclude: Optional[Union[Iterable[Any], Any]] = None,
                         exclude_types: Optional[Union[type, Iterable[type]]] = None,
                         annotations: Optional[bool] = True,
-                        typevars=False,
-                        enum_members=False
+                        typevars=False, enum_members=False
                         ) -> Iterable[Any]:
+    # fmt: on
     def check_val(val):
         if exclude and val in exclude:
             return False
@@ -96,7 +106,7 @@ def module_defines_iter(module: Union[str, ModuleType], *,
             return False
         if exclude_types:
             cls = val.__class__
-            for t in exclude_types:
+            for t in exclude_types: # type: ignore
                 if issubclass(cls, t):
                     return False
         return True
@@ -107,9 +117,12 @@ def module_defines_iter(module: Union[str, ModuleType], *,
     if exclude_types and not isinstance(exclude_types, Iterable):
         exclude_types = {exclude_types}
     for val in m.__dict__.values():
-        if hasattr(val, "__module__") and sys.modules[val.__module__].__name__ == m.__name__:
+        # fmt: off
+        if (hasattr(val, "__module__")
+            and sys.modules[val.__module__].__name__ == m.__name__):
             if check_val(val):
                 yield val
+        # fmt: on
     if annotations:
         for name in m.__annotations__.keys():
             try:
@@ -123,13 +136,14 @@ def module_defines_iter(module: Union[str, ModuleType], *,
                 yield name
 
 
-def exporting(whence, first, *rest,
+def exporting(whence, first, *rest, # fmt: off
               predicate: Optional[Callable[[Any], bool]] = None,
               exclude: Optional[Union[Iterable[Any], Any]] = None,
               exclude_types: Optional[Union[type, Iterable[type]]] = None,
-              annotations: bool = True,
-              typevars: bool = False, enum_members: bool = False
-              ) -> list[str]:
+              annotations: bool = True, typevars: bool = False,
+              enum_members: bool = False
+              ) -> tuple[str]:
+    # fmt: on
     m = get_module(whence)
     has_all = hasattr(m, "__all__")
     if first == ...:
@@ -137,20 +151,17 @@ def exporting(whence, first, *rest,
             iter_names = None
         else:
             iter_names = names_iter(
-                module_defines_iter(m, predicate=predicate,
-                                    exclude=exclude,
-                                    exclude_types=exclude_types,
-                                    annotations=annotations,
-                                    typevars=typevars,
-                                    enum_members=enum_members))
+                module_defines_iter(
+                    m,
+                    predicate=predicate,
+                    exclude=exclude,
+                    exclude_types=exclude_types,
+                    annotations=annotations,
+                    typevars=typevars,
+                    enum_members=enum_members,
+                ))
     else:
-        iter_names = names_iter(rest,
-                                predicate=predicate,
-                                exclude=exclude,
-                                exclude_types=exclude_types,
-                                annotations=annotations,
-                                typevars=typevars,
-                                enum_members=enum_members)
+        iter_names = names_iter(rest)
     if has_all:
         if isinstance(m.__all__, list):
             to_exp = m.__all__.copy()
@@ -161,9 +172,8 @@ def exporting(whence, first, *rest,
     if first != ...:
         to_exp.extend(names_iter(first))
     if not has_all:
-        to_exp.extend(iter_names)
-    to_exp = list(set(to_exp))
-    return to_exp
+        to_exp.extend(iter_names)  # type: ignore
+    return tuple(set(to_exp))  # type: ignore
 
 
 __all__ = exporting(__name__, ...)

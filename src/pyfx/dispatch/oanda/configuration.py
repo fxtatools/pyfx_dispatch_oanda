@@ -1,30 +1,54 @@
-# Configuration for ApiClient
+##  Configuration for ApiClient
 
-from enum import StrEnum
+import asyncio as aio
+from aenum import StrEnum
 from collections import ChainMap
-from contextlib import contextmanager  # TBD
-from contextvars import Context, ContextVar, Token, copy_context  # TBD
-from pydantic import BaseModel, Field, ConfigDict, SecretStr, ValidationError
-from pydantic.fields import PydanticUndefined
+from concurrent.futures import ThreadPoolExecutor
+from datetime import tzinfo
+import importlib.util
+from pydantic import BaseModel, Field, ConfigDict, ValidationError
+from pydantic.fields import PydanticUndefined, FieldInfo
 
 from .util import exporting
 import copy
 import httpx
 import os
-from os import PathLike
+from pytz import utc
 import sys
 import sysconfig
-from typing import Any, List, Literal, Mapping, Optional, Self, Sequence, Union
-from typing_extensions import Annotated, ClassVar, TypeAlias
+from typing import Any, Callable, Literal, Mapping, Optional, Sequence, Union
+from typing_extensions import Annotated, ClassVar, TypeVar
 
 from . import __version__
 from .credential import Credential
 from .hosts import FxHostInfo
+from .util.paths import Pathname
+from .models.common_types import AccountId
+
+T = TypeVar("T")
+
+
+def identity(obj: T) -> T:
+    """Identity function, returns the provided arg"""
+    return obj
+
+
+class ConfigField(FieldInfo):
+    """Initial prototype for configuration field parsing"""
+    parse_func: Callable[[Any], Any] = identity
 
 
 class ProfileName(StrEnum):
-    fxPractice: str = FxHostInfo.fxPractice.name
-    fxLive: str = FxHostInfo.fxLive.name
+    """Enum for host-specific identification of configuration profiles"""
+    FXPRACTICE: str = FxHostInfo.fxPractice.name
+    FXLIVE: str = FxHostInfo.fxLive.name
+
+
+UTC_TZINFO: tzinfo = utc
+"""Default timezone for configuration"""
+
+PROXY_ENV_NAMES: frozenset[str] = frozenset({"https_proxy", "HTTPS_PROXY", "ALL_PROXY", "all_proxy"})
+"""Environment variables that may denote an HTTPS proxy"""
 
 
 def environ_proxy() -> Optional[str]:
@@ -36,7 +60,10 @@ def environ_proxy() -> Optional[str]:
     Implementation Notes:
     - This function is used as a `default_factory` for the Configuration.proxy field
     """
-    return os.environ["https_proxy"] if "https_proxy" in os.environ else os.environ["HTTPS_PROXY"] if "HTTPS_PROXY" in os.environ else None
+    for var in PROXY_ENV_NAMES:
+        if var in os.environ:
+            return os.environ[var]
+    return None
 
 
 class ConfigurationModel(BaseModel):
@@ -75,14 +102,31 @@ class ConfigurationModel(BaseModel):
     access_token: Annotated[Credential, Field(...)]
     '''Access token for the v20 API'''
 
+    account_id: Annotated[AccountId, Field(AccountId.create_deferred())]
+
     datetime_format: str = "%x %X %Z"
-    '''datetime format for the console user interface'''
+    '''datetime format for user interface'''
 
     timezone: str = os.environ["TZ"] if "TZ" in os.environ else "UTC"
-    '''Timezone for console user interface.
+    '''Timezone for user interface.
 
     The default value will be initialized from `TZ` if `TZ` is set
     in `os.environ`, else using UTC'''
+
+    event_loop_policy: Union[str, Callable[[], aio.AbstractEventLoopPolicy]] = aio.get_event_loop_policy
+    """Callback for event loop policy
+
+    The denoted callable should return a value defining  policy will be applied for creating a default main loop and for creating
+    a loop within each worker thread. If provided as a ref (callable or reference string)
+    """
+
+    executor: Union[str, Callable[[int, str, Callable[[], Any]], ThreadPoolExecutor]] = ThreadPoolExecutor
+    """Thread Pool executor (class name, callable, or reference string)
+
+    If provided as a Callable or a reference string denoting a Callable
+    object, the referred Callable should accept positional arguments in
+    a syntax compatible with concurrent.futures.ThreadPoolExecutor
+    """
 
     max_thread_workers: Optional[int] = None
     '''Maximum number of workers for response processing
@@ -129,21 +173,21 @@ class ConfigurationModel(BaseModel):
     Set this to False to skip verifying the SSL hostname and certificate when calling the API
     '''
 
-    ssl_ca_cert: PathLike = os.path.join(sysconfig.get_paths()['purelib'], "certifi", "cacert.pem")
+    ssl_ca_cert: Pathname = os.path.join(sysconfig.get_paths()['purelib'], "certifi", "cacert.pem")
     '''Pathname for the PEM-formatted SSL CA certificate file '''
 
-    ssl_cert_file: Optional[PathLike] = None
+    ssl_cert_file: Optional[Pathname] = None
     '''Optional SSL certificate file for the SSL Context.
 
     If specified, key_file should also be defined'''
 
-    ssl_key_file: Optional[PathLike] = None
+    ssl_key_file: Optional[Pathname] = None
     '''Optional SSL key file for the SSL Context.
 
     If specified, cert_file should also be defined
     '''
 
-    tls_server_name: Optional[PathLike] = None
+    tls_server_name: Optional[Pathname] = None
     '''SSL/TLS Server Name Indication (SNI)
 
     Set this to the SNI value expected by the server.
@@ -162,6 +206,19 @@ class ConfigurationModel(BaseModel):
         return self.__repr__()
 
     @classmethod
+    def get_callable(cls, ident: Union[str, Callable]) -> Callable:
+        if isinstance(ident, Callable):  # type: ignore
+            return ident  # type: ignore
+        else:
+            assert isinstance(ident, str), "Not a string"
+            module_name, name = ident.rsplit(".", maxsplit=1)
+            spec = importlib.util.find_spec(module_name)
+            if spec:
+                return getattr(spec, name)
+            else:
+                raise ValueError("Module not found", module_name)
+
+    @classmethod
     def debug_header(cls):
         '''Return a string of debug header information'''
         return "SDK Debug Report, pyfx.dispatch.oanda\n"\
@@ -170,12 +227,6 @@ class ConfigurationModel(BaseModel):
                "Version of the API: 3.0.25\n"\
                "SDK Package Version: {sdk}".\
                format(env=sys.platform, pyversion=sys.version, sdk=__version__)
-
-
-
-class ConfigurationMap:
-    ## ChainMap integration here
-    pass
 
 
 class Configuration(ConfigurationModel):
@@ -290,7 +341,7 @@ class Configuration(ConfigurationModel):
         "_profiles", "_profile_default_map", "_current_profile", "_current_profile_name"
     })
     _profile_unique_fields: ClassVar[frozenset[str]] = frozenset({
-        "access_token", "fxpractice"
+        "access_token", "fxpractice", "account_id"
     })
     _profile_common_fields: ClassVar[frozenset[str]] = frozenset(ConfigurationModel.model_fields.keys()).difference(_profile_unique_fields)
 
@@ -301,19 +352,19 @@ class Configuration(ConfigurationModel):
             return FxHostInfo.fxLive.value
 
     def get_fxlive_profile(self) -> ChainMap[str, Any]:
-        return self.get_profile(ProfileName.fxLive.value)
+        return self.get_profile(ProfileName.FXLIVE.value)
 
     def get_fxpractice_profile(self) -> ChainMap[str, Any]:
-        return self.get_profile(ProfileName.fxPractice.value)
+        return self.get_profile(ProfileName.FXPRACTICE.value)
 
     def get_profile(self, name: str) -> ChainMap[str, Any]:
         return self._profiles[name]
 
     def use_fxlive_profile(self) -> ChainMap[str, Any]:
-        return self.use_profile(ProfileName.fxLive.value)
+        return self.use_profile(ProfileName.FXLIVE.value)
 
     def use_fxpractice_profile(self) -> ChainMap[str, Any]:
-        return self.use_profile(ProfileName.fxPractice.value)
+        return self.use_profile(ProfileName.FXPRACTICE.value)
 
     def use_profile(self, name: str) -> ChainMap[str, Any]:
         if name in self._profiles:
@@ -337,7 +388,7 @@ class Configuration(ConfigurationModel):
         '''
         return self._profile_default_map
 
-    def set_common(self, name: str, value: Any) -> Self:
+    def set_common(self, name: str, value: Any):
         '''Set the default value for a configuration field.
 
         This value will be shared between fxPractice and fxLive profiles
@@ -350,7 +401,7 @@ class Configuration(ConfigurationModel):
         if name in model_fields:
             if __debug__:
                 self.__pydantic_validator__.validate_assignment(self, name, value)
-            self._profile_default_map[name] = value  #  type: ignore
+            self._profile_default_map[name] = value  # type: ignore
         else:
             raise ValidationError("Configuration field not found", name)
 
@@ -398,24 +449,24 @@ class Configuration(ConfigurationModel):
     def __init__(self, **kwargs):
         '''Create a new Configuration instance
 
-    Instance fields, available as keyword arguments for initialization:
-    - fxpractice (bool) (default: True) If True, use fxTrade Practice endpoints, else use fxTrade Live endpoints
-    - access_token (str) [required]
-    - datetime_format (str)
-    - max_connections (optional int)
-    - max_keepalive_connections (int)
-    - keepalive_expiry (int, in units of seconds)
-    - retries (int)
-    - proxy (optional string, httpx.Proxy, or literal False): False to disable proxying, Null to use OS environ
-    - verify_ssl (bool) default: True
-    - ssl_ca_cert (path-like) default: Use Certifi cert
-    - ssl_cert_file, ssl_key_file (path-like) both must be set if either is provided
-    - tls_server_name (string)
-    - socket_options (sequence of sequences) socket options, provided as a sequence in sequence
+        Instance fields, available as keyword arguments for initialization:
+        - fxpractice (bool) (default: True) If True, use fxTrade Practice endpoints, else use fxTrade Live endpoints
+        - access_token (str) [required]
+        - datetime_format (str)
+        - max_connections (optional int)
+        - max_keepalive_connections (int)
+        - keepalive_expiry (int, in units of seconds)
+        - retries (int)
+        - proxy (optional string, httpx.Proxy, or literal False): False to disable proxying, Null to use OS environ
+        - verify_ssl (bool) default: True
+        - ssl_ca_cert (path-like) default: Use Certifi cert
+        - ssl_cert_file, ssl_key_file (path-like) both must be set if either is provided
+        - tls_server_name (string)
+        - socket_options (sequence of sequences) socket options, provided as a sequence in sequence
 
-    Excepting the access token, keyword arguments provided here will be used to initialize
-    the default configuration profile
-    '''
+        Excepting the access token, keyword arguments provided here will be used to initialize
+        the default configuration profile
+        '''
         profile_args = {}
         for field in self.__class__._profile_data_fields:
             ## move all profile data args into profile_data
@@ -460,20 +511,20 @@ class Configuration(ConfigurationModel):
 
         ## initialize a profile map for each ProfileName enum member,
         ## using annotations of ProfileName as an iteration source
-        for name in ProfileName.__annotations__.keys():
+        for name in ProfileName._value2member_map_.keys():
             if name not in profiles:
                 profile_config = {}
                 profiles[name] = ChainMap(profile_config, defaults)
 
         ## set constants fields per profile
-        profiles[ProfileName.fxLive.value]['fxpractice'] = False
-        profiles[ProfileName.fxPractice.value]['fxpractice'] = True
+        profiles[ProfileName.FXLIVE.value]['fxpractice'] = False
+        profiles[ProfileName.FXPRACTICE.value]['fxpractice'] = True
 
         if "_current_profile_name" in profile_args:
             self._current_profile_name = profile_args["_current_profile_name"]
         else:
             fxpractice = kwargs.get("fxpractice", True)
-            self._current_profile_name = ProfileName.fxPractice if fxpractice else ProfileName.fxLive
+            self._current_profile_name = ProfileName.FXPRACTICE if fxpractice else ProfileName.FXLIVE
 
         if "_current_profile" in profile_args:
             self._current_profile = profile_args['_current_profile']
@@ -489,6 +540,17 @@ class Configuration(ConfigurationModel):
     ##
     ## attribute -> chainmap access for model_fields
     ##
+
+    def parse_config_input(self, key: str, value: Any) -> Any:
+        # supporting only the fields of the Configuration class, mainly
+        # to avoid further instance attribute access within this method
+        #
+        model_fields = Configuration.model_fields
+        field = model_fields[key]
+        if isinstance(field, ConfigField):
+            return field.parse_func(value)
+        else:
+            return value
 
     def __getitem__(self, key: str, assume_model: bool = False) -> Any:
         model_fields = Configuration.model_fields
@@ -509,7 +571,7 @@ class Configuration(ConfigurationModel):
         if assume_model or key in Configuration.model_fields:
             if __debug__:
                 self.__pydantic_validator__.validate_assignment(self, key, value)
-            self._current_profile[key] = value
+            self._current_profile[key] = self.parse_config_input(key, value)
             self.__pydantic_fields_set__.add(key)
         else:
             raise KeyError("Configuration field not found", key)
@@ -535,7 +597,7 @@ class Configuration(ConfigurationModel):
         if assume_model or name in Configuration.model_fields:
             return self.__getitem__(name, True)
         else:
-            return super().__getattr__(name)
+            return super().__getattr__(name)  # typing: ignore
 
     def __setattr__(self, name: str, value: Any, assume_model: bool = False):
         if assume_model or name in Configuration.model_fields:
@@ -559,11 +621,11 @@ class Configuration(ConfigurationModel):
         return result
 
 
-class ConfigurationMgr():
-    profiles: Mapping[str, Configuration]
-    pass
+# class ConfigurationMgr():
+#     profiles: Mapping[str, Configuration]
+#     pass
 
-current_config: Configuration = ContextVar("current_config")
+# current_config: ContextVar[Configuration] = ContextVar("current_config")
 
 
 __all__ = exporting(__name__, ...)

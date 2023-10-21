@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from typing_extensions import ClassVar
 from enum import StrEnum, Enum
 
-from .util.naming import exporting
-
 class EndpointBase(StrEnum):
     """Host base URLs for fxTrade REST and Streaming endpoints"""
     # the actual host URL to use may vary by request
@@ -25,7 +23,7 @@ class FxHost:
     rest_host: str
     stream_host: str
     api_path: ClassVar[str] = "/v3"
-    
+
     def __eq__(self, obj) -> bool:
         other_cls = obj.__class__
         if issubclass(other_cls, Enum):
@@ -38,6 +36,8 @@ class FxHost:
             return False
 
 # class FxHostInfo(enum):
+
+
 class FxHostInfo(Enum):
     """Host definitions for fxTrade Practice and fxTrade Live endpoints"""
     ## not seemingly working out as an "actual python enum"
@@ -49,16 +49,17 @@ class FxHostInfo(Enum):
         rest_host=EndpointBase.fxlive_rest + FxHost.api_path,
         stream_host=EndpointBase.fxlive_streaming + FxHost.api_path
     )
-    
+
     def __eq__(self, obj) -> bool:
         return obj.__eq__(self.value)
-    
+
     @property
     def rest_host(self):
         return self.value.rest_host
-    
+
     @property
     def stream_host(self):
         return self.value.stream_host
 
-__all__ = tuple(exporting(__name__, ...))
+
+__all__ = ("EndpointBase", "FxHost", "FxHostInfo",)

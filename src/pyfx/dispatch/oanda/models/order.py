@@ -1,5 +1,5 @@
 
-"""model definition for OANDA v20 REST API (3.0.25)"""
+"""Order model definition for OANDA v20 REST API (3.0.25)"""
 
 from typing import Annotated, Optional
 
@@ -11,6 +11,7 @@ from .client_extensions import ClientExtensions
 
 from .order_state import OrderState
 from .order_type import OrderType
+
 
 class Order(AbstractApiObject, # type: ignore
             designator_key="type",

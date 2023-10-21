@@ -50,18 +50,20 @@
 
 import argparse as ap
 from contextlib import contextmanager
+import io
 import os
 import re
 import shlex
 from subprocess import Popen
+import platform
 import sys
-from tempfile import TemporaryDirectory, TemporaryFile
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 from time import sleep
 import traceback
 from urllib.error import HTTPError
 import urllib.request
 
-from typing import Any, Callable, Generator, Sequence, TypeVar, Union
+from typing import Any, Callable, Generator, Iterator, Sequence, TypeVar, Union
 
 if sys.version_info >= (3, 10):
     ## TypeAlias is declared for the Yields alias, if >= 3.10
@@ -78,8 +80,8 @@ def notify(fmt: str, *args):
 
 def with_main(
     options: ap.Namespace,
-    sub_main: "Callable",
-    sys_args: "Sequence[str]" = (),
+    sub_main: Callable,
+    sys_args: Sequence[str] = (),
     main_args=(),
     main_kwargs=None,
 ):
@@ -135,7 +137,7 @@ def guess_env_scripts_dir(env_dir: str) -> str:
     ## in character case, on operating systems utilizing a case-folding
     ## syntax in filesystem pathnames
     ##
-    if sys.platform == "win32":
+    if platform.system == "Windows":
         ## referenced onto venv ___init__.py, Python 3.9
         return os.path.join(env_dir, "Scripts")
     else:
@@ -165,22 +167,12 @@ def ensure_env(options: ap.Namespace) -> int:
     env_dir = os.path.abspath(options.env_dir)
     env_cfg = os.path.join(env_dir, "pyvenv.cfg")
     if os.path.exists(env_cfg):
-        scripts_dir = guess_env_scripts_dir(env_dir)
-        py_activate = os.path.join(scripts_dir, "activate_this.py")
-        if os.path.exists(py_activate):
-            notify("Virtual environment already created: %s", env_dir)
-            return 0
-        else:
-            # fmt: off
-            notify("Virtual environment exists but bin/activate_this.py not found: %s",
-                   env_dir)
-            # fmt: on
-            return 7
+        notify("Virtual environment already created: %s", env_dir)
+        return 0
     else:
         rc = 1
         with TemporaryDirectory(
-            prefix=options.prog + ".",
-            dir=options.tmpdir
+            prefix=options.prog + ".", dir=options.tmpdir
         ) as tmpenv_dir:
             notify("Creating bootstrap venv %s", tmpenv_dir)
             if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
@@ -298,9 +290,11 @@ def run_ensure_env(options: ap.Namespace) -> int:
 def run_fetch(options: ap.Namespace) -> int:
     no_proxy = options.no_proxy
     overwrite = options.force
-    tmpf_ex = False
-    tmpname_ex = False
+    tmpf_ex: io.FileIO
+    tmpname_ex: str
     url = options.url
+    tmpdir: str = options.tmpdir
+    prog: str = options.prog
     dest = False if options.dest == "-" else options.dest
     if no_proxy:
         ## reusing a CGI-related security feature to disable proxying
@@ -309,17 +303,17 @@ def run_fetch(options: ap.Namespace) -> int:
         if not overwrite:
             notify("File exists: %s", dest)
             return 1
-        tmpf_ex = TemporaryFile(prefix=options.prog + ".",
-                                dir=options.tmpdir,
-                                delete=False)
+        tmpf_ex = NamedTemporaryFile(  # type: ignore
+            prefix= prog + ".", dir=tmpdir, delete=False
+        )
     try:
-        with urllib.request.urlopen(url) as freq:
+        with urllib.request.urlopen(url) as freq:  # nosec B310
             if dest:
-                tmpf_dst = TemporaryFile(
-                    prefix=options.prog + ".",
-                    dir=options.tmpdir,
+                tmpf_dst = NamedTemporaryFile(
+                    prefix=prog + ".",
+                    dir=tmpdir,
                     delete=False,
-                    mode="w+b"
+                    mode="w+b",
                 )
                 tmpf_dst.write(freq.read())
                 if tmpf_ex:
@@ -372,9 +366,9 @@ def show_help_func(parser: ap.ArgumentParser, stream=sys.stdout) -> OptionsFunc:
 @contextmanager
 def argparser(
     prog,
-    formatter_class: "type[ap.HelpFormatter]" = ap.ArgumentDefaultsHelpFormatter,
+    formatter_class: type[ap.HelpFormatter] = ap.ArgumentDefaultsHelpFormatter,
     **kwargs,
-) -> Yields[ap.ArgumentParser]:
+) -> Iterator[ap.ArgumentParser]:
     parser = ap.ArgumentParser(prog=prog, formatter_class=formatter_class, **kwargs)
     yield parser
 
@@ -385,14 +379,14 @@ def command_parser(
     name: str,
     func: OptionsFunc,
     description: str,
-    formatter_class: "type[ap.HelpFormatter]" = ap.ArgumentDefaultsHelpFormatter,
+    formatter_class: type[ap.HelpFormatter] = ap.ArgumentDefaultsHelpFormatter,
     **parser_args,
-) -> "Yields[ap.ArgumentParser]":
+) -> Iterator[ap.ArgumentParser]:
     helper_args = {}
     if "help" not in parser_args:
         ## include the first line from the command desciption as the help text
         ## for the command when listed under `project.py -h`
-        helper_args["help"] = re.split("[\n\r]", description)[0]
+        helper_args["help"] = re.split("[\n\r]", description, maxsplit=1)[0]
 
     cmd_parser = subparser.add_parser(
         name,
@@ -411,7 +405,7 @@ def subparsers(
     title="commands",
     help="Available commands. See <command> -h",
     **kwargs,
-) -> Yields[ap._SubParsersAction]:
+) -> Iterator[ap._SubParsersAction]:
     yield root_parser.add_subparsers(title=title, help=help, **kwargs)
 
 
@@ -437,15 +431,13 @@ def get_argparser(**parser_kwargs):
     with argparser(**parser_kwargs) as mainparser:
         if "prog" in parser_kwargs:
             ## using arg options for shared storage of the program name
-            mainparser.set_defaults(
-                prog=parser_kwargs["prog"]
-            )
+            mainparser.set_defaults(prog=parser_kwargs["prog"])
         mainparser.add_argument(
             "--debug",
             "-d",
             help="Run with debugging messages enabled (equivalent to -vv)",
             default=False,
-            action="store_true"
+            action="store_true",
         )
         add_common_args(mainparser)
         with subparsers(mainparser) as subparser:
@@ -454,7 +446,7 @@ def get_argparser(**parser_kwargs):
                 subparser,
                 "ensure_env",
                 run_ensure_env,
-                description="Ensure that a virtual environment is created"
+                description="Ensure that a virtual environment is created",
             ) as mkenv_parser:
                 mkenv_parser.add_argument(
                     "--pip-opt",
@@ -462,7 +454,7 @@ def get_argparser(**parser_kwargs):
                     help="Cumulative options to pass to pip install",
                     default=[],
                     action="append",
-                    dest="pip_install_opts"
+                    dest="pip_install_opts",
                 )
                 ## ensure e.g "-v" and "--tmpdir" are avaialble as args,
                 ## before and after the 'ensure_env' cmd name in argv
@@ -471,7 +463,7 @@ def get_argparser(**parser_kwargs):
                     "env_dir",
                     help="Directory path for virtual environment",
                     default="env",
-                    nargs="?"
+                    nargs="?",
                 )
             with command_parser(
                 subparser,
@@ -481,22 +473,20 @@ def get_argparser(**parser_kwargs):
             ) as fetch_parser:
                 add_common_args(fetch_parser)
                 fetch_parser.add_argument(
-                    "--no_proxy",
-                    help="Disable proxy support",
-                    action="store_true"
+                    "--no_proxy", help="Disable proxy support", action="store_true"
                 )
                 fetch_parser.add_argument(
-                    "--force", "-f",
+                    "--force",
+                    "-f",
                     help="Force overwrite of an existing file",
-                    action="store_true"
+                    action="store_true",
                 )
                 fetch_parser.add_argument(
                     "url",
                     help="URL of the resource to fetch",
                 )
                 fetch_parser.add_argument(
-                    "dest",
-                    help="Destination file for fetch, '-' for stdout"
+                    "dest", help="Destination file for fetch, '-' for stdout"
                 )
     return mainparser
 
@@ -513,9 +503,7 @@ if __name__ == "__main__" and not running_ipython():
     this = os.path.basename(this_file)
     project = os.path.basename(os.path.dirname(this_file))
 
-    mainparser = get_argparser(
-        prog=this, description="Project tools for %s" % project
-    )
+    mainparser = get_argparser(prog=this, description="Project tools for %s" % project)
 
     cmd_args = sys.argv[1:]
     # options = mainparser.parse_args(cmd_args)

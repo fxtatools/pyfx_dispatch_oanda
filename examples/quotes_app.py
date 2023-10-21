@@ -3,6 +3,7 @@
 # This example depends on TaskGroup support, using the
 # coroutines-based implementation available in Python 3.11+
 
+import argparse as ap
 import asyncio as aio
 
 from pyfx.dispatch.oanda.models import (  # type: ignore
@@ -11,40 +12,86 @@ from pyfx.dispatch.oanda.models import (  # type: ignore
     GetInstrumentCandles200Response
 )
 
-from dataclasses import dataclass, field
+from pyfx.dispatch.oanda.models.candlestick_granularity import CandlestickGranularity
+from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
+from pyfx.dispatch.oanda.api.price_component import PriceComponent
+
+from contextlib import contextmanager
 import logging
 import os
-from pyfx.dispatch.oanda import ApiController  # type: ignore
+from pyfx.dispatch.oanda.api.default_api import ApiController
 import pyfx.dispatch.oanda.util.log as log
 from pyfx.dispatch.oanda.util import expand_path, console_io  # type: ignore
 import sys
-from typing import Awaitable, Mapping
+from typing import Awaitable, Mapping, Optional
 
 
 logger = logging.getLogger("pyfx.dispatch.oanda.examples")
+
 
 ##
 ## Application Example for Console - async dispatch via future callbacks
 ##
 
-@dataclass(eq=False, order=False)
-class ExampleController(DispatchController):
 
-    active_accounts: list[AccountProperties] = field(default_factory=list, repr=False, hash=False)
-    instruments: Mapping[str, Instrument] = field(default_factory=dict, repr=False, hash=False)
+class ExampleController(ApiController):
 
-    processed_lock: aio.Lock = field(init = False, hash=False, default_factory=aio.Lock)
+    # fmt: off
+    __slots__ = tuple(set(ApiController.__slots__).union(
+        "active_accounts", "instruments", "processed_lock",
+        "instruments_to_process",  "n_instruments",
+        "n_instruments_processed", "args_ns",
+        ## slots to initailize from cmdline options
+        "quote_granularity", "quote_price", "quotes_count",
+        "fetch_instruments"
+    ))
+    # fmt: on
 
-    instruments_to_process: set[str] = field(init=False, hash=False, default_factory=set)
-    n_instruments: int = field(init = False, default=0)
-    n_instruments_processed: int = field(init = False, default=0)
+    active_accounts: list[AccountProperties]
+    instruments: Mapping[str, Instrument]
+
+    processed_lock: aio.Lock
+
+    instruments_to_process: set[str]
+    n_instruments: int
+    n_instruments_processed: int
+
+    args_ns: ap.Namespace
 
     def initialize_defaults(self):
         super().initialize_defaults()
         self.active_accounts = []
         self.instruments = {}
         self.instruments_to_process = set()
+        self.n_instruments_processed = 0
         self.processed_lock = aio.Lock()
+
+    @classmethod
+    @contextmanager
+    def argparser(cls, prog: Optional[str] = None, description: Optional[str] = None):
+        with super().argparser(prog, description) as parser:
+            candles_grp = parser.add_argument_group("candlestick quotes")
+            candles_grp.add_argument("-g", "--granularity",
+                                     help="timeframe i.e Granularity for quotes",
+                                     default="S5", choices=CandlestickGranularity.__members__.keys())
+            candles_grp.add_argument("-p", "--price",
+                                     help="Price component for quotes",
+                                     choices=("a", "ask", "b", "bid", "m", "mid", "ab", "am", "bm", "abm"),
+                                     action="append", default=["m"])
+            candles_grp.add_argument("-n", "--count",  type=int,
+                                     help="Number of quotes (maximum: 5000)",
+                                     default=1)
+            yield parser
+
+    def process_args(self, namespace: ap.Namespace, unparsed: list[str]):
+        if len(unparsed) > 0:
+            raise ValueError("Unparsed args", unparsed)
+        self.quote_granularity = namespace.granularity
+        self.quote_price = PriceComponent.get("".join({PriceComponent.get(p) for p in set(namespace.price)}))
+        count = namespace.count
+        if (count > 5000):
+            raise ValueError("Count exceeds protocol limit (5000) for candlestick request", count)
+        self.quotes_count = namespace.count
 
     async def dispatch_candles_display(self, future: aio.Future[GetInstrumentCandles200Response]):
         # Print OHLC data and timestamps from the instrument candles response
@@ -55,26 +102,26 @@ class ExampleController(DispatchController):
         out = sys.stdout
         symbol = api_response.instrument
         inst_info = self.instruments[symbol]
-        out.write(inst_info.display_name)
+        out.write("%s (%s)" % (inst_info.display_name, self.quote_granularity))
         print(file=out)
         for quote in api_response.candles:
             loc_dt = quote.time.astimezone(self.config.timezone)
             dt_str = loc_dt.strftime(self.config.datetime_format)
             print("    " + dt_str, file=out)
             for label, field in (("A", "ask"), ("M", "mid"), ("B", "bid")):
-                # Implementation note: New response parser does not store attributes for defaults
-                if hasattr(quote, field):
-                    ohlc = getattr(quote, field)
-                    o = ohlc.o
-                    h = ohlc.h
-                    l = ohlc.l
-                    c = ohlc.c
-                    print(
-                        "\t  [{0:s}]   o: {1:^9g}\th: {2:^9g}\tl: {3:^9g}\tc: {4:^9g}".format(
-                            label, o, h, l, c
-                        ),
-                        file=out
-                    )
+                ohlc = getattr(quote, field)
+                if not ohlc:
+                    continue
+                o = ohlc.o
+                h = ohlc.h
+                l = ohlc.l
+                c = ohlc.c
+                print(
+                    "\t  [{0:s}]   o: {1:^9g}\th: {2:^9g}\tl: {3:^9g}\tc: {4:^9g}".format(
+                        label, o, h, l, c
+                    ),
+                    file=out
+                )
         async with self.processed_lock:
             self.n_instruments_processed += 1
             if self.n_instruments_processed is self.n_instruments:
@@ -100,7 +147,11 @@ class ExampleController(DispatchController):
                 inst_candles_future.add_done_callback(
                     self.get_future_callback(self.dispatch_candles_display)
                 )
-                coro = self.api.get_instrument_candles(symbol_name, count=3, granularity="M5", price="ABM", future=inst_candles_future)
+                coro = self.api.get_instrument_candles(symbol_name,
+                                                       count=self.quotes_count,
+                                                       granularity=self.quote_granularity,
+                                                       price=self.quote_price,
+                                                       future=inst_candles_future)
                 self.add_task(coro)
 
     async def call_account_instruments(self, account_id: str):
@@ -110,7 +161,6 @@ class ExampleController(DispatchController):
         # - process kind: dispatching request broker for an iterative request source
         # - general syntax
         #    api.get_account_instruments =[GetAccountInstruments200Response]=> self.dispatch_instrument_candles
-        print("[" + account_id + "]")
         acct_inst_future: aio.Future[GetAccountInstruments200Response] = aio.Future()
         acct_inst_future.add_done_callback(
             self.get_future_callback(self.dispatch_instrument_candles)
@@ -143,7 +193,7 @@ class ExampleController(DispatchController):
             # - This stateless shell script will request the full account
             #   list and instrument details, on each call.
             #
-            accounts_future: aio.Future[ListAccounts200Response] = aio.Future() # type: ignore
+            accounts_future: aio.Future[ListAccounts200Response] = aio.Future()  # type: ignore
             accounts_future.add_done_callback(
                 self.get_future_callback(self.dispatch_accounts_instruments)
             )
@@ -159,15 +209,9 @@ if __name__ == "__main__":
     if __debug__ and 'DEBUG' in os.environ:
         log.configure_debug_logger()
 
-    cfg_file = expand_path("account.ini", os.path.dirname(__file__))
-    if not os.path.exists(cfg_file):
-        print("Configuration file not found: %s" % cfg_file,
-              file=sys.stderr)
-        sys.exit(1)
-
     logger.info("Initialzing application")
 
-    with ExampleController.from_config_ini(cfg_file).run_context() as controller:
+    with ExampleController.from_args(sys.argv, loop = False).run_context() as controller:
         # set a custom datetime format, used in the example
         controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
         logger.info("Running example")
