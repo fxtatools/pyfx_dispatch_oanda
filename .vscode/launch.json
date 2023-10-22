@@ -1,0 +1,44 @@
+{
+        // Use IntelliSense to learn about possible attributes.
+        // Hover to view descriptions of existing attributes.
+        // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+        "version": "0.2.0",
+        "configurations": [
+                {
+                        "name": "Python: Current File",
+                        "type": "python",
+                        "request": "launch",
+                        "program": "${file}",
+                        "console": "integratedTerminal",
+                        "justMyCode": true,
+                        "cwd": "${workspaceFolder}"
+                },
+                {
+                        "name": "Python: quotes_async.py",
+                        "type": "python",
+                        "request": "launch",
+                        "program": "${workspaceFolder}/examples/quotes_async.py",
+                        "console": "integratedTerminal",
+                        "justMyCode": true,
+                        "cwd": "${workspaceFolder}/examples"
+                },
+                {
+                        "name": "Python: quotes_app.py",
+                        "type": "python",
+                        "request": "launch",
+                        "program": "${workspaceFolder}/examples/quotes_app.py",
+                        "console": "integratedTerminal",
+                        "justMyCode": true,
+                        "cwd": "${workspaceFolder}/examples"
+                },
+                {
+                        "name": "Python: summary_app.py",
+                        "type": "python",
+                        "request": "launch",
+                        "program": "${workspaceFolder}/examples/summary_app.py",
+                        "console": "integratedTerminal",
+                        "justMyCode": true,
+                        "cwd": "${workspaceFolder}/examples"
+                },
+        ]
+}

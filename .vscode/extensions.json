@@ -4,6 +4,8 @@
                 "github.vscode-github-actions",
                 "ms-vscode.makefile-tools",
                 "moykeen.ipython2",
-                "amodio.restore-editors"
+                "amodio.restore-editors",
+                "tamasfe.even-better-toml",
+                "ms-python.mypy-type-checker"
         ]
 }
