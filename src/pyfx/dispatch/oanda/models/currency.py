@@ -1,85 +1,168 @@
 """Currency defininition for applications"""
 
-from aenum import Enum, extend_enum
-from typing import Self
+from currency_symbols import CurrencySymbols
+from json import JSONEncoder
+from numpy import ushort
+from immutables import Map
+from typing import Literal, Self, Union
+from typing_extensions import ClassVar
 import isocodes
 
-from ..transport.repository import ApiJsonEncoder
 
-from ..transport import TransportEnumString, JsonTypesRepository
+from ..mapped_enum import MappedEnum
 
+from ..transport.data import JsonTypesRepository
+from ..transport.transport_base import TransportEnumStrType
 
-class Currency(Enum):
+CURRENCY_ALPHA_DIGITS: Map[str, ushort] = Map(
+    (cur['alpha_3'], ushort(cur['numeric']),) for cur in isocodes.currencies.items
+)
+
+CURRENCY_DIGITS_ALPHA: Map[ushort, str] = Map(
+    (CURRENCY_ALPHA_DIGITS[cur['alpha_3']], cur['alpha_3'],) for cur in isocodes.currencies.items
+)
+
+CURRENCY_DIGITS_NAMES: Map[str, str] = Map(
+    (CURRENCY_ALPHA_DIGITS[datum['alpha_3']], datum['name'],)for datum in isocodes.currencies.items  # type: ignore[misc]
+)
+
+class Currency(int, MappedEnum):
     """
-    Currency identifier, ISO 4217 coding
+    Currency identifier (ISO 4217 coding, with extensions)
 
-    Values in the Currency enum class are derived from the `isocodes.currency` table.
+    **Overview**
 
-    Implementation and Usage:
+    Enum members in the Currency class are derived primarily from the `isocodes.currency`
+    table, with currency symbol information provided from `currency_symbols`. Additional
+    coding is provided as denoted, below, under "Extensions"
 
-    Each Currency enum instance is indexed principally by its ISO 4217 three letter alphabetical code. This value may be accessed with the `name` or `alpha` property accessor on each enum instance.
+    **Implementation and Usage**
 
-    The corresponding ISO 4217 numerical code may be accessed with the `value` property on each instance, or indirectly via the `digits` property.
+    Each Currency enum member is indexed with an enum member name representing a three
+    character alphabetical code. Where applicable, this code denotes the ISO 4217
+    three character alphabeitcal code for the representative currency. This alphabetical
+    code may be accessed with either of the properties `name` or indirectly as `alpha`
+    for the Currency enum member.
 
-    A descriptive name for the representative Currency (EN) may be accessed via the `description` property on the Currency enum instance.
+    The ISO 4217 three-digit numerical code for a Currency may be accessed as a numpy.ushort
+    value, using with the `value` property on the Enum member, or indirectly via the `digits`
+    property. For alphabetical currency codes not recognized  under ISO 4217, the digit encoding
+    is described under "Extensions,"  below.
 
-    Enum members can be located using a subscript accessor, provided the unique alphabetical code for the representative currency.
+
+    The currency's single-character significant symbol may be accessed with the `symbol` property.
+
+    Currency enum members can be located using the method `Currency.get(ident)`, given  an `ident`
+    value providing either a  three character alphabetical code or as an integer value representing
+    the thee digit numerical code of a currency as presented under ISO 4217.
+
+    Currency Enum members can also be located with the conventional subscript notation, e.g
+    `Currency[<ALPHA>]` or `Currency[<DIGITS_INT>]`
 
     ```python
-    >>> Currency['CHF']
-    <Currency.CHF: 756>
-    ```
+    >>> from pyfx.dispatch.oanda.models.currency import Currency
 
-    A functional syntax is also available for accessing a Currency enum member, given the currency's unique alphabetical code or unique numerical code.
+    >>> Currency.get('AUD')
+    <Currency.AUD: 036>
 
-    ```python
-    >>> Currency.from_alpha('CHF')
-    <Currency.CHF: 756>
+    >>> Currency.get(36)
+    <Currency.AUD: 036>
 
-    >>> Currency.from_digits(756) is Currency.from_alpha('CHF')
+    >>> Currency.get(36) is Currency.get('AUD')
     True
     ```
 
-    For purpose of iteration, the `Currency._member_map_` table provides a mapping of each three letter alphabetical code to the corresponding Currency enum instance.
+    **Extensions**
 
-    The `Currency._value2member_map_` table provides a converse mapping from numerical codes to each Currency enum instances.
+    The currency code "CNH", though commonly used in financial systems, is not recognized as a
+    currency code under ISO 4217.
 
-    Property accessors:
+    For purpose of consistent numerical encoding, "CNH" is represented here with the integer 1000.
+    The "CNH" currency code, as such, is inaccessible under a string-encoded three-digit code.
+
+    **Known Limitations**
+
+    There may be additional currency codes in use, outside of the range of three-characater alphabetical
+    codes under IS 4217.
+
+    **Property accessors**
+
     - Currency.name -> str
+    - Currency.value -> numpy.ushort
     - Currency.alpha -> str
-    - Currency.value -> int
-    - Currency.numeric-> int
+    - Currency.digits-> numpy.ushort
+    - Currency.digits_str -> str
+    - Currency.symbol -> str
     - Currency.description -> str
 
-    Class methods:
-    - Currency.from_alpha(alpha: str) -> Currency
-    - Currency.from_digits(digits: int) -> Currency
+    **Class methods**
 
-    Compatibility:
+    - Currency.get(ident: Union[int, str]) -> Currency
 
-    The three digit ISO 4217 numerical code represents an unsigned integer with a maximum value of 999, compatible with `numpy.ushort`
     """
 
     def __str__(self) -> str:
         return self.name
+
+    def __bytes__(self) -> bytes:
+        if hasattr(self, "_bytes"):
+            return self._bytes   # type: ignore[has-type]
+        else:
+            bstr = self.name.encode()
+            self._bytes = bstr
+            return bstr
+
+    def __repr__(self) -> str:
+        if hasattr(self, "_repr"):
+            return self._repr  # type: ignore[has-type]
+        else:
+            repr = "<{0:s}.{1:s}: {2:03d}>".format(self.__class__.__name__, self.name, self.value)
+            self._repr = repr
+            return repr
 
     @property
     def alpha(self) -> str:
         """
         Return the ISO 4217 three letter alphabetical code for the representative currency.
 
-        This value may be accessed directly via the `name` property on the enum instance.
+        This value may be accessed directly via the `name` property of each enum member.
         """
         return self.name
 
     @property
-    def digits(self) -> int:
-        """
-        Return the ISO 4217 three digit numerical code for the representative currency.
+    def digits(self) -> ushort:
+        """Return an numpy.ushort value denoting the ISO 4217 three digit numerical code
+        for the  representative currency.
 
-        This value may be accessed directly via the `value` property on the enum instance.
+        This value may be accessed directly via the `value` property of each enum member.
         """
         return self.value
+
+    @property
+    def digits_str(self) -> str:
+        """Return a string denoting the ISO 4217 three digit numerical code for the
+        representative currency. This string will include any leading digits comprising
+        the numerical code, as a string value.
+        """
+        if hasattr(self, "_digits_str"):
+            return self._digits_str  # type: ignore[has-type]
+        else:
+            s = "{0:03d}".format(self.value)
+            self._digits_str = s
+            return s
+
+    @property
+    def symbol(self) -> str:
+        """Return a string denoting the representaive symbol for this currency
+
+        This property is not defined in ISO 4217
+        """
+        if hasattr(self, "_symbol"):
+            return self._symbol  # type: ignore[has-type]
+        else:
+            s = CurrencySymbols.get_symbol(self.name)
+            self._symbol = s
+            return s
 
     @property
     def description(self) -> str:
@@ -89,39 +172,41 @@ class Currency(Enum):
         This property's value is cached dynamically from the `isocodes.currency` table, on first access for each enum member.
         """
         if hasattr(self, "_description"):
-            return self._description
+            return self._description  # type: ignore[has-type]
         else:
-            desc = isocodes.currencies.by_alpha_3(self.name)['name']
+            desc = CURRENCY_DIGITS_NAMES[self.value]
             self._description = desc
             return desc
 
     def __index__(self) -> int:
-        """Return the three digit numerical code for this Currency enumber member"""
+        """Return the numerical code for this Currency enumber member, as an unsigned short value"""
         return self.value
 
     @classmethod
-    def from_alpha(cls, name: str) -> Self:
-        """Return the Currency member for a three letter alphabetical code"""
-        return cls.__getitem__(name)
+    def get(cls, ident: Union[int, str]) -> Self:
+        if isinstance(ident, str):
+            return cls._member_map_[ident]
+        elif isinstance(ident, int):
+            return cls._value2member_map_[ident]
+        else:
+            raise ValueError("Unrecognized currency identifier", ident)
 
+
+    __gen__ = ((dct["alpha_3"], ushort(dct["numeric"]),)
+               for dct in isocodes.currencies.items.copy() + [
+                   dict(alpha_3 = "CNH", numeric="1000")
+                   ])
+
+    __finalize__: ClassVar[Literal[True]] = True
+
+
+class TransportCurrencyKind(TransportEnumStrType[Currency, str]):
     @classmethod
-    def from_digits(cls, digits: int) -> Self:
-        """Return the Currency member for a three digit numerical code"""
-        return cls._value2member_map_[digits]
-
-
-class TransportCurrencyKind(TransportEnumString[Currency, str]):
-    @classmethod
-    def unparse(cls, venum: Currency, encoder: ApiJsonEncoder) -> str:
+    def unparse_py(cls, venum: Currency, encoder: JSONEncoder) -> str:
         return venum.alpha
 
 
-JsonTypesRepository.bind(Currency, TransportCurrencyKind)
+JsonTypesRepository.bind_transport_type(Currency, TransportCurrencyKind)
 
-
-for dct in isocodes.currencies.items:
-    name = dct["alpha_3"]
-    digits = int(dct["numeric"])
-    extend_enum(Currency, name, digits)
 
 __all__ = ("Currency",)

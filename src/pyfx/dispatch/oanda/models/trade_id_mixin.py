@@ -1,5 +1,7 @@
 """TradeIdMixin definition"""
 
+from abc import ABC
+
 from typing import Annotated, Optional
 
 from ..transport.data import ApiObject
@@ -8,7 +10,7 @@ from ..transport.transport_fields import TransportField
 from .common_types import ClientId, TradeId
 
 
-class TradeIdMixin(ApiObject):
+class TradeIdMixin(ApiObject, ABC):
     """
     Mixin class for types representing a `trade_id` and `client_trade_id`
     """

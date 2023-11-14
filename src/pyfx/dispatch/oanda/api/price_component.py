@@ -1,13 +1,17 @@
 """Price components for instrument candlestick requests"""
 
-import aenum
-from typing import Union, Sequence
-from typing_extensions import TypeAlias
+from typing import Union
+from ..util.sequence_like import SequenceLike
 
-from ..api_client import ensure_str
+from ..mapped_enum import MappedEnum, MappedEnumType
 
 
-class PriceComponent(str, aenum.Enum):
+class PriceComponentType(MappedEnumType):
+    def __getitem__(cls, key: Union[str, SequenceLike[str]]) -> str:
+        return cls.get(key)
+
+
+class PriceComponent(str, MappedEnum, metaclass=PriceComponentType):
     """Enum for instrument candlestick requests"""
 
     ASK = "A"
@@ -32,11 +36,11 @@ class PriceComponent(str, aenum.Enum):
     """All Candlestick summarization prices"""
 
     @classmethod
-    def get(cls, ident: str) -> "PriceComponent":
+    def get(cls, ident: Union[str, SequenceLike[str]]) -> "PriceComponent":
         """Return a the PriceComponent for  a string `ident`
 
         `ident` may represnt a name, value, or repeating string of values
-        for a price component, in any combination of upper or lower case 
+        for a price component, in any combination of upper or lower case
         string encoding.
 
         raises KeyError if a value in `ident` cannot be interpreted as
@@ -53,6 +57,8 @@ class PriceComponent(str, aenum.Enum):
         <PriceComponent.ALL: 'ABM'>
         ```
         """
+        if not isinstance(ident, str):
+            ident = "".join(ident)
         ident_uc = ident.upper()
         members = cls._member_map_
         if ident_uc in members:
@@ -75,11 +81,4 @@ class PriceComponent(str, aenum.Enum):
         return self.__class__.get(args)
 
 
-PriceComponentExpr: TypeAlias = Union[PriceComponent, str, Sequence[Union[PriceComponent, str]]]
-
-
-def ensure_price_component(expr: PriceComponentExpr) -> Union[str, PriceComponent]:
-    return expr if isinstance(expr, (str, PriceComponent,)) else "".join(ensure_str(component) for component in expr)
-
-
-__all__ = "PriceComponent", "PriceComponentExpr", "ensure_price_component"
+__all__ = "PriceComponent", "PriceComponentType"

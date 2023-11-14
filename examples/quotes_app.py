@@ -3,13 +3,14 @@
 # This example depends on TaskGroup support, using the
 # coroutines-based implementation available in Python 3.11+
 
+
 import argparse as ap
 import asyncio as aio
 
-from pyfx.dispatch.oanda.models import (  # type: ignore
+from pyfx.dispatch.oanda.models import (  # type: ignore [attr-defined]
     ListAccounts200Response, AccountProperties,
     GetAccountInstruments200Response, Instrument,
-    GetInstrumentCandles200Response
+    GetInstrumentCandles200Response, AccountId
 )
 
 from pyfx.dispatch.oanda.models.candlestick_granularity import CandlestickGranularity
@@ -18,13 +19,12 @@ from pyfx.dispatch.oanda.api.price_component import PriceComponent
 
 from contextlib import contextmanager
 import logging
-import platform
 import os
 from pyfx.dispatch.oanda.api.default_api import ApiController
 import pyfx.dispatch.oanda.util.log as log
-from pyfx.dispatch.oanda.util import expand_path, console_io  # type: ignore
+from pyfx.dispatch.oanda.util import console_io  # type: ignore[attr-defined]
 import sys
-from typing import Awaitable, Mapping, Optional
+from typing import Mapping, Optional
 
 
 logger = logging.getLogger("pyfx.dispatch.oanda.examples")
@@ -59,6 +59,8 @@ class ExampleController(ApiController):
 
     args_ns: ap.Namespace
 
+    instruments_future: aio.Future
+
     def initialize_defaults(self):
         super().initialize_defaults()
         self.active_accounts = []
@@ -67,20 +69,25 @@ class ExampleController(ApiController):
         self.n_instruments_processed = 0
         self.processed_lock = aio.Lock()
 
+        inst_future: aio.Future = aio.Future()
+        self.instruments_future = inst_future
+        exf = self.exit_future
+        inst_future.add_done_callback(lambda _: None if exf.done() else exf.set_result(True))
+
     @classmethod
     @contextmanager
     def argparser(cls, prog: Optional[str] = None, description: Optional[str] = None):
         with super().argparser(prog, description) as parser:
             candles_grp = parser.add_argument_group("candlestick quotes")
             candles_grp.add_argument("-g", "--granularity",
-                                     help="timeframe i.e Granularity for quotes",
+                                     help="Granularity for quotes, i.e timeframe. default: %(default)s",
                                      default="S5", choices=CandlestickGranularity.__members__.keys())
             candles_grp.add_argument("-p", "--price",
-                                     help="Price component for quotes",
+                                     help="Price components for quotes, specifying zero or more. default: %(default)s",
                                      choices=("a", "ask", "b", "bid", "m", "mid", "ab", "am", "bm", "abm"),
                                      action="append", default=["m"])
             candles_grp.add_argument("-n", "--count",  type=int,
-                                     help="Number of quotes (maximum: 5000)",
+                                     help="Number of quotes, maximum 5000 per request. default: %(default)s",
                                      default=1)
             yield parser
 
@@ -102,13 +109,19 @@ class ExampleController(ApiController):
         api_response = future.result()
         out = sys.stdout
         symbol = api_response.instrument
-        inst_info = self.instruments[symbol]
-        out.write("%s (%s)" % (inst_info.display_name, self.quote_granularity))
+        inst_info: Instrument = self.instruments[symbol]
+        name = CurrencyPair.get(inst_info.display_name).name
+        out.write(name)
+        granularity = self.quote_granularity
         print(file=out)
+        spaces = "    "
+        precision = inst_info.display_precision
+        dt_tz = self.config.timezone
+        dt_fmt = self.config.datetime_format
         for quote in api_response.candles:
-            loc_dt = quote.time.astimezone(self.config.timezone)
-            dt_str = loc_dt.strftime(self.config.datetime_format)
-            print("    " + dt_str, file=out)
+            loc_dt = quote.time.astimezone(dt_tz)
+            dt_str = loc_dt.strftime(dt_fmt)
+            print(spaces + dt_str, file=out)
             for label, field in (("A", "ask"), ("M", "mid"), ("B", "bid")):
                 ohlc = getattr(quote, field)
                 if not ohlc:
@@ -118,16 +131,14 @@ class ExampleController(ApiController):
                 l = ohlc.l
                 c = ohlc.c
                 print(
-                    "\t  [{0:s}]   o: {1:^9g}\th: {2:^9g}\tl: {3:^9g}\tc: {4:^9g}".format(
-                        label, o, h, l, c
-                    ),
+                    f"{spaces}\t[{granularity:s} {label:s}]     o:{o:^ 12.0{precision}f}  h:{h:^ 12.0{precision}f}  l:{l:^ 12.0{precision}f}  c:{c:^ 12.0{precision}f}",
                     file=out
                 )
         async with self.processed_lock:
             self.n_instruments_processed += 1
             if self.n_instruments_processed is self.n_instruments:
                 try:
-                    self.exit_future.set_result(True)
+                    self.instruments_future.set_result(True)
                 except aio.InvalidStateError:
                     pass
 
@@ -148,14 +159,15 @@ class ExampleController(ApiController):
                 inst_candles_future.add_done_callback(
                     self.get_future_callback(self.dispatch_candles_display)
                 )
-                coro = self.api.get_instrument_candles(symbol_name,
+                coro = self.api.get_instrument_candles(symbol_name.api_name,
                                                        count=self.quotes_count,
                                                        granularity=self.quote_granularity,
                                                        price=self.quote_price,
                                                        future=inst_candles_future)
-                self.add_task(coro)
+                task = self.add_task(coro)
+                task.add_done_callback(lambda future: inst_candles_future.cancel() if future.cancelled() else None)
 
-    async def call_account_instruments(self, account_id: str):
+    async def call_account_instruments(self, account_id: AccountId):
         # request a list of instruments available for the account id
         #
         # - in: account_id, via direct call
@@ -167,7 +179,8 @@ class ExampleController(ApiController):
             self.get_future_callback(self.dispatch_instrument_candles)
         )
         coro = self.api.get_account_instruments(account_id, future=acct_inst_future)
-        self.add_task(coro)
+        task = self.add_task(coro)
+        task.add_done_callback(lambda future: acct_inst_future.cancel() if future.cancelled() else None)
 
     async def dispatch_accounts_instruments(self, future: aio.Future[ListAccounts200Response]):
         # dispatch to call_account_instruments() for each user account
@@ -182,7 +195,7 @@ class ExampleController(ApiController):
             self.add_task(coro)
 
     async def run_async(self):
-        async with console_io(self.main_loop):
+        async with console_io(loop=self.main_loop):
             # Fetch a list of fxTrade accounts for the requesting client.
             #
             # via future callback: For each account, process each account
@@ -198,25 +211,28 @@ class ExampleController(ApiController):
             accounts_future.add_done_callback(
                 self.get_future_callback(self.dispatch_accounts_instruments)
             )
-            coro: Awaitable = self.api.list_accounts(accounts_future)  # type: ignore
-            self.add_task(coro)
+            coro = self.api.list_accounts(accounts_future)  # type: ignore
+            task = self.add_task(coro)
+            task.add_done_callback(lambda future: accounts_future.cancel() if future.cancelled() else None)
             ## ensure the application completes before the async stdio
             ## streams will be closed
-            await self.exit_future
+
+            try:
+                # await self.exit_future
+                await self.instruments_future
+            except (aio.CancelledError, aio.InvalidStateError):
+                logger.critical("Instruments future cancelled")
+                return
 
 
 if __name__ == "__main__":
     ## debug logging will be enabled if DEBUG is set in the environment
     if __debug__ and 'DEBUG' in os.environ:
-        log.configure_debug_logger()
+        log.configure_loggers()
 
     logger.info("Initialzing application")
 
-    if platform.system != "Windows":
-        print("Installing uvloop")
-        import uvloop
-        uvloop.install() # type: ignore[attr-defined]
-    with ExampleController.from_args(sys.argv, loop = False).run_context() as controller:
-        # set a custom datetime format, used in the example
-        controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
+    with ExampleController.from_args(sys.argv, loop=False).run_context() as controller:
+
         logger.info("Running example")
+        logger.debug("Main loop %r", controller.main_loop)

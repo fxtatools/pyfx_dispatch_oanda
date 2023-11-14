@@ -18,7 +18,7 @@ class FixedPriceOrder(UnitsOrderBase):
 
     type: Annotated[Literal[OrderType.FIXED_PRICE], TransportField(OrderType.FIXED_PRICE)] = OrderType.FIXED_PRICE
     """
-    The type of the Order. Always set to “FIXED_PRICE” for Fixed Price Orders.
+    The type of the Order. Always set to `FIXED_PRICE` for Fixed Price Orders.
     """
 
     price: Annotated[PriceValue, TransportField(...)]

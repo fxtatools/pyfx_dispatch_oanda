@@ -88,6 +88,13 @@ class Trade(ApiObject):
     The financing paid/collected for this Trade.
     """
 
+    dividend_adjustment: Annotated[Optional[AccountUnits], TransportField(None, alias="dividendAdjustment")]
+    """
+    The dividend adjustment paid for this Trade
+
+    supplemental to v20 API 3.0.25
+    """
+
     close_time: Annotated[Optional[Time], TransportField(None, alias="closeTime")]
     """
     The date/time when the Trade was fully closed. Only provided for Trades whose state is CLOSED.

@@ -1,5 +1,6 @@
 """Common mixin classes for Order classes"""
 
+from abc import ABC
 from typing import Annotated, Optional
 from ..util.naming import exporting
 
@@ -19,7 +20,7 @@ from .time_in_force import TimeInForce
 from .trailing_stop_loss_details import TrailingStopLossDetails
 
 
-class OrderBase(Order):
+class OrderBase(Order, ABC):
     """
     Supplemental base class for common fields in Order class definitions
 
@@ -73,7 +74,7 @@ class OrderBase(Order):
     """
 
 
-class LimitOrderMixin(OrderBase):
+class LimitOrderMixin(OrderBase, ABC):
     """
     Mixin class for limit-based orders
     """
@@ -90,7 +91,7 @@ class LimitOrderMixin(OrderBase):
     """
 
 
-class ReplacesOrderMixin(OrderBase):
+class ReplacesOrderMixin(OrderBase, ABC):
     """
     Mixin class for Order classes recording order replacement events
     """
@@ -108,7 +109,7 @@ class ReplacesOrderMixin(OrderBase):
     """
 
 
-class UnitsOrderBase(OrderBase):
+class UnitsOrderBase(OrderBase, ABC):
     """Common base class for units-focused orders"""
 
     ## subclasses: FixedPriceOrder, LimitOrder, MarketIfTouchedOrder, MarketOrder, StopOrder

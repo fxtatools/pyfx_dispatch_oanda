@@ -5,11 +5,11 @@ from typing import Annotated, Optional
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 
-from .response_mixins import ErrorResponse
+from .response_mixins import ApiErrorResponse
 from .market_order_reject_transaction import MarketOrderRejectTransaction
 
 
-class CloseTrade400Response(ErrorResponse):
+class CloseTrade400Response(ApiErrorResponse):
     """
     CloseTrade400Response
     """

@@ -9,19 +9,22 @@ Home = "https://github.com/fxtatools/pyfx_dispatch_oanda"
 name = "pyfx.dispatch.oanda"
 version = "1.0.1"
 description = "aio support for OANDA v20 REST API (Unofficial)"
-authors = [{ name = "Sean Champ", email = "spchamp@users.noreply.github.com" }]
+authors = [
+    { name = "Sean Champ", email = "spchamp@users.noreply.github.com" }
+]
 license = { file = "COPYING" }
 readme = "README.md"
 keywords = ["OpenAPI", "OpenAPI-Generator", "OANDA v20 REST API"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
-    "Private :: Do not Upload",
+    "Private :: Do not Upload"
 ]
 dependencies = [
     "aenum >= 3.1.11",
     "appdirs",
     "aioconsole",
     "certifi",
+    "currency-symbols",
     "httpcore[http2]",
     "httpx[http2] >= 0.24.1",
     "ijson",
@@ -44,37 +47,37 @@ dependencies = [
 requires-python = ">= 3.11.0, < 3.12"
 
 [project.optional-dependencies]
-socks = ["httpx[socks]", "socksio"]
-app-common = [
-    "QtPy>=1.3",
-    "PythonQwt",
-    "mplfinance",
-    "ipython",
+typing = [
+    "pandas-stubs",
+    "pytz-stubs",
+    "dateutils-stubs",
+    "types-pytz",
+    "types-PyYAML",
+    "types-python-dateutil",
+    "types-appdirs",
+    "yaml-stubs"
 ]
-app-pyqt5 = ["pyfx.dispatch.oanda[app-common]", "PyQt5"]
-app-pyqt6 = ["pyfx.dispatch.oanda[app-common]", "PyQt6"]
-## pyside2: limited support for tests on Windows,
-## outside of Python 3.9 or installation with conda
-app-pyside2 = ["pyfx.dispatch.oanda[app-common]", "PySide2"]
-app-pyside6 = ["pyfx.dispatch.oanda[app-common]", "PySide6"]
+socks = ["httpx[socks]", "socksio"]
+
 dev = [
+    "pyfx.dispatch.oanda[typing]",
     "autopep8",
     "black",
     "line_profiler",
     "pytest >= 7.2.1",
+    "pytest-asyncio",
     "assertpy",
     "pytest-dependency",
     "flake8 >=4.0.0",
     "Flake8-pyproject",
     "ipython",
     "jedi>=0.19.1",
+    "keyring >= 24.1.1",
     "polyfactory",
     # attrs: a dependency for polyfactory (19.6.2)
     "attrs",
     "pip-tools",
-    "mypy",
-    "types-pytz",
-    "types-PyYAML",
+    "mypy"
 ]
 
 [tool.mypy]

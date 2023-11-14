@@ -1,5 +1,6 @@
 """Mixin classes for Response model classes"""
 
+from abc import ABC
 from typing import Annotated, Optional
 
 from ..transport.data import ApiObject
@@ -7,11 +8,11 @@ from ..transport.transport_fields import TransportField
 from .common_types import TransactionId
 
 
-class Response(ApiObject):
-    """Comon base class for response objects"""
+class ApiResponse(ApiObject, ABC):
+    """Comon base class for API response objects"""
 
 
-class LastTransactionResponse(Response):
+class LastTransactionResponse(ApiResponse, ABC):
     """
     Mixin class for transaction-related response information
     """
@@ -22,7 +23,7 @@ class LastTransactionResponse(Response):
     )]
 
 
-class TransactionResponse(LastTransactionResponse):
+class TransactionResponse(LastTransactionResponse, ABC):
     """
     Mixin class for transaction-related response information with related transaction IDs
     """
@@ -33,13 +34,15 @@ class TransactionResponse(LastTransactionResponse):
     )]
 
 
-class ErrorResponse(Response):
+class ErrorResponse(ApiResponse, ABC):
     error_code: Annotated[Optional[int], TransportField(
         None,
         alias="errorCode",
         description="The code of the error that has occurred. This field may not be returned for some errors."
     )]
 
+
+class ApiErrorResponse(ApiResponse, ABC):
     error_message: Annotated[Optional[str], TransportField(
         None,
         alias="errorMessage",
@@ -47,10 +50,26 @@ class ErrorResponse(Response):
     )]
 
 
-class TransactionErrorResponse(ErrorResponse, TransactionResponse):
+class TransactionErrorResponse(ApiErrorResponse, TransactionResponse, ABC):
     """
     Common base class for transaction-related error response models
     """
 
 
-__all__ = ("TransactionResponse", "ErrorResponse", "TransactionErrorResponse",)
+class UnknownErrorResponse(ErrorResponse, ABC):
+    """Base class for unexpected error responses"""
+    reason: Annotated[str, TransportField(
+        ..., description="Response reason phrase"
+    )]
+    content_type: Annotated[str, TransportField(
+        ..., description="Content type for the error response"
+    )]
+    content: Annotated[str, TransportField(
+        ..., description="Content of the error response"
+    )]
+
+
+__all__ = (
+    "ApiResponse", "LastTransactionResponse", "TransactionResponse",
+    "ApiErrorResponse", "TransactionErrorResponse",  "UnknownErrorResponse"
+)

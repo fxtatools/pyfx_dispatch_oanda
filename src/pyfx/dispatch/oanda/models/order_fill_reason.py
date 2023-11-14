@@ -1,12 +1,18 @@
 """OrderFillReason definition for OANDA v20 REST API (3.0.25)"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class OrderFillReason(str, Enum):
+class OrderFillReason(ApiEnum):
     """
     The reason that an Order was filled
     """
+
+
+    __finalize__: ClassVar[Literal[True]] = True
 
     LIMIT_ORDER = 'LIMIT_ORDER'
     STOP_ORDER = 'STOP_ORDER'

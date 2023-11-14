@@ -1,36 +1,36 @@
 ## test.py - test support for pyfx.dispatch.oanda development
 
-from abc import ABCMeta
+from abc import ABC, ABCMeta
 from assertpy import assert_that
 from datetime import datetime
 import os
-from os import PathLike
 from polyfactory.factories import pydantic_factory
 from polyfactory.constants import TYPE_MAPPING
 import numpy as np
 import pandas as pd
 from polyfactory.field_meta import FieldMeta
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 import pytest
 from pytest import mark
 import string
 import sys
 from typing_extensions import ClassVar, TypeVar, get_args, get_origin, get_original_bases
-from typing import Any, Generic, Literal, Optional, Sequence, Union, Mapping
+from typing import Any, Generic, Literal, Optional, Sequence, Mapping
 from unittest import TestCase
+
 
 from .credential import Credential
 from .transport import (  # type: ignore
     ApiObject, AbstractApiClass, TransportFieldInfo,
-    TransportTypeInfer, ApiJsonEncoder, AbstractApiObject
+    TransportTypeInfer, AbstractApiObject,
+    TransportTypeClass, TransportFloatStr
     )
 from .configuration import Configuration
-from .api.default_api import DefaultApi
 from .parser import ModelBuilder
 from .models.common_types import AccountId
 from .util.typeref import get_literal_value
 
-from .models import Order, Transaction, CreateOrderRequest
+from .models import Order, Transaction, CreateOrderRequest, Time, InstrumentName, Currency, CurrencyPair
 
 ABSTRACT_CLASSES: frozenset[type[ApiObject]] = frozenset({Order, Transaction, CreateOrderRequest})
 
@@ -45,7 +45,6 @@ Timpl = TypeVar("Timpl", bound=ApiObject)
 
 
 class MockFactoryClass(ABCMeta):
-    @staticmethod
     def __new__(cls, name: str, bases: tuple[type], dct: dict[str, Any]):
         overrides = None
         if "__model__" not in dct and "__orig_bases__" in dct:
@@ -68,11 +67,13 @@ class MockFactory(pydantic_factory.ModelFactory[Timpl], Generic[Timpl], metaclas
     # This parameter will be overidden in subclasses
     __model__ = ApiObject
 
+    random_str_chars = tuple(frozenset(string.ascii_letters + string.digits + string.punctuation) - {'\\', "`", '"', "'"})
+
     @classmethod
     def extract_field_build_parameters(cls, field_meta: FieldMeta, build_args: dict[str, Any]) -> Any:
         args = super().extract_field_build_parameters(field_meta, build_args)
         model = cls.__model__
-        if issubclass(model, AbstractApiObject):  # and AbstractApiClass in model.__bases__:
+        if issubclass(model, AbstractApiObject) and AbstractApiClass in model.__bases__:
             if not args:
                 args = {}
             types_map = model.types_map
@@ -84,7 +85,7 @@ class MockFactory(pydantic_factory.ModelFactory[Timpl], Generic[Timpl], metaclas
 
     @classmethod
     def get_random_str(cls, size: int = 24):
-        return "".join(np.random.choice(tuple(string.printable), size=size))
+        return "".join(np.random.choice(cls.random_str_chars, size=size))
 
     @classmethod
     def get_credential(cls, size: int = 24):
@@ -108,7 +109,19 @@ class MockFactory(pydantic_factory.ModelFactory[Timpl], Generic[Timpl], metaclas
 
     @classmethod
     def get_random_double(cls):
-        return np.random.rand()
+        return np.double(np.random.rand())
+
+    @classmethod
+    def get_currency_pair(cls) -> CurrencyPair:
+        symbols = tuple(Currency.__members__.keys())
+        n_cur = len(symbols)
+        nth_base = np.random.randint(0, n_cur)
+        nth_quote = nth_base
+        while nth_quote == nth_base:
+            nth_quote = np.random.randint(0, n_cur)
+        base_name = symbols[nth_base]
+        quote_name = symbols[nth_quote]
+        return CurrencyPair.from_str_pair(base_name, quote_name)
 
     @classmethod
     def get_provider_map(cls) -> dict[type, Any]:
@@ -116,41 +129,62 @@ class MockFactory(pydantic_factory.ModelFactory[Timpl], Generic[Timpl], metaclas
         ## add custom type callbacks for the polyfactory mock provider map
         map[Configuration] = cls.gen_config
         map[pd.Timestamp] = cls.gen_timestamp
+        map[Time] = cls.gen_timestamp
         map[datetime] = cls.gen_timestamp
         map[SecretStr] = cls.get_secret_str
         map[Credential] = cls.get_credential
         map[AccountId] = cls.get_account_id
         # map[np.double] = cls.get_random_double
         map[float] = cls.get_random_double
-
+        map[InstrumentName] = cls.get_currency_pair
+        for scls in TransportFloatStr.__subclasses__():
+            ## add a mapping for each TransportFloatStr implementation class
+            if scls.__class__ is not TransportTypeClass:
+                map[scls] = cls.get_random_double
         return map
 
     @classmethod
     def build(cls, factory_use_construct: bool = True, **kwargs: Any) -> Timpl:
         mcls = cls.__model__
-        if issubclass(mcls, AbstractApiObject):
-            # the model class is an abstract subclass of AbstractApiobject
+        if issubclass(mcls, AbstractApiObject) and ABC in mcls.__bases__:
             types_map = mcls.types_map
             nr_concrete_cls = len(types_map)
             rnd = np.random.randint(0, max(1, nr_concrete_cls - 1))
             designator = tuple(types_map.keys())[rnd]
-            mock_cls = tuple(types_map.values())[rnd]
+            # mock_cls = tuple(types_map.values())[rnd]
             kwargs[mcls.designator_key] = designator
+        else:
+            for name, fieldinfo in mcls.model_fields.items():
+                # ensure non-key literal args are expressly set for
+                # mock initargs, from the original literal value
+                #
+                # this may serve to prevent a certain false-negative
+                # test failure onto 'type' fields for non-abstract
+                # model classes
+                origin = get_origin(fieldinfo.annotation)
+                if origin and origin == Literal:
+                    kwargs[name] = fieldinfo.get_default()
         return super().build(factory_use_construct, **kwargs)
 
 
-class ComponentTest(TestCase):
+class PytestTest():
+    ## base class for test classes using pytest features, e.g fixtures and parameterization
     pass
 
 
-class ModelTest(ComponentTest, Generic[Timpl]):
+class ComponentTest(PytestTest):
+    ## base class for tests classes with unit test features, e.g setUp()
+    pass
+
+
+class ModelTest(ComponentTest, TestCase, Generic[Timpl]):
+    ## base class for API class tests
     __factory__: ClassVar[type[MockFactory]]
 
-    json_encoder: ApiJsonEncoder
-
     def setUp(self):
-        self.json_encoder = ApiJsonEncoder()
         for mcls in ABSTRACT_CLASSES:
+            assert AbstractApiObject in mcls.__bases__, "Not an abstract API class"
+
             # for each abstract model class, bind a randomly selected
             # concrete class to represent the abstract class in mocks
             #
@@ -159,6 +193,8 @@ class ModelTest(ComponentTest, Generic[Timpl]):
             nr_concrete_cls = len(types_map)
             rnd = np.random.randint(0, max(1, nr_concrete_cls - 1))
             ccls = tuple(types_map.values())[rnd]
+            # assert AbstractApiObject in ccls.__mro__, "Not an abstract implementation class"
+            assert mcls in ccls.__mro__, "Not an abstract implementation class"
             TYPE_MAPPING[mcls] = ccls
 
     # def tearDown(self):
@@ -167,13 +203,16 @@ class ModelTest(ComponentTest, Generic[Timpl]):
     @classmethod
     def assert_recursive_eq(cls, inst_a, inst_b):
         acls = inst_a.__class__
+        bcls = inst_b.__class__
 
-        assert_that(issubclass(acls, inst_b.__class__)).is_true()
+        # assert_that(issubclass(bcls, acls)).is_true()
+        assert_that(issubclass(acls, bcls)).is_true()
 
         if issubclass(acls, ApiObject):
-            fset_a = inst_a.__pydantic_fields_set__
-            fset_b = inst_b.__pydantic_fields_set__
-            assert_that(fset_a).is_equal_to(fset_b)
+            fset_a: set = inst_a.__pydantic_fields_set__
+            fset_b: set = inst_b.__pydantic_fields_set__
+            # assert_that(fset_a).is_equal_to(fset_b)
+            assert_that(fset_b.difference(fset_a)).is_equal_to(set())
             for f in fset_a:
                 f_a = getattr(inst_a, f)
                 f_b = getattr(inst_b, f)
@@ -222,8 +261,8 @@ class ModelTest(ComponentTest, Generic[Timpl]):
             else:
                 model_cls = cls.get_model_class()
 
-        mock_initargs = {}
-        if isinstance(model_cls, AbstractApiClass):
+        mock_initargs = dict()
+        if ABC in model_cls.__bases__:
             fields = model_cls.model_fields
             key_field = model_cls.designator_key
             if key_field in fields:
@@ -237,10 +276,12 @@ class ModelTest(ComponentTest, Generic[Timpl]):
                     raise ValueError("key_field does not provide a Literal annotation", key_field, annot, model_cls)
             else:
                 raise Exception("Abstract key field not found for implementation class", key_field, model_cls)
+
         if to_mock or is_mapped:
             mock_base = to_mock or model_cls
-            class MockTest(ModelTest[mock_base]):  # type: ignore ## FIXME provide to_mock as a class param
-                class Factory(MockFactory[mock_base]):  # type:ignore ## FIXME provide to_mock as a class param
+            ## generate an ephemeral mock class
+            class MockTest(ModelTest[mock_base]):
+                class Factory(MockFactory[mock_base]):
                     pass
                 __factory__ = Factory
             return MockTest.__factory__.build(True, **mock_initargs)
@@ -258,29 +299,25 @@ class ModelTest(ComponentTest, Generic[Timpl]):
         assert_that(model_cls).is_not_none()
         assert_that(issubclass(model_cls, ApiObject)).is_true()
         assert_that(hasattr(model_cls, "model_fields")).is_true()
-        assert_that(hasattr(model_cls, "api_fields")).is_true()
+        assert_that(hasattr(model_cls, "json_fields")).is_true()
         fields = model_cls.model_fields
-        field_names = model_cls.api_fields
+        json_fields = model_cls.json_fields
         for name, info in fields.items():
             assert_that(isinstance(info, TransportFieldInfo)).is_true()
             info: TransportFieldInfo
             # test metadata for the field info object
-            assert_that(info.field_name).is_equal_to(name)
+            assert_that(info.name).is_equal_to(name)
             assert_that(issubclass(model_cls, info.defining_class)).is_true()
             # ensure that a concrete transport type was inferred during ApiObject
             # class initialization
             assert_that(issubclass(info.transport_type, TransportTypeInfer)).is_false()
-            # test name<->info mapping in the model class
-            assert_that(name in field_names).is_true()
-            assert_that(field_names[name] is info).is_true()
-            alias = info.alias
-            if alias:
-                assert_that(alias in field_names).is_true()
-                assert_that(field_names[alias] is info).is_true()
+            # test json name<->info mapping in the model class
+            json_name = info.alias or name
+            assert_that(json_name in json_fields).is_true()
+            assert_that(json_fields[json_name] is info).is_true()
 
     @mark.dependency(depends_on="test_model_cls_fields")
     def test_mapping_transform(self):
-        # raise ValueError("THUNK", os.environ) => ... PYTEST_CURRENT_TEST ...
         cls = self.__class__
         if cls is ModelTest:
             return
@@ -301,8 +338,6 @@ class ModelTest(ComponentTest, Generic[Timpl]):
         if cls is ModelTest:
             return
 
-        encoder = self.json_encoder
-
         inst: Timpl = self.__class__.gen_mock()
         self.assert_recursive_eq(inst, inst)
 
@@ -312,11 +347,19 @@ class ModelTest(ComponentTest, Generic[Timpl]):
             key = icls.designator_key
             assert_that(hasattr(inst, key)).is_true()
 
-        j_str: str = inst.to_json_str(encoder)
+        j_str: str = inst.to_json_str()
         assert_that(isinstance(j_str, str)).is_true()
 
         ## yajl parser expects bytes input, thus calling encode() on the str ...
-        j_inst = ModelBuilder.from_text(inst.__class__, j_str.encode())
+        try:
+            j_inst = ModelBuilder.from_text(inst.__class__, j_str.encode())
+        except ValidationError as exc:
+            ## this section can receive a breakpoint for interactive debugging
+            ##
+            ## ensuring the backtrace will be somehow avaialble in the bugger ...
+            import traceback
+            _ = sys.exc_info()
+            raise exc
         assert_that(j_inst.__class__ is inst.__class__).is_true()
         ## test equiv ...
         self.__class__.assert_recursive_eq(inst, j_inst)

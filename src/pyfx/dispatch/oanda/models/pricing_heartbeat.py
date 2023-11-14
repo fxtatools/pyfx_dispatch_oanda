@@ -6,13 +6,15 @@ from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 from .common_types import Time
 
+from .streaming_price_base import StreamingPriceObject, StreamingPriceType
 
-class PricingHeartbeat(ApiObject):
+
+class PricingHeartbeat(StreamingPriceObject):
     """
     A PricingHeartbeat object is injected into the Pricing stream to ensure that the HTTP connection remains active.
     """
 
-    type: Annotated[Literal["HEARTBEAT"], TransportField(...)] = "HEARTBEAT"
+    type: Annotated[Literal[StreamingPriceType.HEARTBEAT], TransportField(...)] = StreamingPriceType.HEARTBEAT
     """
     The string \"HEARTBEAT\"
     """

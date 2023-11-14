@@ -1,76 +1,73 @@
 # Example API application: Print latest quote information
 #
-# an alternate approach is illustrated in quotes_async.py
+# For each instrument available in each client acount,
+# OHLC quotes data will fetched and displayed for the
+# instrument's latest quote, using default granulatity
+# (i.e timeframe)
+#
+# This example uses a principally synchronous form of
+# functional dispatch for request/response processing,
+# blocking within each successive request/response cycle.
+#
+# An alternate approach is illustrated in each of the files
+# quotes_async.py and quotes_app.py.
+#
+# For each example application in this second set of examples,
+# the application uses a combination of asyncio futures and
+# asynchronous API requests within the application's main
+# asyncio event loop. Each API response will then be processed
+# using an asynchronous callback under a separate worker thread.
+#
+# The source code in the following example may provide a more
+# succinct illustration of call forms for the API.
+#
+
 
 import asyncio as aio
-import configparser as cf
-from datetime import datetime
-import logging
-import os
-import pyfx.dispatch.oanda as dispatch
-import pyfx.dispatch.oanda.logging as dispatch_logging
-from pprint import pprint
+import argparse as ap
+from contextlib import suppress
 import sys
-from typing import List, Optional
+
+from pyfx.dispatch.oanda.api.default_api import ApiController
 
 
-async def run_example(config: dispatch.Configuration) -> List:
-    '''print latest quotes for each available instrument in each Account'''
-    loop = aio.get_event_loop()
-    async with dispatch.ApiClient(loop, config) as api_client:
-        api_instance = dispatch.DefaultApi(api_client)
-        auth = 'Bearer %s' % config.access_token
-        api_response = await api_instance.list_accounts(auth)
-        dt_format = config.datetime_format
+class ExampleController(ApiController):
+    def process_args(self, namespace: ap.Namespace, unparsed: list[str]):
+        pass
+
+    async def run_async(self):
+        api = self.api
+        api_response = await api.list_accounts()
 
         accts = api_response.accounts
         for acctinfo in accts:
             id = acctinfo.id
             print("[%s]" % id)
-            api_response = await api_instance.get_account_instruments(auth, id)
-            instruments = api_response.data.instruments
+            api_response = await api.get_account_instruments(id)
+            instruments = api_response.instruments
             instruments.sort(key=lambda inst: inst.name)
+            out = sys.stdout
             for inst in instruments:
-                sys.stdout.write(inst.display_name)
-                sys.stdout.write(" ")
-                try:
-                    api_response = await api_instance.get_instrument_candles(auth, inst.name, count=1)
-                    quote = api_response.candles[0]
-                    dt = datetime.fromisoformat(quote.time)
-                    ohlc = quote.mid
-                    print("\to: {0:8s}\th: {0:8s}\tl: {0:8s}\tc: {0:8s}".format(
-                        ohlc.o, ohlc.h, ohlc.l, ohlc.c
-                    ) + "\t" + dt.strftime(dt_format))
-                except dispatch.ApiException:
-                    pass
+                api_response = await api.get_instrument_candles(inst.name, count=1)
+                out.write(inst.display_name)
+                out.write(" ")
+                quote = api_response.candles[0]
+                mid = quote.mid
+                precision = inst.display_precision
+                o = mid.o
+                h = mid.h
+                l = mid.l
+                c = mid.c
+                out.write(
+                    f" o:{o:^ 12.0{precision}f}  h:{h:^ 12.0{precision}f}  l:{l:^ 12.0{precision}f}  c:{c:^ 12.0{precision}f} ",
+                )
+                print(quote.time.strftime(self.config.datetime_format), file=out)
+
+        with suppress(aio.InvalidStateError):
+            self.exit_future.set_result(True)
+
 
 if __name__ == "__main__":
-    ## debug logging will be enabled if DEBUG is set in the environment
-    dbg = __debug__ and 'DEBUG' in os.environ
-    if dbg:
-        dispatch_logging.configure_debug_logger()
-    logger = logging.getLogger("pyfx.dispatch.oanda")
-    logger.info("Loading configuration")
-
-    ## initialize the configuration object
-    examples_cfg = dispatch.util.paths.expand_path("account.ini", os.path.dirname(__file__))
-    config = dispatch.config_manager.load_config(examples_cfg)
-    dispatch.Configuration.set_default(config)
-
-    if dbg:
-        config.debug = True
-    dispatch.Configuration.set_default(config)
-
-    if "TRACE" in os.environ:
-        ## optional feature - installing a fault handler for segfaults
-        ##
-        ## e.g with the IOCP proactor, Python on Windows, a segfault may
-        ## occur if the asyncio loop exits abnormally
-        logger.info("Loading faulthandler")
-        import faulthandler
-        faulthandler.enable()
-
-    logger.info("Running example")
-    loop = aio.get_event_loop_policy().get_event_loop()
-    loop.run_until_complete(run_example(config))
-    loop.close()
+    with ExampleController.from_args(sys.argv, loop=False).run_context() as controller:
+        logger = controller.logger
+        logger.info("Running example")

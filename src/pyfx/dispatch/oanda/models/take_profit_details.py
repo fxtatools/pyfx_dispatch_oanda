@@ -1,35 +1,27 @@
 """TakeProfitDetails model definition for OANDA v20 REST API (3.0.25)"""
 
-from typing import Annotated, Optional
-
-from ..transport.data import ApiObject
-from ..transport.transport_fields import TransportField
-from .common_types import PriceValue, Time
-from .time_in_force import TimeInForce
-from .client_extensions import ClientExtensions
+from .trade_dependent_mixins import TradeDependentPriceDetails
 
 
-class TakeProfitDetails(ApiObject):
+class TakeProfitDetails(TradeDependentPriceDetails):
     """
-    TakeProfitDetails specifies the details of a Take Profit Order to be created on behalf of a client. This may happen when an Order is filled that opens a Trade requiring a Take Profit, or when a Trade's dependent Take Profit Order is modified directly through the Trade.
-    """
+    TakeProfitDetails specifies the details of a Take Profit Order to be created on behalf of a client.
 
-    price: Annotated[Optional[PriceValue], TransportField(None)]
-    """
-    The price that the Take Profit Order will be triggered at. Only one of the price and distance fields may be specified.
-    """
+    This may happen when an Order is filled that opens a Trade requiring a Take Profit, or when a Trade'
+    s dependent Take Profit Order is modified directly through the Trade.
 
-    time_in_force: Annotated[Optional[TimeInForce], TransportField(..., alias="timeInForce")] = TimeInForce.GTC
-    """
-    The time in force for the created Take Profit Order. This may only be GTC, GTD or GFD.
-    """
+    Implementation Note:
 
-    gtd_time: Annotated[Optional[Time], TransportField(None, alias="gtdTime")]
-    """
-    The date when the Take Profit Order will be cancelled on if timeInForce is GTD.
-    """
+    The [v20 API documentation for TakeProfitDetails][1] does not provide a definition for a `distance` field
+    in this API class. Nonetheless, a `distance` field is referenced from the documentation for the `price`
+    field in the class' documentation. Moreover, the similar class StopLossDetails has been defined with a
+    `distance` field.
 
-    client_extensions: Annotated[Optional[ClientExtensions], TransportField(None, alias="clientExtensions")]
+    Consequently, a `distance` field  has been included in the definition for the TakeProfitDetails class.
+    (Needs Test)
+
+    [1]: https://developer.oanda.com/rest-live-v20/transaction-df/#TakeProfitDetails
+    """
 
 
 __all__ = ("TakeProfitDetails",)

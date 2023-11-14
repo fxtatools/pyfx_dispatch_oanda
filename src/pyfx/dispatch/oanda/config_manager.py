@@ -15,6 +15,8 @@ from .configuration import Configuration
 from .util.paths import expand_path, Pathname
 
 
+logger = logging.getLogger(__name__)
+
 class ConfigError(RuntimeError):
     """Common Configuration Error"""
     pass
@@ -48,7 +50,7 @@ section should denote an instance field of the class,
 ```
 [Configuration]
 access_token = <private_token>
-host = https://api-fxpractice.oanda.com/v3
+fxpractice = True
 ```
 
 The file should be created with access permissions
@@ -58,18 +60,24 @@ limiting all file operations to the creating user.
     abspath = expand_path(path)
     if not os.path.exists(abspath):
         raise ConfigError("File not found", abspath)
-    parser = cf.ConfigParser()
+    parser = cf.ConfigParser(interpolation=cf.ExtendedInterpolation())
     parser.read(abspath)
     cfgopts = parser['Configuration']
+    config_model = Configuration.model_fields
+    for name in cfgopts.keys():
+        if name not in config_model:
+            logger.critical("Configuration.load: Not a recognized configuration field, discarding %r in %s", name, abspath)            
+            del cfgopts[name]
     if overrides:
         for opt, value in overrides.items():
-            cfgopts[opt] = value
+            if name in config_model:
+                cfgopts[opt] = value
+            else:
+                logger.critical("Configuration.load: Not a recognized configuration field, discarding %r in load_config() overrides", name)                        
     if 'Configuration' in parser.keys():
         return Configuration(**cfgopts)
     else:
-        logger = logging.getLogger(__name__)
-        logger.warn("No Configuration section in INI file %s",
-                    os.path.abspath(path))
+        logger.critical("Configuration.load: No 'Configuration' section in INI file, using empty configuration: %s", os.path.abspath(path))
         return Configuration()
 
 ##

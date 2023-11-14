@@ -13,7 +13,7 @@ from .guaranteed_stop_loss_order_level_restriction import GuaranteedStopLossOrde
 from .instrument_financing import InstrumentFinancing
 from .tag import Tag
 
-from .common_types import PriceValue, LotsValue, FloatValue
+from .common_types import PriceValue, LotsValue, FloatValue, InstrumentName
 
 from .currency import Currency
 
@@ -25,7 +25,7 @@ class Instrument(ApiObject):
     updated supplemental to the fxTrade v20 API version 3.0.25
     """
 
-    name: Annotated[str, TransportField(...)]
+    name: Annotated[InstrumentName, TransportField(...)]
     """
     The name of the Instrument
     """

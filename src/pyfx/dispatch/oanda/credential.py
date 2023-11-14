@@ -8,7 +8,9 @@ from typing import Any, Mapping
 class Credential(SecretStr):
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, str):
+        if id(self) is id(other):
+            return True
+        elif isinstance(other, str):
             return self.get_secret_value() == other
         elif isinstance(other, SecretStr):
             return self.get_secret_value() == other.get_secret_value()

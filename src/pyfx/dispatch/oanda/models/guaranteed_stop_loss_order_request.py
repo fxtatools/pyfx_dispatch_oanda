@@ -15,7 +15,7 @@ class GuaranteedStopLossOrderRequest(StopsRequestBase):
 
     type: Annotated[Literal[OrderType.GUARANTEED_STOP_LOSS], TransportField(OrderType.GUARANTEED_STOP_LOSS)] = OrderType.GUARANTEED_STOP_LOSS
     """
-    The type of the Order to Create. Must be set to “GUARANTEED_STOP_LOSS”
+    The type of the Order to Create. Must be set to `GUARANTEED_STOP_LOSS`
     when creating a Guaranteed Stop Loss Order.
     """
 
@@ -35,7 +35,7 @@ class GuaranteedStopLossOrderRequest(StopsRequestBase):
     time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]
     """
     The time-in-force requested for the GuaranteedStopLoss Order. Restricted
-    to “GTC”, “GFD” and “GTD” for GuaranteedStopLoss Orders.
+    to `GTC`, `GFD` and `GTD` for GuaranteedStopLoss Orders.
     """
 
 

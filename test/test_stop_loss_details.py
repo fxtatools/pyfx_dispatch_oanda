@@ -1,8 +1,5 @@
+"""Unit test definition for StopLossDetails"""
 
-"""Unit test definition for pyfx.dispatch.oanda"""
-
-
-import pyfx.dispatch.oanda
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.stop_loss_details import StopLossDetails
 

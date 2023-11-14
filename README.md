@@ -188,12 +188,12 @@ import pyfx.dispatch.oanda as dispatch
 from pprint import pprint
 
 # Configure a debug-level console logger for the API
-dispatch.logging.configure_debug_logger()
+from pyfx.dispatch.oanda.util.log import configure_debug_logger
 
 # Set host information and token for API requests
 configuration = dispatch.Configuration(
-    'https://api-fxpractice.oanda.com/v3',
-    access_token = '<private_api_token_>'
+    access_token = '<private_api_token_>',
+    fxpractice = True
 )
 
 api_response = None

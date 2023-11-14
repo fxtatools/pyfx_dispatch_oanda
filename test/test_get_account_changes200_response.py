@@ -1,8 +1,5 @@
+"""Unit test definition for TestGetAccountChanges200Response"""
 
-"""Unit test definition for pyfx.dispatch.oanda"""
-
-
-import pyfx.dispatch.oanda
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.get_account_changes200_response import GetAccountChanges200Response
 

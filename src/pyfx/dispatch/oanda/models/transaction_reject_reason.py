@@ -1,12 +1,17 @@
 """TransactionRejectReason definition for OANDA v20 REST API (3.0.25)"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class TransactionRejectReason(str, Enum):
+class TransactionRejectReason(ApiEnum):
     """
     The reason that a Transaction was rejected.
     """
+
+    __finalize__: ClassVar[Literal[True]] = True
 
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR'
     INSTRUMENT_PRICE_UNKNOWN = 'INSTRUMENT_PRICE_UNKNOWN'

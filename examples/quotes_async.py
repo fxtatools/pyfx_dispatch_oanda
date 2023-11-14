@@ -13,12 +13,11 @@ import logging
 import os
 import pyfx.dispatch.oanda as dispatch
 from pyfx.dispatch.oanda.transport.data import ApiObject
-from pyfx.dispatch.oanda.models import GetAccountInstruments200Response, GetInstrumentCandles200Response
+from pyfx.dispatch.oanda.models import GetAccountInstruments200Response, GetInstrumentCandles200Response, CurrencyPair
 import pyfx.dispatch.oanda.util.log as log
 from pyfx.dispatch.oanda.util.console_io import console_io, ConsoleStreamWriter
 from pyfx.dispatch.oanda.api.default_api import ApiController
 import pytz
-import re
 from typing_extensions import Protocol, TypeVar
 
 T = TypeVar("T", bound=ApiObject)
@@ -53,16 +52,15 @@ class ScriptController(ApiController):
         n_instruments = 0
         n_processed = 0
         processed_lock = aio.Lock()
-
+        instrument_info: dict[str, dispatch.Instrument] = dict()
 
         async for account_props in api_instance.accounts(self):
             account_id = account_props.id
             dt_format = config.datetime_format
-            tz_str = os.environ['TZ'] if 'TZ' in os.environ else config.timezone
-            tz = pytz.timezone(tz_str)
+            tz = pytz.timezone(os.environ['TZ']) if 'TZ' in os.environ else config.timezone
             tasks = []
 
-            async with console_io(loop) as pipe:
+            async with console_io(loop=self.main_loop) as pipe:
                 out: ConsoleStreamWriter = pipe.stdout_writer  # type: ignore
                 req_grp = self.task_group
 
@@ -82,37 +80,37 @@ class ScriptController(ApiController):
                                 pass
 
                 def candles_cb(reqftr: aio.Future):
-                    nonlocal dt_format, tz, out
+                    nonlocal dt_format, tz, out, instrument_info
                     if reqftr.cancelled():
                         return
                     exc = reqftr.exception()
                     if exc:
                         raise exc
                     api_response: GetInstrumentCandles200Response = reqftr.result()
-                    out.write(re.sub("_", "/", api_response.instrument, count=1))
+                    inst: CurrencyPair = api_response.instrument  # type: ignore[assignment]
+                    out.write(inst.name)  # type: ignore[attr-defined]
                     print(file=out)
                     for quote in api_response.candles:
                         loc_dt = quote.time.astimezone(tz)
                         dt_str = loc_dt.strftime(dt_format)
                         print("    " + dt_str, file=out)
-                        for name, ohlc in (("A", quote.ask), ("M", quote.mid), ("B", quote.bid)):
+                        info = instrument_info[api_response.instrument]
+                        precision = info.display_precision
+                        for component, ohlc in (("A", quote.ask), ("M", quote.mid), ("B", quote.bid)):
                             if ohlc:
                                 o = ohlc.o
                                 h = ohlc.h
                                 l = ohlc.l
                                 c = ohlc.c
                                 print(
-                                    "\t  [{0:s}]   o: {1:^9g}\th: {2:^9g}\tl: {3:^9g}\tc: {4:^9g}".format(
-                                        name, o, h, l, c
-                                    ),
+                                    f"\t[{component:s}] o:{o:^ 12.0{precision}f}  h:{h:^ 12.0{precision}f}  l:{l:^ 12.0{precision}f}  c:{c:^ 12.0{precision}f}",
                                     file=out
-
                                 )
-                    self.add_task(check_exit())
-
+                    task = self.add_task(check_exit())
+                    self.exit_future.add_done_callback(lambda _: None if task.done() else task.cancel())
 
                 def acct_instrument_cb(reqftr: aio.Future):
-                    nonlocal req_grp, api_instance, tasks, account_id, n_instruments
+                    nonlocal req_grp, api_instance, tasks, account_id, n_instruments, instrument_info
                     if reqftr.cancelled():
                         return
                     exc = reqftr.exception()
@@ -126,16 +124,17 @@ class ScriptController(ApiController):
                     n_instruments = len(instruments)
                     last = None
                     for inst in instruments:
+                        iname = inst.name
+                        instrument_info[iname] = inst
                         inst_task = self.add_task(
                             api_instance.get_instrument_candles_by_account(account_id,
-                                                                            inst.name,
-                                                                            count=5,
-                                                                            # granularity = "M1",
-                                                                            smooth=False,
-                                                                            price=("A", "B", "M",)
-                                                                            ))
+                                                                           iname,
+                                                                           count=5,
+                                                                           # granularity = "M1",
+                                                                           smooth=False,
+                                                                           price=("A", "B", "M",)
+                                                                           ))
                         inst_task.add_done_callback(candles_cb)
-                        last = inst_task
 
                 ##
                 ## Initial Task creation, beginning with each account
@@ -153,12 +152,14 @@ if __name__ == "__main__":
     ## debug logging will be enabled if DEBUG is set in the environment
     dbg = __debug__ and 'DEBUG' in os.environ
     if dbg:
-        log.configure_debug_logger()
+        log.configure_loggers()
     logger = logging.getLogger("pyfx.dispatch.oanda")
     logger.info("Loading configuration")
 
     examples_path = dispatch.util.paths.expand_path("account.ini", os.path.dirname(__file__))
+
     with ScriptController.from_args([]).run_context() as controller:
         ## set a custom datetime format, used in the example
         controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
         logger.info("Running example")
+        logger.debug("Main loop %r", controller.main_loop)

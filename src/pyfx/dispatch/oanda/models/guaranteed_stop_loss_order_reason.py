@@ -1,11 +1,17 @@
 """GuaranteedStopLossOrderReason definition for OANDA v20 REST API, supplemental to 3.0.25"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class GuaranteedStopLossOrderReason(str, Enum):
+class GuaranteedStopLossOrderReason(ApiEnum):
     """The reason that the Guaranteed Stop Loss Order was initiated
     """
+
+
+    __finalize__: ClassVar[Literal[True]] = True
 
     CLIENT_ORDER = "CLIENT_ORDER"
     """The Guaranteed Stop Loss Order was initiated at the request of a client

@@ -21,13 +21,13 @@ class GuaranteedStopLossOrderTransaction(OrderStopsTransaction):
         Literal[TransactionType.GUARANTEED_STOP_LOSS_ORDER],
         TransportField(...)
     ] = TransactionType.GUARANTEED_STOP_LOSS_ORDER
-    """The Type of the Transaction. Always set to “GUARANTEED_STOP_LOSS_ORDER”
+    """The Type of the Transaction. Always set to `GUARANTEED_STOP_LOSS_ORDER`
     in a GuaranteedStopLossOrderTransaction.
     """
 
     time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]
     """The time-in-force requested for the GuaranteedStopLoss Order. Restricted
-    to “GTC”, “GFD” and “GTD” for GuaranteedStopLoss Orders.
+    to `GTC`, `GFD` and `GTD` for GuaranteedStopLoss Orders.
     """
 
     guaranteedExecutionPremium : Annotated[Optional[PriceValue], TransportField(None)]

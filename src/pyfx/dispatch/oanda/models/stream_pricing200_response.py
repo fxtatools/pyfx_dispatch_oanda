@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 
-from .client_price import ClientPrice
+from .client_price import StreamingPrice
 from .pricing_heartbeat import PricingHeartbeat
 
 
@@ -15,7 +15,7 @@ class StreamPricing200Response(ApiObject):
     The response body for the Pricing Stream uses chunked transfer encoding.  Each chunk contains Price and/or PricingHeartbeat objects encoded as JSON.  Each JSON object is serialized into a single line of text, and multiple objects found in the same chunk are separated by newlines. Heartbeats are sent every 5 seconds.
     """
 
-    price: Annotated[Optional[ClientPrice], TransportField(None)]
+    price: Annotated[Optional[StreamingPrice], TransportField(None)]
     """
     The specification of an Account-specific Price.
     """

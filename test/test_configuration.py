@@ -1,29 +1,36 @@
-# coding: utf-8
-
 """Unit tests for pyfx.dispatch.oanda.configuration"""
 
 from assertpy import assert_that
 import random
-import unittest
 from pydantic import ValidationError
+import string
+import dateutil.tz
+from datetime import tzinfo
+from pytest import mark
+
+from pyfx.dispatch.oanda.test import ComponentTest, run_tests
 
 import pyfx.dispatch.oanda.configuration as config
 import pyfx.dispatch.oanda.hosts as hosts
 
+TOKEN_INPUT: str = "".join(frozenset(string.ascii_letters + string.digits + string.punctuation + " "))
 
-class TestConfiguration(unittest.TestCase):
+
+class TestConfiguration(ComponentTest):
     """Unit tests for the Configuration model"""
 
-    @classmethod
-    def gen_secret(cls):
-        ## generate a random string, such that may not map
-        ## to a conventional keyboard
-        return random.randbytes(12).decode("iso-8859-1")
+    def gen_random_str(self, l: int = 12):
+        return "".join(random.choices(TOKEN_INPUT, k = l))
 
-    @classmethod
-    def test_demo(cls):
+    def test_config_model(self):
+        fields = config.Configuration.model_fields
+        tz_field = fields['timezone']
+        assert_that(isinstance(tz_field, config.ConfigFieldInfo)).is_true()
+
+    @mark.dependency()
+    def test_demo_profile(self):
         ## test initilization for a default (fxpractice) account configuration
-        token = cls.gen_secret()
+        token = self.gen_random_str()
         demo_inst = config.Configuration(access_token=token)
 
         assert_that(demo_inst.access_token).is_equal_to(token)
@@ -43,10 +50,9 @@ class TestConfiguration(unittest.TestCase):
         assert_that(demo_inst.fxpractice).is_equal_to(True)
         assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxPractice.value)
 
-    @classmethod
-    def test_live(cls):
-        ## test for initialization with an fxLive (fxpractice = False) configuration
-        token = cls.gen_secret()
+    def test_live_profile(self):
+        ## test initialization for an fxLive (fxpractice = False) configuration
+        token = self.gen_random_str()
         live_inst = config.Configuration(fxpractice=False, access_token=token)
         assert_that(live_inst.access_token).is_equal_to(token)
         assert_that(live_inst.fxpractice).is_equal_to(False)
@@ -62,11 +68,28 @@ class TestConfiguration(unittest.TestCase):
         assert_that(live_inst.fxpractice).is_equal_to(False)
         assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxLive.value)
 
-    @classmethod
-    def test_failure_case(cls):
+    def test_failure_case(self):
         assert_that(config.Configuration).raises(ValidationError).when_called_with()
-        assert_that(config.Configuration).raises(ValidationError).when_called_with(token=random.randint(0, 10))
+        assert_that(config.Configuration).raises(ValidationError).when_called_with(access_token=random.randint(512, 1023))
 
+    @mark.dependency(depends_on=['test_demo_profile'])
+    def test_tz(self):
+        profile_tz_default = config.Configuration(access_token = self.gen_random_str())
+        tz = profile_tz_default.timezone
+        assert_that(isinstance(tz, tzinfo)).is_true()
+        
+        profile_tz_none = config.Configuration(access_token = self.gen_random_str(), timezone=None)
+        tz = profile_tz_none.timezone
+        assert_that(tz).is_equal_to(dateutil.tz.UTC)
+        
+        profile_tz_1 = config.Configuration(access_token = self.gen_random_str(), timezone="UTC-1")
+        tz = profile_tz_1.timezone
+        assert_that(tz).is_equal_to(dateutil.tz.gettz("UTC-1"))
+
+        
 
 if __name__ == '__main__':
-    unittest.main()
+    import importlib
+    import sys
+    importlib.reload(sys.modules["pyfx.dispatch.oanda.configuration"])
+    run_tests(__file__)

@@ -5,8 +5,11 @@ from types import CoroutineType, FunctionType
 from typing import Literal
 import asyncio as aio
 from datetime import datetime
+from immutables import Map
+import sys
+import time
 from typing import (
-    Any, AsyncIterator, AsyncGenerator, Awaitable,
+    Any, AsyncIterator, AsyncContextManager, AsyncGenerator, Awaitable,
     Callable, Optional, Union, Mapping, Sequence
 )
 
@@ -18,7 +21,8 @@ from ..util import exporting
 from ..exec_controller import ExecController
 from ..transport.data import ApiObject
 from .. import models
-from ..models.response_mixins import ErrorResponse
+
+from ..models.response_mixins import ApiErrorResponse
 
 from ..models import (
     AccountId,
@@ -76,7 +80,7 @@ from ..request_constants import RequestMethod
 from ..response_common import ResponseInfo
 from ..parser import ModelBuilder
 
-from .price_component import PriceComponent, ensure_price_component, PriceComponentExpr
+from .price_component import PriceComponent
 
 def validate_request(func: Callable):
     ## conditional dispatch for enabling validation in
@@ -131,7 +135,7 @@ class ApiController(ExecController):
         It's assumed that the `configuration` property will have been
         set, before this method is called.
 
-        The generalized constructor `from_config_ini()` will provide
+        The generalized constructor `from_args()` will provide
         a configuration object to the initialized controller.
 
         This `configuration` object is required for normal API client
@@ -141,21 +145,26 @@ class ApiController(ExecController):
         self.api_client = ApiClient(self)
         self.api = DefaultApi(self)
 
-    def close(self):
+    def close(self, immediate: bool = False):
         """
         Close this controller
 
         `close()` will close the REST client for this controller,
         then dispatching to `ExecController.close()`
         """
-        self.main_loop.run_until_complete(self.api_client.rest_client.aclose())
-        super().close()
+        if not immediate and not self.exit_future.done():
+            try:
+                self.add_task(self.api_client.aclose())
+                time.sleep(sys.getswitchinterval())
+            except Exception as _:
+                pass
+        super().close(immediate)
 
     @asynccontextmanager
-    async def task_context(self):
-        async with super().task_context() as tg:
-            async with self.api_client.rest_client.client:
-                yield tg
+    async def async_context(self) -> AsyncContextManager[aio.TaskGroup]:
+        async with super().async_context() as context_obj:
+            async with self.api_client:
+                yield context_obj
 
 
 ##
@@ -247,6 +256,7 @@ class DefaultApi(object):
             status = info.status
             if status in response_map:
                 return response_map[status]
+            return ApiErrorResponse
 
         return rest_type_callback
 
@@ -642,7 +652,7 @@ class DefaultApi(object):
     @validate_request
     async def get_instrument_candles(self,
                                      instrument: InstrumentName,
-                                     price: Optional[PriceComponentExpr] = None,
+                                     price: Optional[PriceComponent] = None,
                                      granularity: Optional[models.CandlestickGranularity] = models.CandlestickGranularity.S5,
                                      count: Optional[int] = None,
                                      var_from: Optional[Time] = None,
@@ -690,7 +700,7 @@ class DefaultApi(object):
 
         _query_params: dict[str, Any] = dict()
         if price:
-            _query_params['price'] = ensure_price_component(price)
+            _query_params['price'] = PriceComponent.get(price)
 
         if granularity:
             _query_params['granularity'] = granularity
@@ -753,7 +763,7 @@ class DefaultApi(object):
     async def get_instrument_candles_by_account(self,
                                                 account_id: AccountId,
                                                 instrument: InstrumentName,
-                                                price: Optional[PriceComponentExpr] = None,
+                                                price: Optional[PriceComponent] = None,
                                                 granularity: Optional[models.CandlestickGranularity] = None,
                                                 count: Optional[int] = None,
                                                 var_from: Optional[str] = None,
@@ -810,7 +820,7 @@ class DefaultApi(object):
 
         _query_params: dict[str, Any] = dict()
         if price:
-            _query_params['price'] = ensure_price_component(price)
+            _query_params['price'] = PriceComponent.get(price)
 
         if granularity:
             _query_params['granularity'] = granularity

@@ -12,7 +12,6 @@ class QuoteHomeConversionFactors(ApiObject):
     """
     QuoteHomeConversionFactors represents the factors that can be used used to convert quantities of a Price's Instrument's quote currency into the Account's home currency.
 
-    [Deprecated. See usage in ClientPrice]
     """
 
     positive_units: Annotated[Optional[FloatValue], TransportField(None, alias="positiveUnits")]

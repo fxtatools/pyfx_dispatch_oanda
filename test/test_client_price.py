@@ -1,16 +1,13 @@
+"""Unit test definition for ClientPrice"""
 
-"""Unit test definition for pyfx.dispatch.oanda"""
-
-
-import pyfx.dispatch.oanda
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
-from pyfx.dispatch.oanda.models.client_price import ClientPrice
+from pyfx.dispatch.oanda.models.client_price import StreamingPrice
 
 
 class TestClientPrice(ModelTest):
-    """ClientPrice unit test stubs"""
+    """Unit test definition for ClientPrice"""
 
-    class Factory(MockFactory[ClientPrice]):
+    class Factory(MockFactory[StreamingPrice]):
         pass
 
     __factory__ = Factory

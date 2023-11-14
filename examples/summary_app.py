@@ -8,18 +8,13 @@ import asyncio as aio
 
 from pyfx.dispatch.oanda.models import (
     ListAccounts200Response,
-    AccountProperties,
     GetAccountSummary200Response,
-    AccountSummary,
 )
 
 from dataclasses import dataclass, field
 import logging
-import os
 from pyfx.dispatch.oanda.api.default_api import ApiController
-import pyfx.dispatch.oanda.util.log as log
 from pyfx.dispatch.oanda.util.console_io import console_io
-from pyfx.dispatch.oanda.util.paths import expand_path
 from pyfx.dispatch.oanda.models.common_types import AccountId
 from pyfx.dispatch.oanda.transport.transport_fields import TransportFieldInfo
 import sys
@@ -52,10 +47,12 @@ class ExampleController(ApiController):
         self, future: aio.Future[GetAccountSummary200Response]
     ):
         summary = future.result().account
+        ## preserving class attr ordering for displayed fields
         fields: list[str] = []
         model_fields: Mapping[str, TransportFieldInfo]  = summary.__class__.model_fields  # type: ignore[assignment]
         for f in model_fields.keys():
             fields.append(f)
+
         maxlen = max(map(len, fields))
         delim = " : "
         output = sys.stdout
@@ -104,18 +101,7 @@ class ExampleController(ApiController):
 
 
 if __name__ == "__main__":
-    ## debug logging will be enabled if DEBUG is set in the environment
-    if __debug__ and "DEBUG" in os.environ:
-        log.configure_debug_logger()
-
-    cfg_file = expand_path("account.ini", os.path.dirname(__file__))
-    if not os.path.exists(cfg_file):
-        print("Configuration file not found: %s" % cfg_file, file=sys.stderr)
-        sys.exit(1)
-
-    logger.info("Initialzing application")
-
-    with ExampleController.from_args(sys.argv[1:]).run_context() as controller:
+   with ExampleController.from_args(sys.argv[1:]).run_context() as controller:
         # set a custom datetime format, used in the example
         controller.config.datetime_format = "%a, %d %b %Y %H:%M:%S %Z"
         logger.info("Running example")

@@ -1,10 +1,13 @@
 """Base class definitions for request classes"""
 
+from abc import ABC
 from typing import Annotated, Optional
 
 from ..util.naming import exporting
 
-from ..transport import TransportField, ApiObject
+from ..transport import TransportField
+
+from .create_order_request import CreateOrderRequest
 
 from .order_type import OrderType
 from .common_types import InstrumentName, PriceValue, LotsValue, Time
@@ -18,13 +21,14 @@ from .time_in_force import TimeInForce
 from .order_trigger_condition import OrderTriggerCondition
 from .trade_id_mixin import TradeIdMixin
 
+from .create_order_request import CreateOrderRequest
 
-class RequestBase(ApiObject):
+class CreateOrderRequestBase(CreateOrderRequest, ABC):
     """Common base class for Request classes"""
 
     type: Annotated[OrderType, TransportField(...)]
     """
-    The type of the Order to Create. Required value is unique to each request class
+    The type of the Order to Create. This required value is unique to each request class
     """
 
     time_in_force: Annotated[TimeInForce, TransportField(..., alias="timeInForce")]
@@ -39,7 +43,7 @@ class RequestBase(ApiObject):
     """
 
 
-class InstrumentRequestBase(RequestBase):
+class InstrumentRequestBase(CreateOrderRequestBase, ABC):
     """Common base class for requests actuated on a market instrument"""
 
     instrument: Annotated[InstrumentName, TransportField(...)]
@@ -99,7 +103,7 @@ class InstrumentRequestBase(RequestBase):
     """
 
 
-class StopsRequestBase(InstrumentRequestBase, TradeIdMixin):
+class StopsRequestBase(InstrumentRequestBase, TradeIdMixin, ABC):
 
     gtd_time: Annotated[Time, TransportField(TimeInForce.GTC, alias="gtdTime")]
     """
@@ -112,7 +116,7 @@ class StopsRequestBase(InstrumentRequestBase, TradeIdMixin):
     """
 
 
-class PriceBoundedRequest(InstrumentRequestBase):
+class PriceBoundedRequest(InstrumentRequestBase, ABC):
     """Mixin class for instrument-based requests offering a price bound"""
 
     # common to subclasses of InstrumentRequestBase

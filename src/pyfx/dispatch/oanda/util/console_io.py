@@ -3,7 +3,7 @@
 import aioconsole
 import atexit
 import asyncio as aio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 import os
 import sys
 import traceback
@@ -40,6 +40,14 @@ class ConsoleIO:
     def stderr_writer(self) -> ConsoleStreamWriter:
         return self._err_writer
 
+    def close(self):
+        ## close stdout, stderr writers without flush
+        stdout = self.stdout_writer
+        stdout.close()
+        stderr = self.stderr_writer
+        if stderr is not stdout:
+            stderr.close()
+
     async def aclose(self):
         stdout = self.stdout_writer
         stdout.close()
@@ -57,7 +65,7 @@ class ConsoleIO:
 
 
 @asynccontextmanager
-async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventLoop] = None):
+async def console_io(*, stderr_out: bool = False, loop: Optional[aio.AbstractEventLoop] = None):
     '''Async context manager for aioconsole streams
 
     On entry to the context manager, creates a new ConsoleIO object for sys.stdin, sys.stdout,
@@ -105,7 +113,7 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
         sys.stdin = pipe.stdin_reader
         yield pipe
     finally:
-        # Open fallback streams for the original file descriptors
+        # Open a fallback stream for each original file descriptor
         #
         # This should serve to ensure normal I/O is available before sys.exit()
         #
@@ -129,10 +137,13 @@ async def console_io(stderr_out: bool = False, loop: Optional[aio.AbstractEventL
         atexit.register(sys.stdin.close)
         if pipe:
             try:
-                await pipe.aclose()
+                async with aio.timeout(sys.getswitchinterval()):
+                    await pipe.aclose()
             except:
-                print("Error during ConsoleIO.aclose()", file = stderr)
-                traceback.print_exception(*sys.exc_info(), file = stderr)
+                print("Error during ConsoleIO.aclose()", file=stderr)
+                traceback.print_exception(*sys.exc_info(), file=stderr)
+            finally:
+                pipe.close()
 
 
 __all__ = exporting(__name__, ..., annotations=True)

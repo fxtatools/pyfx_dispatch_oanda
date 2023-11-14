@@ -36,7 +36,7 @@ class GuaranteedStopLossOrder(TradeIdMixin, LimitOrderMixin, ReplacesOrderMixin)
     time_in_force: Annotated[TimeInForce, TransportField(TimeInForce.GTC, alias="timeInForce")]
     """
     The time-in-force requested for the GuaranteedStopLoss Order. Restricted
-    to “GTC”, “GFD” and “GTD” for GuaranteedStopLoss Orders.
+    to `GTC`, `GFD` and `GTD` for GuaranteedStopLoss Orders.
     """
 
 __all__ = ("GuaranteedStopLossOrder",)

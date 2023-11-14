@@ -54,7 +54,6 @@ class Transaction(AbstractApiObject,
         return IOBTree.BTree()
 
     def persist(self, dest: Persistent):
-        ## dest: typically an IOBTree ...
         dest[self.id] = self
 
 

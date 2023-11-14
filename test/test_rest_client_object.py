@@ -13,6 +13,7 @@ CONTENT_HTML: str = "text/html; charset=ISO-88859-8-I"
 
 class TestRESTClientObject(ComponentTest):
     """Unit tests for RESTClientObject"""
+
     def test_charset_re(self):
         '''test regular expression patterns for RESTCLientObject'''
         rest_tail = CONTENT_REST.split(";", maxsplit=1)[1]
@@ -22,7 +23,7 @@ class TestRESTClientObject(ComponentTest):
         assert_that(UTF8_RE_MATCH.match(stream_tail)).is_none()
         assert_that(UTF8_RE_MATCH.match(html_tail)).is_none()
 
-        html_charset_match=CHARSET_RE_GROUP.match(html_tail)
+        html_charset_match = CHARSET_RE_GROUP.match(html_tail)
         assert_that(html_charset_match).is_not_none()
         assert_that(html_charset_match.group(1)).is_equal_to("ISO-88859-8-I")
 

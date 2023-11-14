@@ -30,7 +30,7 @@ class GetInstrumentPriceRange200Response(ApiObject):
     """
 
     time : Annotated[Optional[Time], TransportField(...)]
-    """The DateTime value to use for the “since” parameter in the next poll request.
+    """The DateTime value to use for the "since" parameter in the next poll request.
 
     supplemental to the fxTrade v20 API 3.0.25
     """

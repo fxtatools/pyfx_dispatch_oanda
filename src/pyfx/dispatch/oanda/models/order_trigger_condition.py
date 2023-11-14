@@ -1,9 +1,12 @@
 """OrderTriggerCondition definition for OANDA v20 REST API (3.0.25)"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class OrderTriggerCondition(str, Enum):
+class OrderTriggerCondition(ApiEnum):
     """
     Specification of which price component should be used when determining if an Order
     should be triggered and filled.
@@ -21,18 +24,20 @@ class OrderTriggerCondition(str, Enum):
     the default trigger condition when creating or modifying an Order.
 
     A special restriction applies when creating a guaranteed Stop Loss Order. In this case,
-    the TriggerCondition value must either be "DEFAULT", or the "natural" trigger side "DEFAULT"
-    results in. So for a Stop Loss Order for a long trade valid values are "DEFAULT" and "BID",
-    and for short trades "DEFAULT" and "ASK" are valid.
+    the TriggerCondition value must either be `DEFAULT`, or the "natural" trigger side `DEFAULT`
+    results in. So for a Stop Loss Order for a long trade valid values are `DEFAULT` and `BID`,
+    and for short trades `DEFAULT` and `ASK` are valid.
     """
 
+    __finalize__: ClassVar[Literal[True]] = True
+
     DEFAULT = 'DEFAULT'
-    """Trigger an Order the “natural” way: Compare its price to the ask for long Orders and bid
+    """Trigger an Order the "natural" way: Compare its price to the ask for long Orders and bid
     for short Orders.
     """
 
     INVERSE = 'INVERSE'
-    """Trigger an Order the opposite of the “natural” way: Compare its price to the bid for long
+    """Trigger an Order the opposite of the "natural" way: Compare its price to the bid for long
     Orders and ask for short Orders.
     """
 

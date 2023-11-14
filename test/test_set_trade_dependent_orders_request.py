@@ -1,8 +1,5 @@
+"""Unit test definition for SetTradeDependentOrdersRequest"""
 
-"""Unit test definition for pyfx.dispatch.oanda"""
-
-
-import pyfx.dispatch.oanda
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.set_trade_dependent_orders_request import SetTradeDependentOrdersRequest
 

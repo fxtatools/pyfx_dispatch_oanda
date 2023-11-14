@@ -1,9 +1,12 @@
 """Currency Pair encoding for applications"""
 
-from aenum import Enum, extend_enum
-import re
-import string
-from typing import Self
+from aenum import extend_enum
+from ..finalizable import FinalizationState
+from ..mapped_enum import MappedEnum
+
+
+from types import NotImplementedType
+from typing import Self, Union
 from typing_extensions import ClassVar
 
 from .currency import Currency
@@ -12,7 +15,7 @@ CURRENCY_PAIR_BASE_SHIFT: int = 16
 CURRENCY_PAIR_QUOTE_MASK: int = 0xffff
 
 
-class CurrencyPair(Enum):
+class CurrencyPair(MappedEnum):
     """
     Enum Representation of a Currency pair
 
@@ -46,11 +49,13 @@ class CurrencyPair(Enum):
     - CurrencyPair.from_delimited_str(str) :  Retrieve a CurrencyPair for a delimited currency pair name, e.g `AUD_CHF` or `AUD/CHF`
     """
 
+    __finalization_state__: ClassVar[FinalizationState] = FinalizationState.NEVER
+
     @property
     def base_digits(self) -> int:
         """ISO 4217 numerical code representing the base currency"""
         if hasattr(self, "_base_currency"):
-            return self._base_currency.digits
+            return self._base_currency.digits  # type: ignore[has-type]
         else:
             return self.value >> CURRENCY_PAIR_BASE_SHIFT
 
@@ -58,43 +63,63 @@ class CurrencyPair(Enum):
     def quote_digits(self) -> int:
         """ISO 4217 numerical code representing the quote currency"""
         if hasattr(self, "_quote_currency"):
-            return self._quote_currency.digits
+            return self._quote_currency.digits  # type: ignore[has-type]
         else:
             return self.value & CURRENCY_PAIR_QUOTE_MASK
 
     @property
     def base_currency(self) -> Currency:
-        """Currency enum member representing the base currency"""
+        """The Currency object representing the base currency"""
         if hasattr(self, "_base_currency"):
-            return self._base_currency
+            return self._base_currency  # type: ignore[has-type]
         else:
             base_digits = self.base_digits
-            base = Currency.from_digits(base_digits)
+            base = Currency.get(base_digits)
             self._base_currency = base
             return base
 
     @property
     def quote_currency(self) -> Currency:
-        """Currency enum member representing the quote currency"""
+        """The Currency object representing the quote currency"""
         if hasattr(self, "_quote_currency"):
-            return self._quote_currency
+            return self._quote_currency  # type: ignore[has-type]
         else:
             quote_digits = self.quote_digits
-            quote = Currency.from_digits(quote_digits)
+            quote = Currency.get(quote_digits)
             self._quote_currency = quote
             return quote
+
+    @property
+    def api_name(self) -> str:
+        """Sstring representation of the currency pair for the v20 API"""
+        if hasattr(self, "_api_name"):
+            return self._api_name  # type: ignore[has-type]
+        else:
+            name = self.base_currency.name + "_" + self.quote_currency.name
+            self._api_name = name
+            return name
+
+    @property
+    def api_bytes(self) -> bytes:
+        """Bytes representation of the currency pair for the v20 API"""
+        if hasattr(self, "_api_bytes"):
+            return self._api_bytes  # type: ignore[has-type]
+        else:
+            bstr = self.base_currency.name.encode() + b"_" + self.quote_currency.name.encode()
+            self._api_bytes = bstr
+            return bstr
 
     @classmethod
     def from_str_pair(cls, base: str, quote: str) -> Self:
         """Return the CurrencyPair for a set of base and quote currency symbols
 
-        base: ISO 4217 three-digit alphabetical code for the base currency
-        quote: ISO 4217 three-digit alphabetical code for the quote currency
+        base: three-digit alphabetical code for the base currency, generally per ISO 4217
+        quote: three-digit alphabetical code for the quote currency, generally per ISO 4217
 
-        returns the corresponding CurrencyPair
+        returns a CurrencyPair enum object representing currency pair
         """
-        base_cur = Currency.from_alpha(base)
-        quote_cur = Currency.from_alpha(quote)
+        base_cur = Currency.get(base)
+        quote_cur = Currency.get(quote)
         assert base_cur is not quote_cur, "base currency and quote currency are equivalent"
         code = (base_cur.digits << CURRENCY_PAIR_BASE_SHIFT) | quote_cur.digits
         codes_map = cls._value2member_map_
@@ -105,6 +130,9 @@ class CurrencyPair(Enum):
             inst = extend_enum(cls, name, code)
             inst._base_currency = base_cur
             inst._quote_currency = quote_cur
+            inst._api_name = str(base_cur) + "_" + str(quote_cur)
+            inst._api_bytes = bytes(base_cur) + b"_" + bytes(quote_cur)
+            inst._hash_code = hash(code)
             return inst
 
     @classmethod
@@ -112,7 +140,14 @@ class CurrencyPair(Enum):
         """
         Return the CurrencyPair for a CurrencyPair integer code
 
-        code: a CurrencyPair integer code.
+        code: a CurrencyPair integer code, as the bitwise union
+        of integer codes for the base and quote currencies.
+
+        To produce a currency pair integer code, the integer
+        code for the base currency - generally per ISO 4217 -
+        should be shifted leftwards 16 bits, then combined
+        in a logical `or` with the bitwise representation
+        of the integer code for the quote currency.
 
         returns the corresponding CurrencyPair
         """
@@ -120,8 +155,8 @@ class CurrencyPair(Enum):
         if code in codes_map:
             return codes_map[code]
         else:
-            base_cur = Currency.from_digits(code >> CURRENCY_PAIR_BASE_SHIFT)
-            quote_cur = Currency.from_digits(code & CURRENCY_PAIR_QUOTE_MASK)
+            base_cur = Currency.get(code >> CURRENCY_PAIR_BASE_SHIFT)
+            quote_cur = Currency.get(code & CURRENCY_PAIR_QUOTE_MASK)
             assert base_cur is not quote_cur, "base currency and quote currency are equivalent"
             name = base_cur.name + quote_cur.name
             inst = extend_enum(cls, name, code)
@@ -138,44 +173,86 @@ class CurrencyPair(Enum):
 
         returns the corresponding CurrencyPair
         """
-        if __debug__:
-            if len(name) != 6:
-                raise AssertionError("Concatenated currency pair not recognized", name)
-        return cls.from_str_pair(name[0:3], name[3:])
+        nchars = len(name)
+        if nchars == 6:
+            return cls.from_str_pair(name[0:3], name[3:])
+        elif nchars == 7:
+            return cls.from_delimited_str(name)
+        else:
+            raise ValueError("Syntax not recognized for currency pair", name)
 
     @classmethod
     def from_delimited_str(cls, name: str) -> Self:
         """
         Return the CurrencyPair for a delimited name
 
-        name: a delimited currency pair, e.g \"AUD_USD\" or \"CHF/JPY\".
+        name: a delimited currency pair name, e.g
+        `"AUD_USD"` or `"CHF/JPY"`.
 
-        This function accepts any delimiter character for the currency pair.
+        This function will accept any delimiter character
+        for the currency pair.
 
         returns the corresponding CurrencyPair
         """
         if __debug__:
             if len(name) != 7:
-                raise AssertionError("Delimited currency pair not recognized", name)
+                raise AssertionError("Unsupported syntax for a aelimited currency pair", name)
         return cls.from_str_pair(name[0:3], name[4:])
 
     @classmethod
-    def get(cls, ident: str):
-        return cls.from_str(ident) if len(ident) == 6 else cls.from_delimited_str(ident)
+    def get(cls, name: str):
+        """Return a CurrencyPair for a provided currency pair name.
+
+        The `name` string should be provided with the syntax of
+        either a concatenated currency pair name, e.g `"CHFJPY"`
+        or a delimited currency pair name, e.g `"AUD_USD"`
+        """
+        return cls.from_str(name) if len(name) == 6 else cls.from_delimited_str(name)
 
     def __index__(self) -> int:
         return self.value
 
+    def __lt__(self, other) -> Union[bool, NotImplementedType]:
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        else:
+            return NotImplemented
+
+    def __gt__(self, other) -> Union[bool, NotImplementedType]:
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        else:
+            return NotImplemented
+
+    def __eq__(self, other) -> Union[bool, NotImplementedType]:
+        if id(self) is id(other):
+            return True
+        elif self.__class__ is other.__class__:
+            return self.value == other.value
+        else:
+            return NotImplemented
+
     def __str__(self) -> str:
-        return self.name
+        return self.api_name
+
+    def __bytes__(self) -> bytes:
+        return self.api_bytes
+
+    def __hash__(self) -> int:
+        if hasattr(self, "_hash_code"):
+            return self._hash_code
+        else:
+            h = hash(self.value)
+            self._hash_code = h
+            return h
 
     def __repr__(self) -> str:
         if hasattr(self, "_repr"):
-            return self._repr
+            return self._repr  # type: ignore[has-type]
         else:
             base_digits = self.base_digits
             quote_digits = self.quote_digits
-            repr = "<%s.%s [%d %d]>" % (self.__class__.__name__, self.name, base_digits, quote_digits)
+            repr = "<%s.%s [%03d %03d]>" % (self.__class__.__name__, self.name, base_digits, quote_digits)
             self._repr = repr
             return repr
 

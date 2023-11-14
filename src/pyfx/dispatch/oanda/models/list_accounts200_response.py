@@ -11,6 +11,7 @@ class ListAccounts200Response(ApiObject):
     """
     listAccounts200Response
     """
+
     accounts: Annotated[list[AccountProperties], TransportField(...)]
     """
     The list of Accounts the client is authorized to access and their associated properties.

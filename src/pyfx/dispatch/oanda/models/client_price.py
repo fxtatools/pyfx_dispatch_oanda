@@ -1,8 +1,11 @@
+"""ClientPrice model definitions for OANDA v20 REST and Streaming APIs (3.0.25)"""
 
-"""ClientPrice model definition for OANDA v20 REST and Streaming APIs (3.0.25)"""
 
 from typing import Annotated, Literal, Optional
 
+from .streaming_price_base import StreamingPriceObject, StreamingPriceType
+
+from abc import ABC
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 from .common_types import InstrumentName, Time, PriceValue
@@ -12,24 +15,19 @@ from .quote_home_conversion_factors import QuoteHomeConversionFactors
 from .units_available import UnitsAvailable
 
 
-class ClientPrice(ApiObject):
-    """
-    The specification of an Account-specific Price.
-    """
+class ClientPriceBase(ApiObject, ABC):
+    """Common base class for Client-specific price
 
-    type: Annotated[Literal["PRICE"], TransportField(...)] = "PRICE"
-    """
-    The string \"PRICE\". Used to identify a Price object when found in a stream.
+    ClientPriceBase provides a base class with common field
+    definitions for the following implementation classes
+
+    - StreamingPrice, as adapted for the streaming price endpoint
+    - ClientPrice, as applied within OrderFillTransaction objects
     """
 
     instrument: Annotated[Optional[InstrumentName], TransportField(None)]
     """
-    The Price's Instrument.
-    """
-
-    time: Annotated[Time, TransportField(..., alias="timestamp")]
-    """
-    The date/time when the Price was created
+    The Price's Instrument (when provided in the object)
     """
 
     status: Annotated[Optional[PriceStatus], TransportField(None, deprecated=True)]
@@ -63,7 +61,50 @@ class ClientPrice(ApiObject):
     """
 
     quote_home_conversion_factors: Annotated[Optional[QuoteHomeConversionFactors], TransportField(None, alias="quoteHomeConversionFactors", deprecated=True)]
+
     units_available: Annotated[Optional[UnitsAvailable], TransportField(None, alias="unitsAvailable", deprecated=True)]
 
 
-__all__ = ("ClientPrice",)
+class StreamingPrice(ClientPriceBase, StreamingPriceObject):
+
+    """
+    The specification of an Account-specific Price, as presented via the v20 streaming price endpoint
+
+    This class is adapted after the definition of ClientPrice in the v20 API JSON schema, version
+    3.0.25. The StreamingPrice class definition diverges to the present ClientPrice class definition,
+    in the following characteristics:
+
+    - The presence of the 'type' field, in the StreamingPrice class.
+    - The name of the respective 'time' or 'timestamp' field, for each of the StreamingPrice and
+      ClientPrice classes.
+
+    StreamingPrice is implemented as a subclass of StreamingPriceObject, complimentary to the
+    PricingHeartbeat class. In processing for server response messages for the streaming price
+    endpoint, the two StreamingPriceObject subclasses are each differentiated by the content of
+    the `type` field, whether `"PRICE"` or `"HEARTBEAT"`. The StreamingPriceType enum class provides
+    an internal representation of values for this generally constant field.
+    """
+
+    type: Annotated[Literal[StreamingPriceType.PRICE], TransportField(...)] = StreamingPriceType.PRICE
+    """
+    The string \"PRICE\". Used to identify a Price object when found in a stream.
+    """
+
+    time: Annotated[Time, TransportField(...)]
+    """
+    The date/time when the Price was created
+    """
+
+
+class ClientPrice(ClientPriceBase):
+    """
+    The specification of an Account-specific Price, as presented within order fill transaction logs
+    """
+
+    timestamp: Annotated[Time, TransportField(...)]
+    """
+    The date/time when the Price was created
+    """
+
+
+__all__ = "ClientPriceBase", "StreamingPrice", "ClientPrice"

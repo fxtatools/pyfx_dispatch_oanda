@@ -1,27 +1,46 @@
 ## base types for transport type, transport field definitions
 
-from collections.abc import Collection, Sequence, Sequence
-from json import JSONEncoder
-from types import NoneType
-from typing import Generic, Optional, TypeAlias, Union
-from typing_extensions import ClassVar, Generic, TypeAlias, TypeVar, Union, get_args, get_origin, get_original_bases
+from abc import ABC, ABCMeta
+from collections.abc import Sequence
+from datetime import datetime
 
-from pydantic import BaseModel
-from pydantic.fields import FieldInfo
+from .application_fields import ApplicationFieldInfo
+from ..mapped_enum import MappedEnum
+from enum import Enum
+from json import JSONEncoder
+import logging
+from numbers import Real
+from types import NoneType
+from typing import Any, Generic, Optional, Self, Union
+from typing_extensions import ClassVar, TypeAlias, TypeVar, get_args, get_origin, get_original_bases
+import numpy as np
+import pandas as pd
+from urllib.parse import quote_from_bytes
+
+from pydantic import SecretStr
 
 from ..util.typeref import get_type_class
 from ..util.naming import exporting
 
-## memoization for ApiClient.sanitize_for_serialization
-JsonLiteral: TypeAlias = Union[float, bool, bytes, str, int]
+from .encoder_constants import EncoderConstants
+
+TypeDesignator: TypeAlias = Union[type, TypeAlias]
 
 Ti = TypeVar("Ti")
 To = TypeVar("To")
 
 InitArg = TypeVar("InitArg")
 
+logger = logging.getLogger(__name__)
+
 
 def get_sequence_member_class(spec: TypeAlias) -> type:
+    """Utility function for initialization of values transport types
+
+    Provided with a type specifier `spec`, generally as a type alias
+    with a syntax such  as `Optional[List[<cls>>]]`, returns the <cls>
+    dentoed in the type alias.
+    """
     # if __debug__:
     #     if not isinstance(spec, GenericAlias):
     #         raise AssertionError("Not a generic alias type specifier", spec)
@@ -43,22 +62,120 @@ def get_sequence_member_class(spec: TypeAlias) -> type:
         raise ValueError("Unable to determine a concrete member class for sequence type declaration", spec)
 
 
-class TransportTypeBase(type, Generic[Ti, To]):
-    ## initialization shim for TransportType processing in TransportTypeClass.__new__
-    ##
-    ## in effect, defines a named union type
-    pass
+class TransportInterface(Generic[Ti, To]):
+
+    storage_type: ClassVar[TypeDesignator]
+    """Effective storage type for values of this transport type"""
+
+    storage_class: ClassVar[type]
+    """Storage interface class for values of this transport type
 
 
-class TransportTypeClass(type):
+    The default `parse()` method will apply this class name as
+    a constructor function. The function will be provided with the
+    intermediate transport value received by `parse()
+    """
 
+    serialization_type: ClassVar[TypeDesignator]
+    """Intermediate serialization type for protocol data encoding
+
+    For a transport type serialized to JSON, this type would typically
+    denote the type of value processed by the JSON encoder or decoder.
+    """
+
+    serialization_class: ClassVar[type]
+    """Intermediate serialization class for protocol data encoding
+
+    For a transport type serialized to JSON, this class would typically
+    denote the class of value processed by the JSON encoder or decoder.
+
+    The default `unparse_py()` method will apply this class name as a constructor
+    function to the value provided to `unparse+py()`. The object returned by the
+    constructor will be passed to the transport encoder provided to `unparse_py()`
+    """
+
+    @classmethod
+    def check_type(cls, value) -> bool:
+        return isinstance(value, cls.storage_class)
+
+    @classmethod
+    def unparse_py(cls, value: Ti, encoder: JSONEncoder) -> To:
+        """Return a serializable object representing a value
+        of this transport type.
+
+        The return value should be produced with a type compatible with
+        this transport type's serialization encoding. Structurally, the
+        value should have a syntax compatible with the return value of
+        `json.JSONEncoder.default()`
+
+        Params:
+        value: the value to unparse
+        decoder: a JSONEncoder instance.
+
+        Returns: the encoded object, in this transport type's
+        serialization encoding
+        """
+
+        ## encoder: JSON encoder for structured object deserializtion.
+        ##
+        ## This default method is applicable for literal serialization
+        ## types only
+        if not encoder:
+            raise AssertionError("No encoder", value)
+        return encoder.default(cls.serialization_class(value))
+
+    @classmethod
+    def unparse_bytes(cls, value: Ti) -> bytes:
+        ## the default implementation assumes that the value will not need further quoting, for form data syntax
+        return value if isinstance(value, bytes) else str(value).encode()
+
+    @classmethod
+    def unparse_url_bytes(cls, value: Ti) -> bytes:
+        ## the default implementation assumes that the value will not need further quoting, for URL syntax
+        return value if isinstance(value, bytes) else str(value).encode()
+
+    @classmethod
+    def unparse_url_str(cls, value: Ti) -> bytes:
+        ## the default implementation assumes that the value will not need further quoting, for URL syntax
+        return value if isinstance(value, str) else str(value)
+
+    @classmethod
+    def parse(cls, unparsed: To) -> Ti:
+        if __debug__:
+            if not hasattr(cls, "storage_class"):
+                raise AssertionError("No storage_class defined", cls)
+        return cls.storage_class(unparsed)
+
+    @classmethod
+    def get_display_string(cls, value: Ti) -> str:
+        return str(value)
+
+    @classmethod
+    def get_state(cls, object):
+        ## default method for scalar values ..
+        return object
+
+    @classmethod
+    def __init_subclass__(cls, *args, **kw):
+        # utility function for application after new_class() and within cls.__new__()
+        super().__init_subclass__
+        cls.initialize_attrs()
+
+    @classmethod
     def initialize_attrs(cls):
+        """Initialize attributes of the class"""
+        if ABC in cls.__bases__:
+            return
         attrs = cls.__dict__
-        ## set the transport storage and serialization classes for the new TransportTypeClass,
-        ## based on args provided to the TransportTypeBase generic type
+        ## if the class definition does not already provide type/class information
+        ## for storage values and/or transport (serialization) values, derive the
+        ## transport storage and serialization classes for the class, based on args
+        ## provided to a TransportInterface generic type, if provided as a base class
+        ## of the cls
         for gen_base in get_original_bases(cls):
             origin = get_origin(gen_base)
-            if origin and issubclass(origin, TransportTypeBase):
+            # if origin and issubclass(origin, TransportTypeBase):
+            if origin and issubclass(origin, TransportInterface):
                 args = get_args(gen_base)
                 if len(args) is not int(2):
                     continue
@@ -78,101 +195,92 @@ class TransportTypeClass(type):
                 break
 
 
-class TransportType(TransportTypeBase[Ti, To], Generic[Ti, To], metaclass=TransportTypeClass):
-
-    storage_type: ClassVar[Union[type, TypeAlias]]
-    """Effective storage type for values of this transport type"""
-
-    storage_class: ClassVar[type]
-    """Storage interface class for values of this transport type
+class TransportObject(TransportInterface[Ti, To]):
+    def __new__(cls, arg: Union[Ti, To]) -> Self:
+        return cls.parse(arg)
 
 
-    The default `parse()` method will apply this class name as
-    a constructor function. The function will be provided with the
-    intermediate transport value received by `parse()
-    """
+T_co = TypeVar("T_co", covariant=True)
 
-    serialization_type: ClassVar[Union[type, TypeAlias]]
-    """Intermediate serialization type for protocol data encoding
 
-    For a transport type serialized to JSON, this type would typically
-    denote the type of value processed by the JSON encoder or decoder.
-    """
+class TransportTypeClass(ABCMeta, type[T_co]):
 
-    serialization_class: ClassVar[type]
-    """Intermediate serialization class for protocol data encoding
+    def __subclasscheck__(cls, test_cls: type) -> bool:
+        """support for `__subclasscheck__` at the TransportType type instance scope
 
-    For a transport type serialized to JSON, this class would typically
-    denote the class of value processed by the JSON encoder or decoder.
-
-    The default `unparse()` method will apply this class name as a constructor
-    function to the value provided to `unparse()`. The object returned by the
-    constructor will be passed to the transport encoder provided to `unparse()`
-    """
-
-    @classmethod
-    def unparse(cls, value: Ti, encoder: JSONEncoder) -> To:
-        """Return a serializable object representation for a value
-        of this transport type.
-
-        The return value should be produced in a type compatible with
-        this transport type's serialization encoding. Structurally, the
-        value should have a syntax generally similar to the syntax for
-        the return value of json.JSONEncoder.default()
-
-        Params:
-        value: the value to unparse
-        decoder: a JSONEncoder instance.
-
-        Returns: the encoded object, in this transport type's
-        serialization encoding
+        Returns True if the type metaclass `cls` is in the MRO for the type `test_cls`
         """
+        return cls in test_cls.__mro__
 
-        ## decoder: JSON decoder for structured object deserializtion.
-        ##
-        ## If provided, the decoder should be applied for deserializing
-        ## structured elements of the value. To apply the decoder about
-        ## the value itself would likely result in a loop
-        ##
-        ## Assumption: The decoder will not need to check for circular
-        ## object references.
-        ##
-        ## This default method is applicable for literal serialization
-        ## types only
-        return encoder.default(cls.serialization_class(value))
+    def __instancecheck__(cls, instance: Any) -> bool:
+        """support for `__instancecheck__` at the TransportType type instance scope
 
-    @classmethod
-    def parse(cls, unparsed: To) -> Ti:
-        if __debug__:
-            ## generalized TransportType has no storage class defined
-            if not hasattr(cls, "storage_class"):
-                raise AssertionError("No storage_class defined", cls)
-        return cls.storage_class(unparsed)
-
-    @classmethod
-    def __init_subclass__(cls, *args, **kw):
-        # utility function for application after new_class() and within cls.__new__()
-        super().__init_subclass__
-        cls.initialize_attrs()
+        Returns True if type metaclass `cls` is in the MRO for the `__class__` of the instance
+        """
+        return cls in instance.__class__.__mro__
 
 
-class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
+class TransportType(type, TransportInterface[Ti, To], metaclass=TransportTypeClass):
+    # base class for TransportInterface classes defininig a type class
+
+    def __subclasscheck__(cls, test_cls: type) -> bool:
+        """Abstract subclass check for TransportType type instance scope
+
+        subcls: A class to test for subclass relation to this TransportType class
+
+        Returns true if the TypeClass `cls` is in the MRO for `test_cls`
+        """
+        return cls in test_cls.__mro__
+
+    def __instancecheck__(cls, instance: Any) -> bool:
+        """Abstract instance check for TransportType type instance scope
+
+        instance: An object to test for instance relation to this
+        TransportType class
+
+        Returns true if TransportType class `cls` is present in the MRO for
+        the instance's class, or if `cls` has a defined `storage_class`
+        attribute and that `storage_class` is present in the MRO for the
+        instance's class.
+        """
+        ## test case:
+        # import numpy as np
+        # import pyfx.dispatch.oanda as dispatch
+        # dispatch.PriceValue.__instancecheck__(np.double(1.5))
+        ## => True
+        ## i.e
+        # isinstance(np.double(1.5), dispatch.PriceValue)
+        ## => True
+        imro = instance.__class__.__mro__
+        return cls in imro or (hasattr(cls, "storage_class") and cls.storage_class in imro)
+
+
+class TransportFieldInfo(ApplicationFieldInfo, Generic[Ti, To]):
     '''FieldInfo base class for transport fields'''
 
+    __slots__ = tuple(list(ApplicationFieldInfo.__slots__) + [
+        "transport_type", "value_type",
+        "json_name", "json_name_bytes",
+        "storage_class", "deprecated"
+    ])
+
     transport_type: TransportType[Ti, To]
+    value_type: Union[type, TypeAlias]
+    json_name: str
+    json_name_bytes: bytes
     storage_class: type
-    field_name: str
-    defining_class: type[BaseModel]
     deprecated: bool
 
-    __slots__  = tuple(frozenset(list(FieldInfo.__slots__) + ["transport_type", "defining_class", "field_name", "storage_class", "deprecated"]))
-
     def __init__(self, default, transport_type: TransportType[Ti, To], deprecated=None, **kw):
-        # implementation note: the field's transport type will be
-        # further processed duirng ApiObject class initialization,
-        # mainly to replace any TransportTypeInfer type with a
-        # transport type determined from metadata for the field,
-        # at the class scope
+        # Implementation note: Processing for TransportTypeInfer
+        #
+        # For each field and field info pair of an ApiObjbect class, the field info's transport
+        # type binding will be further processed duirng ApiObject class initialization. This
+        # would be mainly to replace any TransportTypeInfer type with a transport type determined
+        # from metadata for the field, at the class scope.
+        #
+        # Once a concrete tranpsort type is determined for the Field Info instance, additional
+        # processing may be applied under self.bind()
         self.transport_type = transport_type
         self.deprecated = deprecated
         super().__init__(default=default, **kw)
@@ -181,32 +289,56 @@ class TransportFieldInfo(FieldInfo, Generic[Ti, To]):
     def from_field(cls, default, transport_type: TransportType[Ti, To], **kw):  # type: ignore
         return cls(default, transport_type=transport_type, **kw)
 
+    def bind(self, field_name: str, cls: type):
+        """Set addtional metadata for JSON encoding of the field, after ApplicationFieldInfo.bind()
+
+        This method will configure the following field attributes, when no `json_name` attribute
+        has been defined in `self`:
+        - `json_name` : the first _truthy_ value of the the alias name or field name for the field
+        - `json_name_bytes` : bytes encoding for the JSON field name
+        """
+        super().bind(field_name, cls)
+        if not hasattr(self, "json_name"):
+            json_name = self.alias or field_name
+            self.json_name = json_name
+            self.json_name_bytes = json_name.encode()
+
     def __repr__(self):
-        defining = self.defining_class.__qualname__ if hasattr(self, "defining_class") else "<Undefined>"
-        field = self.field_name if hasattr(self, "field_name") else "<Undefined>"
-        return "<%s [%s.%s]>" % (self.__class__.__qualname__, defining, field)
+        """Return a repr string for this field info object, denoting the field info
+        class, field name,  and defining class
+
+        For each of the *defining class* and *field name* atrributes: If the attribute
+        has not been set for the field info object, the repr string will include the
+        text, `<Undefined>`. as a place holder for that attribute value.
+        """
+        defining = self.defining_class.__name__ if hasattr(self, "defining_class") else "<Undefined>"
+        name = self.name if hasattr(self, "name") else "<Undefined>"
+        return "<%s [%s.%s] at 0x%x>" % (self.__class__.__name__, defining, name, id(self),)
 
 
 class TransportTypeInfer(TransportType[None, None]):
-    """Intemerdiate TransportType
+    """Intermediate TransportType class
 
-    The presence of the class TransportTypeInfer as the transport type for a
-    TransportFieldInfo definition will indicate that the transport type for
-    the corresponding class field should be inferred from field annotations.
+    For each *field* and *field info* pair within an ApiObject class: If the field
+    info object is defined with the class TransportTypeInfer as the transport type
+    for the field definition, then the field will be processed during ApiObject
+    class initialization as to infer the real transport type for the field. This
+    inference would be applied at the class scupe, using field annotations onto the
+    transport types repository for the initialized ApiObject class.
     """
     pass
 
 
 TRANSPORT_VALUES_STORAGE_CLASS: TypeAlias = list
-"""Storage class for internal representation of JSON array values"""
+"""Type alias denoting the storage class for internal representation of JSON array values"""
 
 
-class TransportValues(TransportType[TRANSPORT_VALUES_STORAGE_CLASS[Ti], list[To]], Generic[Ti, To]):
+class TransportValuesType(TransportType[TRANSPORT_VALUES_STORAGE_CLASS[Ti], list[To]], Generic[Ti, To]):
     member_transport_type: TransportType[Ti, To]
 
     @classmethod
     def get_storage_class(cls):
-        return list
+        return TRANSPORT_VALUES_STORAGE_CLASS
 
     @classmethod
     def parse_member(cls, value: To) -> Ti:
@@ -214,16 +346,35 @@ class TransportValues(TransportType[TRANSPORT_VALUES_STORAGE_CLASS[Ti], list[To]
 
     @classmethod
     def unparse_member(cls, value: Ti, encoder: JSONEncoder) -> To:
-        return cls.member_transport_type.unparse(value, encoder)
+        return cls.member_transport_type.unparse_py(value, encoder)
 
     @classmethod
     def parse(cls, unparsed: list[To]) -> TRANSPORT_VALUES_STORAGE_CLASS[Ti]:
         return [cls.parse_member(elt) for elt in unparsed]
 
     @classmethod
-    def unparse(cls, value: list[Ti],
+    def unparse_py(cls, value: list[Ti],
                 encoder: JSONEncoder) -> list[To]:
         return [cls.unparse_member(elt, encoder) for elt in value]
+
+    @classmethod
+    def unparse_bytes(cls, value: TRANSPORT_VALUES_STORAGE_CLASS[Ti]) -> bytes:
+        mtyp = cls.member_transport_type
+        return EncoderConstants.START_ARRAY.value + b','.join(mtyp.unparse_bytes(elt) for elt in value) + EncoderConstants.END_ARRAY.value
+
+    @classmethod
+    def unparse_url_bytes(cls, value: TRANSPORT_VALUES_STORAGE_CLASS) -> bytes:
+        mtyp = cls.member_transport_type
+        return b','.join(mtyp.unparse_url_bytes(elt) for elt in value)
+
+    @classmethod
+    def unparse_url_str(cls, value: TRANSPORT_VALUES_STORAGE_CLASS) -> str:
+        mtyp = cls.member_transport_type
+        return ','.join(mtyp.unparse_url_str(elt) for elt in value)
+
+    @classmethod
+    def get_state(cls, object):
+        return tuple(cls.member_transport_type.get_state(v) for v in object)
 
     @classmethod
     def __init_subclass__(cls, *, member_class=None, **kw):
@@ -233,4 +384,337 @@ class TransportValues(TransportType[TRANSPORT_VALUES_STORAGE_CLASS[Ti], list[To]
         super().__init_subclass__(**kw)
 
 
-__all__ = exporting(__name__, ..., typevars=True)
+#
+# Transport Type Definitions
+#
+
+
+class TransportNone(TransportType[None, None]):
+
+    # this assumes a convention of parsing JSON null as None,
+    # conversely encoding None as JSON null within the input
+    # or output processor. Thus, the value None is used both
+    # internally and for the intemediate representaion
+
+
+    @classmethod
+    def parse(cls, unparsed: None) -> None:
+        return unparsed
+
+    @classmethod
+    def unparse_py(cls, value: None, encoder: JSONEncoder) -> None:
+        return value
+
+    @classmethod
+    def unparse_bytes(cls, value: None) -> bytes:
+        if __debug__:
+            if value is not None:
+                raise AssertionError("value is not None", value)
+        return b'null'
+
+
+class TransportNoneType(TransportNone, TransportType[NoneType, NoneType]):
+    pass
+
+
+class TransportBool(TransportInterface[bool, bool]):
+    @classmethod
+    def parse(cls, value: Union[bool, str]) -> bool:
+        # during processing for an abstract API model type,
+        # parse() may receive a parsed boolean value
+        if value == EncoderConstants.TRUE.str_value or value is True:
+            return True
+        elif value == EncoderConstants.FALSE.str_value or value is False:
+            return False
+        else:
+            raise ValueError("Non-boolean input value", value)
+
+    @classmethod
+    def unparse_py(cls, value: bool) -> str:
+        if value is True:
+            return EncoderConstants.TRUE.str_value
+        elif value is False:
+            return EncoderConstants.FALSE.str_value
+        else:
+            raise ValueError("Non-boolean output value", value)
+
+    @classmethod
+    def unparse_bytes(cls, value: bool) -> bytes:
+        if value is True:
+            return EncoderConstants.TRUE.value
+        elif value is False:
+            return EncoderConstants.FALSE.value
+        else:
+            raise ValueError("Non-boolean output value", value)
+
+
+class TransportBoolType(TransportBool, TransportType[bool, bool]):
+    pass
+
+
+class TransportFloatStr(TransportInterface[np.double, str]):
+    @classmethod
+    def parse(cls, value: Union[str, Real]) -> np.double:
+        if isinstance(value, np.double):
+            return value
+        else:
+            return np.double(value)
+
+    @classmethod
+    def unparse_py(cls, value: np.double, encoder: Optional[JSONEncoder] = None) -> str:
+        if __debug__:
+            if value == np.nan:
+                raise AssertionError("Not serializable for transport", value)
+        return str(value)
+
+    @classmethod
+    def unparse_bytes(cls, value: np.double) -> bytes:
+        return b'"' + super().unparse_bytes(value) + b'"'
+
+
+
+class TransportFloatStrType(TransportFloatStr, TransportType[np.double, str]):
+    pass
+
+
+class TransportInt(TransportInterface[int, int]):
+    @classmethod
+    def unparse_py(cls, value: int,
+                encoder: Optional[JSONEncoder] = None) -> int:
+        return value
+
+    @classmethod
+    def parse(cls, value: int) -> int:
+        return value
+
+    @classmethod
+    def unparse_url_str(cls, value: int) -> bytes:
+        return str(value)
+
+    @classmethod
+    def unparse_bytes(cls, value: int) -> bytes:
+        return str(value).encode()
+
+    @classmethod
+    def unparse_url_bytes(cls, value: int) -> bytes:
+        return cls.unparse_bytes(value)
+
+
+class TransportIntType(TransportInt, TransportType[int, int]):
+    pass
+
+
+class TransportStr(TransportInterface[str, str]):
+    @classmethod
+    def unparse_py(cls, value: str,
+                encoder: Optional[JSONEncoder] = None) -> str:
+        return value
+
+    @classmethod
+    def parse(cls, value: str) -> str:
+        return value
+
+    @classmethod
+    def get_display_string(cls, value: str) -> str:
+        return value
+
+    @classmethod
+    def unparse_bytes(cls, value: str) -> bytes:
+        if value or isinstance(value, str):
+            ## ensuring encode for value == ""
+            ## given that "" is processed as a false-like value in Python
+            return b'"' + value.encode() + b'"'
+        else:
+            return EncoderConstants.NULL
+
+    @classmethod
+    def unparse_url_bytes(cls, value: str) -> bytes:
+        return quote_from_bytes(value.encode()).encode()
+
+    @classmethod
+    def unparse_url_str(cls, value: str) -> bytes:
+        return quote_from_bytes(value.encode())
+
+
+class TransportStrType(TransportStr, TransportType[str, str]):
+    pass
+
+
+class TransportSecretStr(TransportStr, TransportInterface[SecretStr, str]):
+    @classmethod
+    def unparse_py(cls, value: SecretStr,
+                encoder: Optional[JSONEncoder] = None) -> str:
+        return value.get_secret_value()
+
+    @classmethod
+    def parse(cls, value: str) -> SecretStr:
+        if isinstance(value, SecretStr):
+            return value
+        else:
+            assert isinstance(value, str), "Received a non-string initializer for SecretStr"
+            return cls.storage_class(value)
+
+    @classmethod
+    def get_display_string(cls, value: SecretStr) -> str:
+        return '**********'
+
+    @classmethod
+    def unparse_bytes(cls, value: SecretStr) -> bytes:
+        return super().unparse_bytes(value.get_secret_value())
+
+    @classmethod
+    def unparse_url_bytes(cls, value: SecretStr) -> bytes:
+        return super().unparse_url_bytes(value.get_secret_value())
+
+    @classmethod
+    def unparse_url_str(cls, value: SecretStr) -> bytes:
+        return super().unparse_url_str(value.get_secret_value())
+
+class TransportSecretStrType(TransportSecretStr, TransportType[SecretStr, str]):
+    pass
+
+
+class TransportIntStr(TransportStr, TransportInterface[int, str]):
+    ## the server may encode some integer identifiers as string values
+    ## e.g TradeID
+    @classmethod
+    def unparse_py(cls, value: int,
+                encoder: Optional[JSONEncoder] = None) -> str:
+        return str(value)
+
+    @classmethod
+    def parse(cls, value: str) -> int:
+        return int(value)
+
+    @classmethod
+    def unparse_bytes(cls, value: str) -> bytes:
+        return super().unparse_bytes(cls.unparse_py(value))
+
+    @classmethod
+    def unparse_url_str(cls, value: str) -> str:
+        return cls.unparse_py(value)
+
+    @classmethod
+    def unparse_url_bytes(cls, value: str) -> bytes:
+        cls.unparse_url_str().encode()
+
+
+class TransportIntStrType(TransportIntStr[int, str], TransportType[int, str]):
+    pass
+
+
+class TransportTimestamp(TransportInterface[datetime, str]):
+    """Nullable datetime transport type
+
+    Storage Type: Union[pd.Timestamp, Literal[pd.NaT]]
+    Storage Class: datetime.datetime
+    Transport Value Class: str
+
+    The transport string '0' is interpreted symmetrically as pandas.NaT
+    """
+    storage_class = datetime
+
+    @classmethod
+    def unparse_py(cls, value: datetime,
+                encoder: Optional[JSONEncoder] = None) -> str:
+        if value == pd.NaT:
+            return "0"
+        else:
+            return value.isoformat()
+
+    @classmethod
+    def parse(cls, dt: Union[str, datetime]) -> datetime:
+        if isinstance(dt, pd.Timestamp):
+            return dt
+        elif isinstance(dt, datetime):
+            return pd.to_datetime(dt)
+        else:
+            if __debug__:
+                if not isinstance(dt, str):
+                    raise AssertionError("Not a string", dt)
+            dtlen = len(dt)
+            if dtlen is int(1):
+                if __debug__:
+                    if dt != "0":
+                        raise AssertionError("Unrecognized value", dt)
+                return pd.NaT
+            else:
+                try:
+                    ## assumption: ISO format
+                    return pd.to_datetime(dt, unit='ns')
+                except:
+                    ## assumption: Epoch format
+                    try:
+                        return pd.to_datetime(float(dt), unit='s')
+                    except:
+                        logger.critical("Unrecognized timestamp value %r", dt)
+                        return pd.NaT
+
+    @classmethod
+    def unparse_bytes(cls, value: datetime) -> bytes:
+        return TransportStrType.unparse_bytes(value.isoformat(timespec="milliseconds"))
+
+    @classmethod
+    def unparse_url_bytes(cls, value: datetime) -> bytes:
+        return TransportStrType.unparse_url_bytes(value.isoformat(timespec="milliseconds"))
+
+    @classmethod
+    def unparse_url_str(cls, value: datetime) -> bytes:
+        return TransportStrType.unparse_url_str(value.isoformat(timespec="milliseconds"))
+
+
+class TransportTimestampType(TransportTimestamp, TransportType[datetime, str]):
+    pass
+
+
+Tenum = TypeVar("Tenum", bound=MappedEnum)
+
+
+class TransportEnum(TransportInterface[Tenum, To]):
+
+    @classmethod
+    def check_type(cls, value) -> bool:
+        return isinstance(value, cls.storage_class)
+
+    @classmethod
+    def parse(cls, serialized: To) -> Union[Tenum, To]:  # type: ignore
+        storage_cls: type[Enum] = cls.storage_class
+        map = storage_cls._member_map_
+        if serialized in map:
+            return map[serialized]  # type: ignore
+        elif serialized in storage_cls._value2member_map_:
+            return storage_cls._value2member_map_[serialized]
+        else:
+            return storage_cls[serialized]
+
+    @classmethod
+    def unparse_py(cls, venum: Tenum,
+                encoder: Optional[JSONEncoder] = None) -> To:
+        return venum.value
+
+    @classmethod
+    def unparse_bytes(cls, value: Tenum) -> bytes:
+        return b'"' + bytes(value) + b'"'
+
+    @classmethod
+    def unparse_url_bytes(cls, value: Tenum) -> bytes:
+        return bytes(value)
+
+    @classmethod
+    def unparse_url_str(cls, value: Tenum) -> bytes:
+        return str(value)
+
+
+class TransportEnumType(TransportEnum, TransportType[Tenum, To]):
+    pass
+
+
+class TransportEnumStrType(TransportEnumType[Tenum, str]):
+    pass
+
+
+class TransportEnumIntType(TransportEnumType[Tenum, int]):
+    pass
+
+
+__all__ = exporting(__name__, ..., "TypeDesignator", typevars=True)

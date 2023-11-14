@@ -3,12 +3,12 @@
 from typing import Annotated, Optional
 
 from ..transport.transport_fields import TransportField
-from .response_mixins import ErrorResponse
+from .response_mixins import ApiErrorResponse
 from .client_configure_reject_transaction import ClientConfigureRejectTransaction
 from .common_types import TransactionId
 
 
-class ConfigureAccount400Response(ErrorResponse):
+class ConfigureAccount400Response(ApiErrorResponse):
     """
     Response status codes under ConfigureAccount400Response:
     400: The configuration specification was invalid.

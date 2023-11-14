@@ -23,7 +23,7 @@ class TestDefaultApi(unittest.TestCase):
         self.api = subject.DefaultApi(self.client)
 
     def tearDown(self):
-        self.loop.run_until_complete(self.client.close)
+        self.loop.run_until_complete(self.client.aclose)
 
     # def test_cancel_order(self):
     #     """Test case for cancel_order

@@ -1,6 +1,7 @@
 ## Common Definitions for API requests
 
-from enum import Enum, StrEnum
+
+from enum import Enum
 from .util.naming import exporting
 
 class RequestMethod(Enum):
@@ -21,12 +22,19 @@ For `POST`, `PUT`, `PATCH`, and `DELETE` request methods,
     PATCH = 1 << (_FORM_OFFSET + 3) | _FORM_OFFSET
     DELETE = 1 << (_FORM_OFFSET + 4) | _FORM_OFFSET
 
+
     def isFormRequest(self) -> bool:
         return (self.value & self.__class__._FORM_OFFSET.value) != 0
 
+    def __bytes__(self):
+        if hasattr(self, "_bytes"):
+            return self._bytes
+        else:
+            b = self.name.encode()
+            self._bytes = b
+            return b
 
-class BoolStr(StrEnum):
-    true= "true"
-    false = "false"
+    def __str__(self):
+        return self.name
 
-__all__ = tuple(exporting(__name__, ...))
+__all__ = ("RequestMethod",)

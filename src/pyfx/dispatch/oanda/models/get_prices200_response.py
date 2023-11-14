@@ -4,18 +4,18 @@ from typing import Annotated, Optional
 
 from ..transport.transport_fields import TransportField
 
-from .response_mixins import Response
-from .client_price import ClientPrice
+from .response_mixins import ApiResponse
+from .client_price import StreamingPrice
 from .home_conversions import HomeConversions
 from .common_types import Time
 
 
-class GetPrices200Response(Response):
+class GetPrices200Response(ApiResponse):
     """
     GetPrices200Response
     """
 
-    prices: Annotated[list[ClientPrice], TransportField(...)]
+    prices: Annotated[list[StreamingPrice], TransportField(...)]
     """
     The list of Price objects requested.
     """

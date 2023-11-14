@@ -1,7 +1,10 @@
-"""Mixin classes for Transaction class definition"""
+"""Mixin classes for Transaction class definitions"""
 
+from abc import ABC
 from pandas import Timestamp
 from typing import Annotated, Optional
+
+from ..util.naming import exporting
 
 from ..transport.transport_fields import TransportField
 
@@ -20,7 +23,7 @@ from .time_in_force import TimeInForce
 from .market_order_reason import MarketOrderReason
 
 
-class InstrumentTxn(Transaction):
+class InstrumentTxn(Transaction, ABC):
     """Mixin for Transaction classes denoting a measure of units for an instrument"""
 
     instrument: Annotated[InstrumentName, TransportField(...)]
@@ -43,20 +46,20 @@ class InstrumentTxn(Transaction):
 #     """
 
 
-class ClientExtensionsTxn(Transaction):
+class ClientExtensionsTxn(Transaction, ABC):
     """Mixin for Transaction classes providing a `client_extensions` field"""
 
     client_extensions: Annotated[
         Optional[ClientExtensions],
         TransportField(None, alias="clientExtensions")
-        ]
+    ]
     """
     Client Extensions to add to the Order (only provided if the Order is
     being created with client extensions).
     """
 
 
-class TimeInForceTxn(Transaction):
+class TimeInForceTxn(Transaction, ABC):
     """
     Mixin for Transaction classes providing a `time_in_force` field
     """
@@ -64,7 +67,7 @@ class TimeInForceTxn(Transaction):
     time_in_force: Annotated[
         TimeInForce,
         TransportField(..., alias="timeInForce")
-        ]
+    ]
     """
     The time-in-force requested for the Order.
 
@@ -72,7 +75,7 @@ class TimeInForceTxn(Transaction):
     """
 
 
-class OrderFillTxn(InstrumentTxn):
+class OrderFillTxn(InstrumentTxn, ABC):
     """
     Mixin for Transaction classes providing order fill information.
     """
@@ -80,7 +83,7 @@ class OrderFillTxn(InstrumentTxn):
     position_fill: Annotated[
         OrderPositionFill,
         TransportField(OrderPositionFill.DEFAULT, alias="positionFill")
-        ]
+    ]
     """
     Specification of how Positions in the Account are modified when the Order is filled.
     """
@@ -88,7 +91,7 @@ class OrderFillTxn(InstrumentTxn):
     take_profit_on_fill: Annotated[
         Optional[TakeProfitDetails],
         TransportField(None, alias="takeProfitOnFill")
-        ]
+    ]
     """
     The specification of the Take Profit Order that should be created for a
     Trade opened when the Order is filled (if such a Trade is created).
@@ -97,7 +100,7 @@ class OrderFillTxn(InstrumentTxn):
     stop_loss_on_fill: Annotated[
         Optional[StopLossDetails],
         TransportField(None, alias="stopLossOnFill")
-        ]
+    ]
     """
     The specification of the Stop Loss Order that should be created for a
     Trade opened when the Order is filled (if such a Trade is created).
@@ -106,7 +109,7 @@ class OrderFillTxn(InstrumentTxn):
     trailing_stop_loss_on_fill: Annotated[
         Optional[TrailingStopLossDetails],
         TransportField(None, alias="trailingStopLossOnFill")
-        ]
+    ]
     """
     The specification of the Trailing Stop Loss Order that should be created
     for a Trade that is opened when the Order is filled (if such a Trade is
@@ -116,7 +119,7 @@ class OrderFillTxn(InstrumentTxn):
     trade_client_extensions: Annotated[
         Optional[ClientExtensions],
         TransportField(None, alias="tradeClientExtensions")
-        ]
+    ]
     """
     Client Extensions to add to the Trade created when the Order is filled
     (if such a Trade is created).  Do not set, modify, delete
@@ -124,7 +127,7 @@ class OrderFillTxn(InstrumentTxn):
     """
 
 
-class ReplacementTxn(TimeInForceTxn):
+class ReplacementTxn(TimeInForceTxn, ABC):
     """
     Mixin for Transaction classes pertaining to order replacement
     """
@@ -149,7 +152,7 @@ class ReplacementTxn(TimeInForceTxn):
     trigger_condition: Annotated[
         OrderTriggerCondition,
         TransportField(OrderTriggerCondition.DEFAULT, alias="triggerCondition")
-        ]
+    ]
     """
     Specification of which price component should be used when determining if an Order should be triggered and filled.
 
@@ -172,7 +175,7 @@ class ReplacementTxn(TimeInForceTxn):
     replaces_order_id: Annotated[
         Optional[OrderId],
         TransportField(None, alias="replacesOrderID")
-        ]
+    ]
     """
     The ID of the Order that this Order replaces (only provided if this Order replaces an existing Order).
     """
@@ -180,15 +183,13 @@ class ReplacementTxn(TimeInForceTxn):
     cancelling_transaction_id: Annotated[
         Optional[TransactionId],
         TransportField(None, alias="cancellingTransactionID")
-        ]
+    ]
     """
     The ID of the Transaction that cancels the replaced Order (only provided if this Order replaces an existing Order).
     """
 
 
-
-
-class PositionEntryTxn(OrderFillTxn, ClientExtensionsTxn):
+class PositionEntryTxn(OrderFillTxn, ClientExtensionsTxn, ABC):
     """
     Mixin for transaction classes representing an immediate or scheduled order entry to the market
     """
@@ -203,7 +204,7 @@ class PositionEntryTxn(OrderFillTxn, ClientExtensionsTxn):
     pass
 
 
-class RejectTxn(Transaction):
+class RejectTxn(Transaction, ABC):
     """
     Mixin class for transactions specifying a reject_reason field
     """
@@ -211,13 +212,13 @@ class RejectTxn(Transaction):
     reject_reason: Annotated[
         Optional[TransactionRejectReason],
         TransportField(None, alias="rejectReason")
-        ]
+    ]
     """
     The reason that the Reject Transaction was created
     """
 
 
-class PriceBoundEntryTransaction(PositionEntryTxn, TimeInForceTxn):
+class PriceBoundEntryTransaction(PositionEntryTxn, TimeInForceTxn, ABC):
     """
     Common base class for transaction classes in the following subset:
     - MarketIfTouchedOrderTransaction
@@ -228,13 +229,13 @@ class PriceBoundEntryTransaction(PositionEntryTxn, TimeInForceTxn):
     price_bound: Annotated[
         Optional[PriceValue],
         TransportField(None, alias="priceBound")
-        ]
+    ]
     """
     The worst price that the client is willing to have the Order filled at.
     """
 
 
-class PriceEntryTransaction(PositionEntryTxn):
+class PriceEntryTransaction(PositionEntryTxn, ABC):
     """
     Common base class for transaction classes in the following subset:
     - LimitOrderTransaction
@@ -249,7 +250,7 @@ class PriceEntryTransaction(PositionEntryTxn):
     """
 
 
-class OrderStopsTransaction(ReplacementTxn, ClientExtensionsTxn, TradeIdMixin):
+class OrderStopsTransaction(ReplacementTxn, ClientExtensionsTxn, TradeIdMixin, ABC):
     """
     Common base class for transactions classes representing a stops adjustment to an open positio
 
@@ -261,13 +262,13 @@ class OrderStopsTransaction(ReplacementTxn, ClientExtensionsTxn, TradeIdMixin):
     order_fill_transaction_id: Annotated[
         Optional[TransactionId],
         TransportField(None, alias="orderFillTransactionID")
-        ]
+    ]
     """
     The ID of the OrderFill Transaction that caused this Order to be created (only provided if this Order was created automatically when another Order was filled).
     """
 
 
-class OrderDistanceStopsTransaction(OrderStopsTransaction):
+class OrderDistanceStopsTransaction(OrderStopsTransaction, ABC):
     """
     Common base class for order stops transactions providing a `distance` field.
 
@@ -283,299 +284,4 @@ class OrderDistanceStopsTransaction(OrderStopsTransaction):
     Instrument's bid price is used, and for long Trades the ask is used.
     """
 
-
-##
-## Common Fields, by transaction class subset
-##
-
-# MarketIfTouchedOrderTransaction
-# LimitOrderTransaction
-# OrderFillTransaction
-# StopOrderTransaction
-# FixedPriceOrderTransaction
-#         price
-#         instrument
-#         reason
-#         units
-
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# LimitOrderTransaction
-#         time_in_force
-#         cancelling_transaction_id
-#         instrument
-#         trade_client_extensions
-#         position_fill
-#         take_profit_on_fill
-#         gtd_time
-#         units
-#         trigger_condition
-#         stop_loss_on_fill
-#         replaces_order_id
-#         trailing_stop_loss_on_fill
-
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# LimitOrderTransaction
-# FixedPriceOrderTransaction
-#         client_extensions
-#         price
-#         instrument
-#         trade_client_extensions
-#         position_fill
-#         reason
-#         take_profit_on_fill
-#         units
-#         stop_loss_on_fill
-#         trailing_stop_loss_on_fill
-
-# OrderFillTransaction
-#         price
-#         instrument
-#         account_balance
-#         financing
-#         reason
-#         units
-
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-#         client_extensions
-#         time_in_force
-#         price_bound
-#         price
-#         cancelling_transaction_id
-#         instrument
-#         trade_client_extensions
-#         position_fill
-#         reason
-#         take_profit_on_fill
-#         units
-#         gtd_time
-#         trigger_condition
-#         stop_loss_on_fill
-#         replaces_order_id
-#         trailing_stop_loss_on_fill
-
-# MarketIfTouchedOrderTransaction
-# StopLossOrderTransaction
-# LimitOrderTransaction
-# OrderFillTransaction
-# StopOrderTransaction
-# TakeProfitOrderTransaction
-# FixedPriceOrderTransaction
-#         price
-#         reason
-
-# StopLossOrderTransaction
-# LimitOrderTransaction
-# TakeProfitOrderTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-#         time_in_force
-#         cancelling_transaction_id
-#         price
-#         gtd_time
-#         trigger_condition
-#         replaces_order_id
-
-# StopLossOrderTransaction
-# LimitOrderTransaction
-# TakeProfitOrderTransaction
-# FixedPriceOrderTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-#         price
-#         client_extensions
-
-# StopLossOrderTransaction
-# TakeProfitOrderTransaction
-#         price
-#         trade_id
-#         order_fill_transaction_id
-#         client_trade_id
-
-# StopLossOrderTransaction
-#         price
-#         distance
-
-# MarketIfTouchedOrderTransaction
-# StopLossOrderTransaction
-# LimitOrderTransaction
-# MarketOrderTransaction
-# StopOrderTransaction
-# TrailingStopLossOrderTransaction
-# TakeProfitOrderTransaction
-#         time_in_force
-
-# StopLossOrderTransaction
-# LimitOrderTransaction
-# TrailingStopLossOrderTransaction
-# TakeProfitOrderTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-#         client_extensions
-#         time_in_force
-#         cancelling_transaction_id
-#         reason
-#         gtd_time
-#         trigger_condition
-#         replaces_order_id
-
-# StopLossOrderTransaction
-# TrailingStopLossOrderTransaction
-# TakeProfitOrderTransaction
-#         client_extensions
-#         time_in_force
-#         cancelling_transaction_id
-#         client_trade_id
-#         reason
-#         trade_id
-#         gtd_time
-#         trigger_condition
-#         replaces_order_id
-#         order_fill_transaction_id
-
-# StopLossOrderTransaction
-# TrailingStopLossOrderTransaction
-#         client_extensions
-#         time_in_force
-#         cancelling_transaction_id
-#         client_trade_id
-#         reason
-#         trade_id
-#         gtd_time
-#         trigger_condition
-#         distance
-#         replaces_order_id
-#         order_fill_transaction_id
-
-# DelayedTradeClosureTransaction
-# LimitOrderTransaction
-# StopLossOrderTransaction
-# OrderFillTransaction
-# TrailingStopLossOrderTransaction
-# FixedPriceOrderTransaction
-# TakeProfitOrderTransaction
-# OrderCancelTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-#         reason
-
-# StopLossOrderTransaction
-# LimitOrderTransaction
-# TrailingStopLossOrderTransaction
-# TakeProfitOrderTransaction
-# FixedPriceOrderTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-#         client_extensions
-#         reason
-
-# OrderCancelTransaction
-#         order_id
-#         client_order_id
-#         reason
-
-# TradeClientExtensionsModifyTransaction
-# StopLossOrderTransaction
-# TrailingStopLossOrderTransaction
-# TakeProfitOrderTransaction
-#         trade_id
-#         client_trade_id
-
-# TradeClientExtensionsModifyTransaction
-#         trade_id
-#         client_trade_id
-#         trade_client_extensions_modify
-
-# TradeClientExtensionsModifyTransaction
-# OrderClientExtensionsModifyTransaction
-#         trade_client_extensions_modify
-
-# OrderClientExtensionsModifyTransaction
-#         order_id
-#         client_order_id
-#         trade_client_extensions_modify
-
-# DailyFinancingTransaction
-# OrderFillTransaction
-#         account_balance
-#         financing
-
-# DailyFinancingTransaction
-# OrderFillTransaction
-# TransferFundsTransaction
-#         account_balance
-
-# OrderClientExtensionsModifyTransaction
-# OrderCancelTransaction
-#         order_id
-#         client_order_id
-
-##
-## common fields x market order, by transaction class subset
-##
-
-
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# LimitOrderTransaction
-# MarketOrderTransaction
-#         take_profit_on_fill
-#         trade_client_extensions
-#         trailing_stop_loss_on_fill
-#         time_in_force
-#         units
-#         stop_loss_on_fill
-#         position_fill
-#         instrument
-
-# OrderCancelTransaction
-# TakeProfitOrderTransaction
-# DelayedTradeClosureTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# MarketOrderTransaction
-# TrailingStopLossOrderTransaction
-# OrderFillTransaction
-# LimitOrderTransaction
-# FixedPriceOrderTransaction
-# StopLossOrderTransaction
-#         reason
-
-# TakeProfitOrderTransaction
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# MarketOrderTransaction
-# TrailingStopLossOrderTransaction
-# LimitOrderTransaction
-# FixedPriceOrderTransaction
-# StopLossOrderTransaction
-#         client_extensions
-#         reason
-
-## <<market-activated transaction>>
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# MarketOrderTransaction
-# OrderFillTransaction
-# LimitOrderTransaction
-# FixedPriceOrderTransaction
-#         units
-#         reason
-#         instrument
-
-# MarketIfTouchedOrderTransaction
-# StopOrderTransaction
-# MarketOrderTransaction
-# LimitOrderTransaction
-# FixedPriceOrderTransaction
-#         take_profit_on_fill
-#         trade_client_extensions
-#         trailing_stop_loss_on_fill
-#         client_extensions
-#         units
-#         reason
-#         stop_loss_on_fill
-#         position_fill
-#         instrument
+__all__ = tuple(exporting(__name__, ...))

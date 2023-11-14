@@ -1,12 +1,18 @@
 """TradePL definition for OANDA v20 REST API (3.0.25)"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class TradePL(str, Enum):
+class TradePL(ApiEnum):
     """
     The classification of TradePLs.
     """
+
+
+    __finalize__: ClassVar[Literal[True]] = True
 
     POSITIVE = 'POSITIVE'
     NEGATIVE = 'NEGATIVE'

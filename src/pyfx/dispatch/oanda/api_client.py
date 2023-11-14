@@ -1,27 +1,22 @@
-## ApiClient, based on code generated with OpenAPI Generator
+## ApiClient, originally based on code generated with OpenAPI Generator
 
-from enum import Enum
+from enum import Enum, StrEnum
 import asyncio as aio
-import atexit
 import datetime
 from numbers import Real
-from json import JSONEncoder
 import logging
 from typing import Any, Awaitable, Mapping, Optional, Sequence, Union
-from typing_extensions import AsyncGenerator, TypeAlias, TypeVar
+from typing_extensions import AsyncGenerator, TypeVar
 
 from urllib.parse import quote_from_bytes
 
-from .models.common_types import Time
 from .exceptions import RequestValueError
 from .exec_controller import ExecController
 from .credential import Credential
 from .transport.data import ApiObject
-from .transport.transport_base import JsonLiteral
-from .transport.repository import ApiJsonEncoder
 from .configuration import Configuration
 from . import rest
-from .request_constants import BoolStr, RequestMethod
+from .request_constants import RequestMethod
 from .hosts import FxHostInfo
 
 from .util.naming import exporting
@@ -31,6 +26,11 @@ logger = logging.getLogger(__name__)
 __all__ = ("ApiClient",)
 
 To_co = TypeVar("To_co", covariant=True)
+
+
+class BoolStr(StrEnum):
+    TRUE= "true"
+    FALSE = "false"
 
 def ensure_str(value) -> str:
     # utility function for query path encoding
@@ -43,7 +43,7 @@ def ensure_str(value) -> str:
     elif isinstance(value, Real):
         return str(value)
     elif isinstance(value, bool):
-        return BoolStr.true if value else BoolStr.false
+        return BoolStr.TRUE if value else BoolStr.FALSE
     elif isinstance(value, Credential):
         return value.get_secret_value()
     else:
@@ -69,15 +69,13 @@ class ApiClient(object):
 
     config: Configuration
     controller: ExecController
-    encoder: JSONEncoder
+    '''Reference to a managing ExecController, typically an ApiController'''
+
     loop: aio.AbstractEventLoop
     rest_client: rest.RESTClientObject
 
-    def __init__(
-        self, controller: ExecController, encoder: Optional[JSONEncoder] = None
-    ):
+    def __init__(self, controller: ExecController):
         self.config = controller.config
-        self.encoder = encoder or ApiJsonEncoder()
         self.loop = controller.main_loop
         self.rest_client = rest.RESTClientObject(controller)
 
@@ -85,12 +83,14 @@ class ApiClient(object):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.close()
+        await self.aclose()
 
-    async def close(self):
-        await self.rest_client.aclose()
-        if hasattr(atexit, "unregister"):
-            atexit.unregister(self.close)
+    async def aclose(self):
+        try:
+            await self.rest_client.aclose()
+        except:
+            pass
+
 
     async def call_api(self,  # fmt: off
                        resource_path: str,
@@ -121,8 +121,7 @@ class ApiClient(object):
                 **{k: ensure_str(v) for k, v in path_params.items()}
             )
 
-
-        body_text = body.to_json_str(self.encoder) if body else None
+        body_text = None if body is None else body.to_json_bytes()
 
         ## generalization for fxPractice and fxLive endpoints
         # fmt: off
@@ -168,12 +167,12 @@ class ApiClient(object):
         elif isinstance(value, Real):
             return str(value)  # type: ignore
         elif isinstance(value, bool):
-            return BoolStr.true if value == True else BoolStr.false  # type: ignore
+            return BoolStr.TRUE if value == True else BoolStr.FALSE  # type: ignore
         elif isinstance(value, datetime.datetime):
             ## alternately a pandas timestamp
             return value.isoformat(timespec="milliseconds")  # type: ignore
         elif isinstance(value, ApiObject):
-            return value.to_json_str(self.encoder)  # type: ignore
+            return value.to_json_str()  # type: ignore
         elif isinstance(value, Sequence):
             return ",".join([await self.serialize_quoting(obj) for obj in value])  # type: ignore
         elif isinstance(value, Mapping):

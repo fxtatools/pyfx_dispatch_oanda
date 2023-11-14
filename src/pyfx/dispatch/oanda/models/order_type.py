@@ -1,13 +1,17 @@
-
 """OrderType definition for OANDA v20 REST API (3.0.25) and subsequent"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class OrderType(str, Enum):
+class OrderType(ApiEnum):
     """
     The type of the Order.
     """
+
+    __finalize__: ClassVar[Literal[True]] = True
 
     MARKET = 'MARKET'
     """Market Order"""

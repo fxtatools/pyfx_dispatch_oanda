@@ -1,36 +1,28 @@
-from abc import abstractmethod
+"""Segmented I/O streams"""
+
 import asyncio as aio
-import math
 import concurrent.futures
 import os
+from queue import SimpleQueue, Empty
 import sys
-import time
-from queue import SimpleQueue
-from typing import Awaitable, Generic, Literal, Optional, Union
-from typing_extensions import Generic, Protocol, TypeVar
+from typing import Awaitable, Generic, Iterator, Literal, Optional, Union
+from typing_extensions import Generic, TypeVar
+from ..util.sequence_like import IndexedSequenceLike
+
 
 from enum import IntEnum, Enum
 
-Tdata = TypeVar("Tdata", bound="SequenceLike")
+
+Tdata = TypeVar("Tdata", bound=IndexedSequenceLike)
 
 
 class ReaderConst(float, Enum):
     INF = float("inf")
 
 
-class SequenceLike(Protocol, Generic[Tdata]):  # type: ignore
-    @abstractmethod
-    def __len__(self) -> int:
-        raise NotImplementedError(self.__len__)
-
-    @abstractmethod
-    def __getitem__(self, key) -> Tdata:
-        raise NotImplementedError(self.__getitem__)
-
-
 class IoState(IntEnum):
-    NoState = 0
-    Closed = 1
+    NONE = 0
+    CLOSED = 1
 
 
 class DataError(Exception):
@@ -51,13 +43,7 @@ class Segment(Generic[Tdata]):
     Synchronous Segment implementation
     """
 
-    __slots__ = (
-        "data",
-        "slen",
-        "cursor",
-        "last",
-        "eof",
-    )
+    __slots__ = "data", "slen", "cursor", "last", "eof"
 
     data: Tdata
     """Segment Data
@@ -101,8 +87,8 @@ class Segment(Generic[Tdata]):
     def read(self, n: Union[int, Literal[ReaderConst.INF]] = -1) -> Tdata:
         data = self.data
         last = self.slen
-        if n is int(-1) or n is ReaderConst.INF:
-            rslt = data[self.cursor :]
+        if n < 0 or n is ReaderConst.INF:
+            rslt = data[self.cursor:]
             self.cursor = last
             return rslt
         else:
@@ -111,23 +97,21 @@ class Segment(Generic[Tdata]):
             if end > last:
                 raise aio.IncompleteReadError(expected=n, partial=data[cursor:last])
             else:
-                rslt = data[self.cursor : end]
+                rslt = data[self.cursor: end]
                 self.cursor = end
                 return rslt
 
 
-Tsegment = TypeVar("Tsegment")
+T_seg_co = TypeVar("T_seg_co", bound=Segment, covariant=True)
 
 
-class SegmentChannelBase(Generic[Tsegment, Tdata]):
-    __slots__ = (
-        "read_queue",
-        "closed_future",
-        "eof",
-        "empty_sequence",
-        "line_separator",
-        "current_segment",
-    )
+class SegmentChannelBase(Generic[T_seg_co, Tdata]):
+    # fmt: off
+    __slots__ = ("read_queue", "closed_future", "eof",
+                 "empty_sequence", "line_separator",
+                 "current_segment",
+                 )
+    # fmt: on
 
     eof: bool
     """EOF indicator
@@ -205,27 +189,81 @@ class SegmentChannelBase(Generic[Tsegment, Tdata]):
         return self.closed_future.done()
 
     def next_segment(self) -> Optional[Segment[Tdata]]:
-        seg = self.current_segment
-        if seg is None:
+        seg: Segment[Tdata] = self.current_segment
+        delay = sys.getswitchinterval()
+        while seg is None:
             if self.closed() or self.eof:
                 return None
             else:
-                seg = self.read_queue.get()
-                self.current_segment = seg
+                try:
+                    seg = self.read_queue.get(timeout=delay)
+                except Empty:
+                    pass
+        self.current_segment = seg
         return seg
 
-    def next_chunk(self) -> Tdata:
+    def peek_segment(self) -> Tdata:
         """return the next segment data, without advancing cursor"""
-        ## usage: provides support for effective read-ahead
+        ## usage: provides support for effective read-ahead,
+        ## assuming a certain synchronization across channel I/O
         seg = self.next_segment()
-        return seg.data if seg else self.empty_sequence  # type: ignore
+        return seg.data if seg else self.empty_sequence
 
     def finalize_segment(self, seg):
         ## utility method for read()
-        if seg.eof:
+        if seg.eof:  # and seg.cursor == seg.slen
             self.eof = True
+        # self.read_queue.task_done()
         self.current_segment = None
-        del seg
+        # del seg
+
+    def queued(self) -> Iterator[Tdata]:
+        """Return an iterator yielding all queued segments until `self.eof` or `self.closed()`
+
+        Implementation Notes
+
+        This method should generally not be mixed with applications
+        of `channel.read()` onto the same segment channel. For any active segment in the
+        channel, the iterator will provide the segment's unabridged data, regardless of
+        cursor position. Any data previously accessed from the active segment with `read()`
+        will be duplicated in the return value, for any active segment under `queued()`.
+
+        The iterator will exit under the following events:
+        1) after yielding a segment that was provided as `channel.feed(<data>, eof=True)`
+        2) before any subsequent iteration, once the  segment channel is `closed()`
+
+        This iterator is generally thread-safe, under the following limitations:
+
+        1) `channel.feed()` may be called within zero or more threads for the
+           synchronous implementation, or at most one thread for the async
+           implementation.
+
+        2) `channel.queued()` may be called in at most one thread, within
+           either implementation. In both implementations, this thread may
+           be distinct to the thread calling `channel.feed()`
+
+        If no new data has been provided to the channel as with `channel.feed()`,
+        the iterator will block within the current thread, until the first
+        segment has been provided. Subsequently, after yielding the data
+        of the current segment, if the channel is not closed and no `eof` segment
+        has been provided to `feed()`, the iterator will block until the next segment.
+        """
+        queue = self.read_queue
+        try:
+            while not self.closed():
+                seg = self.current_segment
+                if seg is None:
+                    if self.eof or self.closed():
+                        return
+                    seg = queue.get()
+                yield seg.data
+                self.finalize_segment(seg)
+        finally:
+            if not self.closed():
+                self.close()
+
+    def join_queued(self, sep: Tdata) -> Tdata:
+        return sep.join(self.queued())
 
 
 class SegmentChannel(SegmentChannelBase[Segment[Tdata], Tdata]):
@@ -341,11 +379,11 @@ class SegmentChannel(SegmentChannelBase[Segment[Tdata], Tdata]):
                 break
             else:
                 n_read = len(seg_read)
-                if n_read is seg.slen:
+                if n_read == seg.slen:
                     self.finalize_segment(seg)
                 if to_read is not ReaderConst.INF:
                     to_read = to_read - n_read
-                if to_read is int(0):
+                if to_read == 0:
                     break
         return have_read  # type: ignore
 
@@ -427,11 +465,12 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
         closed_future: Optional[aio.Future] = None,
         loop: Optional[aio.AbstractEventLoop] = None,
     ):
+        # global thread_loop
         if closed_future:
             self.closed_future = closed_future
         else:
             self.closed_future = aio.Future(
-                loop=loop if loop else aio.get_event_loop_policy().get_event_loop()
+                loop=loop if loop else aio.get_running_loop() or aio.get_event_loop_policy().get_event_loop()
             )
 
         super().__init__(empty_sequence, line_separator)
@@ -450,19 +489,36 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
             ## has been replaced with a bounded queue in some subclass
             self.read_queue.put(AsyncSegment(data, eof))
 
+    async def anext_segment(self) -> Optional[Segment[Tdata]]:
+        seg: Segment[Tdata] = self.current_segment
+        delay = sys.getswitchinterval()
+        while seg is None:
+            if self.closed():
+                return None
+            else:
+                try:
+                    async with aio.timeout(delay):
+                        seg = self.read_queue.get()
+                except aio.TimeoutError:
+                    pass
+                except aio.CancelledError:
+                    return None
+        self.current_segment = seg
+        return seg
+
     async def feed_line(self, data: Tdata, eof: bool = False):
         return await self.feed(data + self.line_separator, eof)  # type: ignore
 
     async def read(self, n: int = -1) -> Awaitable[Tdata]:  # type: ignore
         to_read = n if n >= 0 else ReaderConst.INF
         have_read = self.empty_sequence if hasattr(self, "empty_sequence") else None
+        queue = self.read_queue
         while to_read >= 0:
-            queue = self.read_queue
             seg = self.current_segment
             if seg is None:
-                if self.closed() or self.eof:
+                if self.eof or self.closed():
                     return have_read  # type: ignore
-                seg = queue.get()
+                seg = await self.anext_segment()
                 self.current_segment = seg
             if not have_read:
                 # map have_read to empty_sequence after the first stream feed()
@@ -480,10 +536,10 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
                 break
             else:
                 n_read = len(seg_read)  # type: ignore
-                if n_read is seg.slen:
+                if n_read == seg.slen:
                     self.finalize_segment(seg)
                 to_read = to_read if to_read == ReaderConst.INF else to_read - n_read
-                if to_read is int(0):
+                if to_read == 0:
                     break
         return have_read  # type: ignore
 
@@ -501,22 +557,70 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
     async def readuntil(self, separator: Optional[Tdata] = None) -> Awaitable[Tdata]:  # type: ignore
         raise NotImplementedError(self.readuntil)
 
-    async def aclose(self):
-        return self.close()
+    def close(self) -> aio.Handle:
+        """Closes this segment channel
 
-    def close(self):
-        return super().close()
+        - Sets the `eof` state of this channel to True
+
+        - Sets the result of the `closed_future` to `IoState.Closed` if the
+          `closed_future` was not previously in a "done" state.
+
+        `close()` will endeavor to set the IoState for the `closed_future`
+        using a thread-safe call.
+
+        Returns an asyncio.Handle for the thread-safe call to set the result
+        of the `closed_future`. This handle may result in an exception when
+        awaited, of a type `aio.InvalidStateException`, if the `closed_future`
+        was previously in a "done" state.
+        """
+        self.eof = True
+        # task = self.closed_future.get_loop().create_task(self.aclose())
+        # _ = task.result
+        self.close_current()
+
+    def close_current(self):
+        ""
+        try:
+            if not self.closed_future.done():
+                self.closed_future.set_result(IoState.CLOSED)
+        except aio.InvalidStateError:
+            pass
+
+    async def aclose(self):
+        """Set the eof state for the channel to `True` and ensure a "done" state
+        for the channel's `closed_future`.
+
+        If the `closed_future` was initialized under a different loop than the loop
+        calling this coroutine, then the "done" state will be set for the `closed_future`
+        under a thread-safe call, using the future's original event loop. In otherwise,
+        the "done" state will be set as for a future initialized within the same event
+        loop as current.
+
+        If not already set, the state will be set to the value `IoState.CLOSED`
+        """
+        self.eof = True
+        ftr = self.closed_future
+        ftr_loop = ftr.get_loop()
+        running_loop = aio.get_running_loop()
+        try:
+            if ftr_loop is running_loop:
+                self.close_current()
+            else:
+                hdl = ftr_loop.call_soon_threadsafe(self.close_current)
+                # await ftr
+        except aio.InvalidStateError:
+            pass
 
     async def __aenter__(self):
         """Asynchronous context maanger entry method
 
-        returns the bound async segment channel
+        returns this segment channel
         """
         return self
 
     async def __aexit__(self, exc_type, exc_value, tb):
         """Asynchronous context maanger exit method
 
-        closes the bound async segment channel
+        closes this segment channel, as with `aclose()`
         """
         await self.aclose()

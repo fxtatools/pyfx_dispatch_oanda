@@ -1,12 +1,18 @@
 """OrderCancelReason definition for OANDA v20 REST API (3.0.25)"""
 
-from enum import Enum
+from typing import Literal
+from typing_extensions import ClassVar
+
+from .api_enum import ApiEnum
 
 
-class OrderCancelReason(str, Enum):
+class OrderCancelReason(ApiEnum):
     """
     The reason that an Order was cancelled.
     """
+
+
+    __finalize__: ClassVar[Literal[True]] = True
 
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR'
     ACCOUNT_LOCKED = 'ACCOUNT_LOCKED'

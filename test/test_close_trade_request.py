@@ -20,7 +20,7 @@ class TestCloseTradeRequest(ModelTest):
         assert_that(parsed).is_equal_to(DoubleConstants.INF)
 
     def test_all_unparse(self):
-        unparsed = TransportDecmialAll.unparse(DoubleConstants.INF)
+        unparsed = TransportDecmialAll.unparse_py(DoubleConstants.INF)
         assert_that(unparsed).is_equal_to("ALL")
 
     def test_units_parse(self):
@@ -28,7 +28,7 @@ class TestCloseTradeRequest(ModelTest):
         assert_that(parsed).is_equal_to(1.5)
 
     def test_units_unparse(self):
-        unparsed = TransportDecmialAll.unparse(1.5)
+        unparsed = TransportDecmialAll.unparse_py(1.5)
         assert_that(unparsed).is_equal_to("1.5")
 
 

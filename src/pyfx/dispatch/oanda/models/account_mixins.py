@@ -1,6 +1,7 @@
 """Mixin classes for account model classes"""
 
-from typing import Annotated, Literal, Union, Optional
+from abc import ABC
+from typing import Annotated, Optional
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
@@ -12,7 +13,7 @@ from .guaranteed_stop_loss_order_mutability import GuaranteedStopLossOrderMutabi
 from .guaranteed_stop_loss_order_parameters import GuaranteedStopLossOrderParameters
 
 
-class AccountStateBase(ApiObject):
+class AccountStateBase(ApiObject, ABC):
     """Mixin class for account state fields"""
 
     balance: Annotated[Optional[AccountUnits], TransportField(None)]
@@ -143,7 +144,7 @@ class AccountStateBase(ApiObject):
     The date/time of the Account's last margin call extension.
     """
 
-class AccountSummaryBase(AccountStateBase):
+class AccountSummaryBase(AccountStateBase, ABC):
     """
     Mixin class for common account summary fields
     """

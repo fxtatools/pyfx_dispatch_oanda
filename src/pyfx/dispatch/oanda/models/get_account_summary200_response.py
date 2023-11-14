@@ -13,7 +13,7 @@ class GetAccountSummary200Response(LastTransactionResponse):
     GetAccountSummary200Response
     """
 
-    account: Annotated[Optional[AccountSummary], TransportField(None)]
+    account: Annotated[AccountSummary, TransportField(...)]
     """The summary of the requested Account.
     """
 

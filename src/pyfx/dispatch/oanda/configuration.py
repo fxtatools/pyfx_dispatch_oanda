@@ -5,25 +5,33 @@ from aenum import StrEnum
 from collections import ChainMap
 from concurrent.futures import ThreadPoolExecutor
 from datetime import tzinfo
+import dateutil.tz
 import importlib.util
+import logging
 from pydantic import BaseModel, Field, ConfigDict, ValidationError
 from pydantic.fields import PydanticUndefined, FieldInfo
 
-from .util import exporting
 import copy
 import httpx
 import os
-from pytz import utc
+import platform
 import sys
 import sysconfig
-from typing import Any, Callable, Literal, Mapping, Optional, Sequence, Union
-from typing_extensions import Annotated, ClassVar, TypeVar
+from typing import Annotated, Any, Callable, Literal, Mapping, Optional, Self, Sequence, Union
+from typing_extensions import ClassVar, TypeVar, override
+
+if platform.system != "Windows":
+    import uvloop
 
 from . import __version__
 from .credential import Credential
 from .hosts import FxHostInfo
 from .util.paths import Pathname
 from .models.common_types import AccountId
+from .util import exporting
+
+
+logger = logging.getLogger(__package__)
 
 T = TypeVar("T")
 
@@ -33,9 +41,21 @@ def identity(obj: T) -> T:
     return obj
 
 
-class ConfigField(FieldInfo):
+class ConfigFieldInfo(FieldInfo):
     """Initial prototype for configuration field parsing"""
     parse_func: Callable[[Any], Any] = identity
+
+    @classmethod
+    @override
+    def from_field(cls, default: Any = ..., *,
+                   parse_func, **kw) -> Self:
+        info = super().from_field(default, **kw)
+        info.parse_func = parse_func
+        return info
+
+
+def ConfigField(default, *, parse_func, **kw):
+    return ConfigFieldInfo.from_field(default, parse_func=parse_func, **kw)
 
 
 class ProfileName(StrEnum):
@@ -43,9 +63,6 @@ class ProfileName(StrEnum):
     FXPRACTICE: str = FxHostInfo.fxPractice.name
     FXLIVE: str = FxHostInfo.fxLive.name
 
-
-UTC_TZINFO: tzinfo = utc
-"""Default timezone for configuration"""
 
 PROXY_ENV_NAMES: frozenset[str] = frozenset({"https_proxy", "HTTPS_PROXY", "ALL_PROXY", "all_proxy"})
 """Environment variables that may denote an HTTPS proxy"""
@@ -66,13 +83,28 @@ def environ_proxy() -> Optional[str]:
     return None
 
 
+def parse_tz(input: Union[str, tzinfo, None]) -> tzinfo:
+    if isinstance(input, str):
+        info = dateutil.tz.gettz(input)
+        if info:
+            return info
+        else:
+            logger.warn("Unknown timezone %r, using UTC", input)
+            return dateutil.tz.UTC
+    elif input:
+        assert isinstance(input, tzinfo)
+        return input
+    else:
+        return dateutil.tz.UTC
+
+
 class ConfigurationModel(BaseModel):
     '''Configuration settings for the API client.
 
     Initialization:
 
     ```python
-    Configuration(host = <host>, access_token = <token>, ... )
+    Configuration(fxpractice = <bool>, access_token = <token>, ... )
     ```
 
     Instance fields, available as keyword arguments for initialization:
@@ -107,37 +139,59 @@ class ConfigurationModel(BaseModel):
     datetime_format: str = "%x %X %Z"
     '''datetime format for user interface'''
 
-    timezone: str = os.environ["TZ"] if "TZ" in os.environ else "UTC"
+    timezone: Annotated[tzinfo, ConfigField(..., parse_func=parse_tz)] = parse_tz(os.environ["TZ"] if "TZ" in os.environ else "UTC")
     '''Timezone for user interface.
 
     The default value will be initialized from `TZ` if `TZ` is set
     in `os.environ`, else using UTC'''
 
-    event_loop_policy: Union[str, Callable[[], aio.AbstractEventLoopPolicy]] = aio.get_event_loop_policy
+    event_loop_policy: Union[str, Callable[[], aio.AbstractEventLoopPolicy]] = aio.get_event_loop_policy if ("NO_UVLOOP" in os.environ or platform.system == "Windows") else uvloop.EventLoopPolicy  # type: ignore[attr-defined]
     """Callback for event loop policy
 
-    The denoted callable should return a value defining  policy will be applied for creating a default main loop and for creating
-    a loop within each worker thread. If provided as a ref (callable or reference string)
+    Syntax: Class name, callable, or reference string
+
+    If provided as a string, the string should provide a module-qualified name of a
+    compatible class, function, static method, or class method.  If provided as a
+    class name, the class' constructor should be compatible with the functional
+    semantics for this value. If provided as a callable object, the callable should
+    return an event loop policy when called with no args.
+
+    The value may also be provided as an event loop policy.
+
+    The event loop policy will be applied for creating a default main loop when no
+    loop is provided to the controller interface, and for creating a loop within each
+    worker thread.
     """
 
     executor: Union[str, Callable[[int, str, Callable[[], Any]], ThreadPoolExecutor]] = ThreadPoolExecutor
-    """Thread Pool executor (class name, callable, or reference string)
+    """Thread Pool executor
 
-    If provided as a Callable or a reference string denoting a Callable
-    object, the referred Callable should accept positional arguments in
-    a syntax compatible with concurrent.futures.ThreadPoolExecutor
+    Syntax: Class name, callable, or reference string
+
+    If provided as a string, the string should provide a module-qualified name of a
+    compatible class, function, static method, or class method.  If provided as a
+    class name, the class' constructor should be compatible with the functional
+    semantics for this value. If provided as a callable object, the callable should
+    accept the keyword args `max_workers` (int or None), `thread_name_prefix` (str),
+    and `initializer` (callable) and should return a compatible thread pool executor.
+
+    Once initialized from this configuration value, the thread pool executor will be
+    applied for creating worker threads within the primary application controller.
     """
 
     max_thread_workers: Optional[int] = None
-    '''Maximum number of workers for response processing
+    '''Maximum number of worker threads for the thread pool executor.
 
     `None` implies to use the system default.
     '''
 
     max_connections: Optional[int] = 100
     '''Client-side limit for number of concurrent HTTP connections.
-    Default value is 100, None means no limit.
+
+    Default value is 100. None means no client-side limit.
     '''
+
+    request_timeout: Optional[float] = None
 
     max_keepalive_connections: int = 10
     '''Client-side limit for number of conccurrent HTTP keepalive connections'''
@@ -155,26 +209,27 @@ class ConfigurationModel(BaseModel):
     '''HTTPS proxy for REST client requests.
 
     If None, the proxy will be determined from the first defined environment
-    variable in `https_proxy` and `HTTPS_PROXY` at time of call.
-
-    If False, no proxy will be used.
+    variable at time of call, given the downcase and upcase  variants of the
+    environment variable names `https_proxy` and `all_proxy`
 
     If an httpx.Proxy object, the object will be used directly for the REST client.
 
     If a string, the string should provide the URL for an HTTPS proxy server.
+
+    If False, no proxy will be used for requests.
 
     This value will be used for determining the proxy configuration for the REST
     client of each ApiClient
     '''
 
     verify_ssl: bool = True
-    '''SSL/TLS verification.
+    '''Enable SSL/TLS hostname and certificate verification.
 
     Set this to False to skip verifying the SSL hostname and certificate when calling the API
     '''
 
     ssl_ca_cert: Pathname = os.path.join(sysconfig.get_paths()['purelib'], "certifi", "cacert.pem")
-    '''Pathname for the PEM-formatted SSL CA certificate file '''
+    '''Pathname for a PEM-formatted SSL CA certificate file '''
 
     ssl_cert_file: Optional[Pathname] = None
     '''Optional SSL certificate file for the SSL Context.
@@ -190,7 +245,7 @@ class ConfigurationModel(BaseModel):
     tls_server_name: Optional[Pathname] = None
     '''SSL/TLS Server Name Indication (SNI)
 
-    Set this to the SNI value expected by the server.
+    Set this to None, or the SNI value expected by the server.
     '''
 
     socket_options: Optional[Sequence[Sequence[int]]] = None
@@ -207,8 +262,8 @@ class ConfigurationModel(BaseModel):
 
     @classmethod
     def get_callable(cls, ident: Union[str, Callable]) -> Callable:
-        if isinstance(ident, Callable):  # type: ignore
-            return ident  # type: ignore
+        if isinstance(ident, Callable):  # type: ignore[arg-type]
+            return ident  # type: ignore[return-value]
         else:
             assert isinstance(ident, str), "Not a string"
             module_name, name = ident.rsplit(".", maxsplit=1)
@@ -285,10 +340,10 @@ class Configuration(ConfigurationModel):
     ```
 
     The `del` operation is not supported for fields not having a default
-    value, mainly the `access_token` field and the effective profile
-    designator field, `fxpractice`. The `fxpractice` field will be
-    constantly `True` for the `fxpractice` profile, and constantly `False `
-    for the `fxlive` profile.
+    value, mainly the `access_token` field and the profile host designator
+    field, `fxpractice`. The `fxpractice` field will be constantly `True`
+    for an `fxpractice` profile, and constantly `False ` for an `fxlive`
+    profile.
 
     ## Access for Profile Fields (Common Profile)
 
@@ -328,43 +383,45 @@ class Configuration(ConfigurationModel):
     '''
 
     ## backing store for per-profile configuration
-    _profiles: Mapping[str, ChainMap[str, Any]]
-    ## backing store for user-specified defaults
-    _profile_default_map: Mapping[str, Any]
+    _profiles: dict[str, ChainMap[str, Any]]
+
+    _profile_default_map: dict[str, Any]
+
     ## backing store for the active profile configuration.
     ## should be equal to a value in _profiles
     _current_profile: ChainMap[str, Any]
+
     ## should be equal to a key in _profiles
     _current_profile_name: str
 
-    _profile_data_fields: ClassVar[frozenset[str]] = frozenset({
+    _profile_fields: ClassVar[frozenset[str]] = frozenset({
         "_profiles", "_profile_default_map", "_current_profile", "_current_profile_name"
     })
     _profile_unique_fields: ClassVar[frozenset[str]] = frozenset({
         "access_token", "fxpractice", "account_id"
     })
-    _profile_common_fields: ClassVar[frozenset[str]] = frozenset(ConfigurationModel.model_fields.keys()).difference(_profile_unique_fields)
+    _config_common_fields: ClassVar[frozenset[str]] = frozenset(ConfigurationModel.model_fields.keys()).difference(_profile_unique_fields)
 
-    def get_host(self):
+    def get_host(self) -> FxHostInfo:
         if self.fxpractice:
             return FxHostInfo.fxPractice.value
         else:
             return FxHostInfo.fxLive.value
 
     def get_fxlive_profile(self) -> ChainMap[str, Any]:
-        return self.get_profile(ProfileName.FXLIVE.value)
+        return self.get_profile(str(ProfileName.FXLIVE))
 
     def get_fxpractice_profile(self) -> ChainMap[str, Any]:
-        return self.get_profile(ProfileName.FXPRACTICE.value)
+        return self.get_profile(str(ProfileName.FXPRACTICE))
 
     def get_profile(self, name: str) -> ChainMap[str, Any]:
         return self._profiles[name]
 
     def use_fxlive_profile(self) -> ChainMap[str, Any]:
-        return self.use_profile(ProfileName.FXLIVE.value)
+        return self.use_profile(str(ProfileName.FXLIVE))
 
     def use_fxpractice_profile(self) -> ChainMap[str, Any]:
-        return self.use_profile(ProfileName.FXPRACTICE.value)
+        return self.use_profile(str(ProfileName.FXPRACTICE))
 
     def use_profile(self, name: str) -> ChainMap[str, Any]:
         if name in self._profiles:
@@ -468,15 +525,15 @@ class Configuration(ConfigurationModel):
         the default configuration profile
         '''
         profile_args = {}
-        for field in self.__class__._profile_data_fields:
-            ## move all profile data args into profile_data
+        for field in self.__class__._profile_fields:
+            ## move config profile args into profile_args
             if field in kwargs:
                 profile_args[field] = kwargs[field]
                 del kwargs[field]
 
         common_args = {}
-        for name in self.__class__._profile_common_fields:
-            ## move kwargs to common args for each kwarg not in _profile_unique_fields
+        for name in self.__class__._config_common_fields:
+            ## move kwargs to common args for each kwarg in _config_common_fields
             if name in kwargs:
                 common_args[name] = kwargs[name]
                 del kwargs[name]
@@ -486,13 +543,13 @@ class Configuration(ConfigurationModel):
         if len(unknown) is not int(0):
             raise ValidationError("Unknown configuration fields", unknown)
 
-        ## initialize required and unique fields for the object via pydantic,
-        ## before accessing any instance attributes below
+        ## initialize required and unique fields for the object via pydantic
         super().__init__(**kwargs)
 
-        ## initialize profile data
+        ## initialize structural profile fields
         for field in profile_args:
-            setattr(self, profile_args[field])
+            setattr(self, field, profile_args[field])
+
         if "_profile_default_map" in profile_args:
             self._profile_default_map = profile_args["_profile_default_map"]
         else:
@@ -504,17 +561,16 @@ class Configuration(ConfigurationModel):
             self._profiles = {}
         profiles = self._profiles
 
-        defaults = self._profile_default_map
-        ## initialize defaults
+        default_map = self._profile_default_map
+        ## set all non-profile-unique configuration values to the profile's default map
         for key, value in common_args.items():
-            defaults[key] = value
+            default_map[key] = self.parse_config_input(key, value)
 
-        ## initialize a profile map for each ProfileName enum member,
-        ## using annotations of ProfileName as an iteration source
+        ## initialize a profile map for each ProfileName enum member
         for name in ProfileName._value2member_map_.keys():
             if name not in profiles:
-                profile_config = {}
-                profiles[name] = ChainMap(profile_config, defaults)
+                profile_map = {}  # type: ignore[var-annotated]
+                profiles[name] = ChainMap(profile_map, default_map)
 
         ## set constants fields per profile
         profiles[ProfileName.FXLIVE.value]['fxpractice'] = False
@@ -532,10 +588,9 @@ class Configuration(ConfigurationModel):
             self._current_profile = self._profiles[self._current_profile_name]
 
         profile = self._current_profile
-        ## re-proceses all profile-uniqe kwargs,
-        ## now that the instance profile map is initialized
+        ## proceses all profile-unique kwargs, storing directly to the active profile map
         for key, value in kwargs.items():
-            profile[key] = value
+            profile[key] = self.parse_config_input(key, value)
 
     ##
     ## attribute -> chainmap access for model_fields
@@ -544,13 +599,15 @@ class Configuration(ConfigurationModel):
     def parse_config_input(self, key: str, value: Any) -> Any:
         # supporting only the fields of the Configuration class, mainly
         # to avoid further instance attribute access within this method
-        #
         model_fields = Configuration.model_fields
-        field = model_fields[key]
-        if isinstance(field, ConfigField):
-            return field.parse_func(value)
+        if key in model_fields:
+            field = model_fields[key]
+            if isinstance(field, ConfigFieldInfo):
+                return field.parse_func(value)
+            else:
+                return value
         else:
-            return value
+            raise ValueError("Unknown configuration field", key)
 
     def __getitem__(self, key: str, assume_model: bool = False) -> Any:
         model_fields = Configuration.model_fields

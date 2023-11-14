@@ -1,6 +1,7 @@
 
 """Order model definition for OANDA v20 REST API (3.0.25)"""
 
+from abc import ABC
 from typing import Annotated, Optional
 
 from ..transport.data import AbstractApiObject
@@ -13,7 +14,7 @@ from .order_state import OrderState
 from .order_type import OrderType
 
 
-class Order(AbstractApiObject, # type: ignore
+class Order(AbstractApiObject, ABC,
             designator_key="type",
             designator_type=OrderType):
     """
