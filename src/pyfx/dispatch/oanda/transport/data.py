@@ -887,7 +887,7 @@ class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
 
     @classmethod
     def finalize_prototype(cls, value: Self) -> Self:
-        ## no further instance initialization to perform, generally
+        ## no further initialization, in the base class
         return value
 
 
@@ -945,21 +945,22 @@ class AbstractApiObject(ApiObject, ABC, Generic[Td], metaclass=AbstractApiClass)
 
     The types map will generally represent a mapping of each value of the class'
     `designator_type` to a correpsonding subclass of the class.
+
+    ### Syntax and Finalization
+
+    Before finalization, the `types_map` class field will be provided with a Python
+    dict object. Subsequent of finalization, the `types_map` field will be provided
+    with an immutable mapping.
     """
 
     designator_key: ClassVar[str]
-    """Field name for the the designator key within a concrete implementation
+    """Field name for the the designator key, within concrete implementations
     of the abstract API Object class
     """
 
     designator_type: ClassVar[Enum]
-    """Type for the designator value within a concrete implementation of the
-    abstract API Object class.
-
-    As in effect an extension to JSON Schema, the fxTrade v20 API uses a form of
-    enum value types for concrete type designation, within each abstract schema
-    class. These enum designator types may each be represented with a Python Enum
-    definition.
+    """Enum type for the designator value, within concrete implementations of
+    the abstract API Object class.
     """
 
     @classmethod
@@ -973,7 +974,7 @@ class AbstractApiObject(ApiObject, ABC, Generic[Td], metaclass=AbstractApiClass)
         if designator_type:
             cls.designator_type = designator_type
         if not (designator_key or designator_type or ABC in cls.__bases__):
-            ## initialize a subclass representing an abstract API object class
+            ## initialize an implementation class
             base = cls.get_abstract_base()
             key = base.designator_key
             serialize = set(cls.api_transport_fields)
@@ -984,13 +985,14 @@ class AbstractApiObject(ApiObject, ABC, Generic[Td], metaclass=AbstractApiClass)
                 if key not in hints:
                     # fmt: off
                     raise ValueError("Subclass has no type hints for key attribute", key, cls, base)
+                    # fmt: on
                 key_hint = hints[key]
                 if key_hint is designator_type:
-                    # an intermediate abstract class may not have provided a binding
-                    # for the designator key - not an error
-                    return
+                    raise ValueError("Subclass has unexpected designator_type binding", key_hint)
                 literal_value = get_literal_value(key_hint)
                 binding = {literal_value: cls}
+                logger.debug("%s bind %r => %s", base.__name__, literal_value, cls.__name__)
+
                 # register the subclass to the abstract base class
                 base.bind_types(binding)
                 # also register the subclass to the subclass' own types_map:
