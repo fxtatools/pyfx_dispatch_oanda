@@ -554,6 +554,8 @@ class ExecController(ABC):
                     #     worker_loop.close()
             ## close worker threads
             self.executor.shutdown(wait=False, cancel_futures=True)
+        finally:
+            pass
     def exit(self, code: int, immediate: bool = False):
         logger.critical("Exiting: %r (%r)", code, immediate)
         self.close(immediate)
