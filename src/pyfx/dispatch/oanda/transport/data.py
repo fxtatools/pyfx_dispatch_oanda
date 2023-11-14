@@ -16,7 +16,7 @@ from pydantic._internal._model_construction import ModelMetaclass
 from reprlib import repr
 import sys
 from types import new_class, NoneType
-from typing import Any, Generic, Iterable, Iterator, Optional, TypeAlias, Union
+from typing import Any, Generic, Iterable, Iterator, Optional, TypeAlias, Union, TYPE_CHECKING
 from typing_extensions import ClassVar, Self, TypeVar, TypeAlias, Union, get_origin, get_type_hints
 
 from ..finalizable import FinalizableClass
@@ -32,7 +32,7 @@ from .transport_base import (
     TransportFloatStrType, TransportTimestampType
     # fmt: on
 )
-
+from .application_fields import ApplicationFieldInfo
 from .repository import TransportBaseRepository
 from .encoder_constants import EncoderConstants
 
@@ -478,6 +478,10 @@ class TransportObjectType(TransportObject, TransportType[Tobject, IntermediateOb
 
 
 class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
+
+    if TYPE_CHECKING:
+        model_fields: ClassVar[Mapping[str, ApplicationFieldInfo]]
+
     __finalize__: ClassVar[bool] = False
     """Finalization state flag for the ApiObject class"""
 
@@ -696,7 +700,10 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
 
 class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
 
-    api_transport_fields: ClassVar[frozenset[str]]  # Models API only
+    if TYPE_CHECKING:
+        model_fields: ClassVar[Mapping[str, TransportFieldInfo]]
+
+    api_transport_fields: ClassVar[frozenset[str]]
     """Fields to serialize for transport
 
     A set-wise listing of field names, for fields that should always be serialized

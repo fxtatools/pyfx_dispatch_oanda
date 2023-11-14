@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from pandas import Timestamp
 from typing import Iterator
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 from pyfx.dispatch.oanda.test import ComponentTest, run_tests
 from pyfx.dispatch.oanda.transport.data import ApiObject, TransportObjectType

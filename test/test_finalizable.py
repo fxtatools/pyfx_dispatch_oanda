@@ -1,6 +1,6 @@
 """Unit tests for Finalizble, FinalizableClass"""
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 from typing_extensions import ClassVar
 
 from pyfx.dispatch.oanda.test import ComponentTest, run_tests

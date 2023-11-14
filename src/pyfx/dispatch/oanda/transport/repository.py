@@ -35,9 +35,6 @@ from .transport_base import (
 from ..util.naming import exporting
 
 
-T_type = TypeVar("T_type", bound=type)
-
-
 T_co = TypeVar("T_co", covariant=True)
 
 
@@ -82,17 +79,17 @@ class TransportBaseRepository(Finalizable, metaclass=TransportRepositoryClass[Se
         self.member_types_map = dict()
         self.bind_types(bindings)
 
-    def bind_transport_type(self, type: T_type, transport_type: type[TransportType[T_type, Any]]):
+    def bind_transport_type(self, type: type[T_co], transport_type: TransportType[type[T_co], Any]):
         if self.__finalization_state__:
             raise ValueError("Repository is finalized", self)
         self.direct_types_map[type] = transport_type  # type: ignore[index]
 
-    def bind_values_type(self, member_type: type[T_type], transport_type: type[TransportValuesType[T_type, Any]]):
+    def bind_values_type(self, member_type: type[T_co], transport_type: TransportValuesType[type[T_co], Any]):
         if self.__finalization_state__:
             raise ValueError("Repository is finalized", self)
         self.member_types_map[member_type] = transport_type  # type: ignore[index]
 
-    def bind_types(self, map: Mapping[T_type, type[TransportType[T_type, Any]]]):
+    def bind_types(self, map: Mapping[type[T_co], TransportType[type[T_co], Any]]):
         if self.__finalization_state__:
             raise ValueError("Repository is finalized", self)
         for t, transport_t in map.items():

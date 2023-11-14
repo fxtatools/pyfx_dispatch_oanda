@@ -3,7 +3,7 @@
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.cancel_order200_response import CancelOrder200Response
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 
 class TestCancelOrder200Response(ModelTest):

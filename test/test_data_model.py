@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pytest import mark
 from typing import Annotated, Mapping
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 
 from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue
@@ -62,6 +62,12 @@ class TestDataModel(ModelTest):
             assert_that(t_type.storage_class).is_equal_to(icls)
             assert_that(t_type.serialization_class).is_equal_to(ocls)
 
+        ## test nullable timestamp
+        time_nat = pd.NaT
+        assert_that(TransportTimestampType.parse('0') is time_nat).is_true()
+        assert_that(TransportTimestampType.unparse_py(time_nat)).is_equal_to('0')
+
+
     @mark.dependency()
     def test_fields_map(self):
         cls = self.__class__
@@ -70,15 +76,15 @@ class TestDataModel(ModelTest):
         model_fields = mock_cls.model_fields
         json_names = mock_cls.json_field_names
         assert_that(len(model_fields)).is_not_zero()
-        for name, fieldinfo in model_fields.items():
+        for name, info in model_fields.items():
             assert_that(name in json_names).is_true()
-            alias = fieldinfo.alias
+            alias = info.alias
             if alias:
                 assert_that(alias in json_fields).is_true()
             else:
                 assert_that(name in json_fields).is_true()
-            assert_that(isinstance(fieldinfo, TransportFieldInfo)).is_true()
-            assert_that(fieldinfo.defining_class).is_equal_to(mock_cls)
+            assert_that(isinstance(info, TransportFieldInfo)).is_true()
+            assert_that(info.defining_class).is_equal_to(mock_cls)
         assert_that('field_str_list' in model_fields).is_true()
         assert_that(model_fields['field_str_list'].transport_type.member_transport_type).is_equal_to(TransportStrType)
 

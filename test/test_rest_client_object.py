@@ -4,7 +4,7 @@ from pyfx.dispatch.oanda.test import ComponentTest
 from pyfx.dispatch.oanda.rest import RESTClientObject, UTF8_RE_MATCH, CHARSET_RE_GROUP
 
 import unittest
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 CONTENT_REST: str = "application/json; charset=UTF-8"
 CONTENT_STREAM: str = "application/octet-stream"

@@ -1,7 +1,7 @@
 
 """Unit test definition for pyfx.dispatch.oanda"""
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 import pyfx.dispatch.oanda
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests

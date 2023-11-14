@@ -8,7 +8,6 @@ from .data import ApiObject, TransportObject, JsonTypesRepository
 
 from ..io.segment import AsyncSegmentChannel
 
-
 class ApiJsonEncoder(JSONEncoder):
     """JSON encoder for API Object classes"""
 

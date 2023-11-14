@@ -353,7 +353,7 @@ class TransportValuesType(TransportType[TRANSPORT_VALUES_STORAGE_CLASS[Ti], list
 
     @classmethod
     def unparse_py(cls, value: list[Ti],
-                encoder: JSONEncoder) -> list[To]:
+                   encoder: JSONEncoder) -> list[To]:
         return [cls.unparse_member(elt, encoder) for elt in value]
 
     @classmethod
@@ -471,7 +471,6 @@ class TransportFloatStr(TransportInterface[np.double, str]):
         return b'"' + super().unparse_bytes(value) + b'"'
 
 
-
 class TransportFloatStrType(TransportFloatStr, TransportType[np.double, str]):
     pass
 
@@ -479,7 +478,7 @@ class TransportFloatStrType(TransportFloatStr, TransportType[np.double, str]):
 class TransportInt(TransportInterface[int, int]):
     @classmethod
     def unparse_py(cls, value: int,
-                encoder: Optional[JSONEncoder] = None) -> int:
+                   encoder: Optional[JSONEncoder] = None) -> int:
         return value
 
     @classmethod
@@ -506,7 +505,7 @@ class TransportIntType(TransportInt, TransportType[int, int]):
 class TransportStr(TransportInterface[str, str]):
     @classmethod
     def unparse_py(cls, value: str,
-                encoder: Optional[JSONEncoder] = None) -> str:
+                   encoder: Optional[JSONEncoder] = None) -> str:
         return value
 
     @classmethod
@@ -524,6 +523,8 @@ class TransportStr(TransportInterface[str, str]):
             ## given that "" is processed as a false-like value in Python
             return b'"' + value.encode() + b'"'
         else:
+            ## In data fetched from the a v20 demo server, str typed fields
+            ## may sometimes be provided with a null value
             return EncoderConstants.NULL
 
     @classmethod
@@ -542,7 +543,7 @@ class TransportStrType(TransportStr, TransportType[str, str]):
 class TransportSecretStr(TransportStr, TransportInterface[SecretStr, str]):
     @classmethod
     def unparse_py(cls, value: SecretStr,
-                encoder: Optional[JSONEncoder] = None) -> str:
+                   encoder: Optional[JSONEncoder] = None) -> str:
         return value.get_secret_value()
 
     @classmethod
@@ -578,7 +579,7 @@ class TransportIntStr(TransportStr, TransportInterface[int, str]):
     ## e.g TradeID
     @classmethod
     def unparse_py(cls, value: int,
-                encoder: Optional[JSONEncoder] = None) -> str:
+                   encoder: Optional[JSONEncoder] = None) -> str:
         return str(value)
 
     @classmethod
@@ -602,31 +603,36 @@ class TransportIntStrType(TransportIntStr[int, str], TransportType[int, str]):
     pass
 
 
+NullableTimesamp: TypeAlias = Union[datetime, pd.NaT]
+
 class TransportTimestamp(TransportInterface[datetime, str]):
     """Nullable datetime transport type
 
-    Storage Type: Union[pd.Timestamp, Literal[pd.NaT]]
-    Storage Class: datetime.datetime
+    Storage Interface Class: datetime.datetime
+    Storage Type: Union[pd.Timestamp, Literal[pd.NaT]]; Compatible with datetime.datetime
     Transport Value Class: str
 
     The transport string '0' is interpreted symmetrically as pandas.NaT
     """
+
+    ## case study: GetAccountSummary200Response => AccountSummary => resettable_pl_time
+    ## - transmitted sometimes as "0".
+    ## - when present in the response, the resettable_pl_time "0" must be parsed as some value
+    ## - when parsed as a timestamp string, the usage of "0" may lead to unexpected data
+    ##   in deserialization, as when value was parsed as a timestamp string
+    ##   (e.g using epoch coding) then unparsed from the erroneous timetamp
+    ##   (ca. 1970)
+
     storage_class = datetime
 
     @classmethod
-    def unparse_py(cls, value: datetime,
-                encoder: Optional[JSONEncoder] = None) -> str:
-        if value == pd.NaT:
-            return "0"
-        else:
-            return value.isoformat()
-
-    @classmethod
-    def parse(cls, dt: Union[str, datetime]) -> datetime:
+    def parse(cls, dt: Union[str, NullableTimesamp]) -> NullableTimesamp:
         if isinstance(dt, pd.Timestamp):
             return dt
         elif isinstance(dt, datetime):
             return pd.to_datetime(dt)
+        elif dt is pd.NaT:
+            return dt
         else:
             if __debug__:
                 if not isinstance(dt, str):
@@ -650,16 +656,47 @@ class TransportTimestamp(TransportInterface[datetime, str]):
                         return pd.NaT
 
     @classmethod
-    def unparse_bytes(cls, value: datetime) -> bytes:
-        return TransportStrType.unparse_bytes(value.isoformat(timespec="milliseconds"))
+    def unparse_py(cls, value: NullableTimesamp,
+                   encoder: Optional[JSONEncoder] = None) -> str:
+        ## Implementation Note:
+        ##
+        ## pd.NaT may have a particular __eq__ semantics, such that pd.NaT != pd.NaT
+        ## while 'a = pd.NaT; a is pd.NaT' would provide a consistent identity relation
+        ## in Python
+        if value is pd.NaT:
+            return "0"
+        else:
+            return value.isoformat()
+
+    @classmethod
+    def unparse_bytes(cls, value: NullableTimesamp) -> bytes:
+        if value is pd.NaT:
+            ## Implementation Note:
+            ##
+            ## Although NaT may be parsed from a timestamp '0' in a server response,
+            ## NaT values should  generally not be used for requests, whether via form
+            ## data or in request URLs.
+            ##
+            ## Outside of the request scope, the NaT value may be used in JSON
+            ## serialization for data from a server response. Consequently,
+            ## this transport type supports unparse for NaT, except in URL scope
+            return b'0'
+        else:
+            return TransportStrType.unparse_bytes(value.isoformat(timespec="milliseconds"))
 
     @classmethod
     def unparse_url_bytes(cls, value: datetime) -> bytes:
-        return TransportStrType.unparse_url_bytes(value.isoformat(timespec="milliseconds"))
+        if value is pd.NaT:
+            raise ValueError("No URL encoding available for NaT", value)
+        else:
+            return TransportStrType.unparse_url_bytes(value.isoformat(timespec="milliseconds"))
 
     @classmethod
     def unparse_url_str(cls, value: datetime) -> bytes:
-        return TransportStrType.unparse_url_str(value.isoformat(timespec="milliseconds"))
+        if value is pd.NaT:
+            raise ValueError("No URL encoding available for NaT", value)
+        else:
+            return TransportStrType.unparse_url_str(value.isoformat(timespec="milliseconds"))
 
 
 class TransportTimestampType(TransportTimestamp, TransportType[datetime, str]):
@@ -688,7 +725,7 @@ class TransportEnum(TransportInterface[Tenum, To]):
 
     @classmethod
     def unparse_py(cls, venum: Tenum,
-                encoder: Optional[JSONEncoder] = None) -> To:
+                   encoder: Optional[JSONEncoder] = None) -> To:
         return venum.value
 
     @classmethod
@@ -716,4 +753,4 @@ class TransportEnumIntType(TransportEnumType[Tenum, int]):
     pass
 
 
-__all__ = exporting(__name__, ..., "TypeDesignator", typevars=True)
+__all__ = exporting(__name__, ..., typevars=True)

@@ -1,6 +1,6 @@
 """Unit test definition for TestCloseTradeRequest"""
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.close_trade_request import CloseTradeRequest, TransportDecmialAll

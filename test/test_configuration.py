@@ -1,6 +1,6 @@
 """Unit tests for pyfx.dispatch.oanda.configuration"""
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 import random
 from pydantic import ValidationError
 import string

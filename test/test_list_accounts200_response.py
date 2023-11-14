@@ -7,7 +7,7 @@ from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.list_accounts200_response import ListAccounts200Response
 
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 class TestListAccounts200Response(ModelTest):
     """ListAccounts200Response unit test stubs"""

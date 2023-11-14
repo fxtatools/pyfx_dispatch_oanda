@@ -7,7 +7,7 @@ from pyfx.dispatch.oanda.test import MockFactory, ModelTest, run_tests
 from pyfx.dispatch.oanda.models.account_properties import AccountProperties
 
 
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 
 class TestAccountProperties(ModelTest):
     """AccountProperties unit test stubs"""
