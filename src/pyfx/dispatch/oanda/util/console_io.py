@@ -129,12 +129,12 @@ async def console_io(*, stderr_out: bool = False, loop: Optional[aio.AbstractEve
         sys.stdout = open(stdout_fd, encoding=stdout.encoding, mode=stdout.mode)
         atexit.register(sys.stdout.close)
         if stderr_fd:
-            sys.stderr = open(stderr_fd, encoding=stdout.encoding, mode=stderr.mode)
+            sys.stderr = open(stderr_fd, encoding=stderr.encoding, mode=stderr.mode)
             atexit.register(sys.stderr.close)
         else:
             sys.stderr = sys.stdout
 
-        sys.stdin = open(stdin_fd, encoding=stdout.encoding, mode=stdin.mode)
+        sys.stdin = open(stdin_fd, encoding=stdin.encoding, mode=stdin.mode)
         atexit.register(sys.stdin.close)
         if pipe:
             try:

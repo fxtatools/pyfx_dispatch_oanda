@@ -202,10 +202,8 @@ api_response = None
 async with dispatch.ApiClient(configuration) as api_client:
     ## Create an instance of the API class
     api_instance = dispatch.DefaultApi(api_client)
-    ## Authentication bearer token for OANDA v20
-    auth = 'Bearer %s' % configuration.access_token
     ## Send a single API request
-    api_response = await api_instance.list_accounts(auth)
+    api_response = await api_instance.list_accounts()
 
 # print the result of the API query
 if api_response:
