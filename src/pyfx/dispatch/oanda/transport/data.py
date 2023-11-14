@@ -326,6 +326,60 @@ class ApiClass(InterfaceClass, ABC):
         return new_cls
 
 
+Ts = TypeVar("Ts", bound="ApiObject")
+
+
+class ModelState(Generic[Ts]):
+    __slots__ = ("state", "model_class")
+    state: Map[str, Any]
+    model_class: "type[Ts]"
+
+    @property
+    def model_fields(self) -> Mapping[str, TransportFieldInfo]:
+        return self.model_class.model_fields  # type: ignore[return-value]
+
+    @classmethod
+    def get_field_state(cls, obj: "ApiObject", name: str):
+        model_fields = obj.__class__.model_fields
+        if name in model_fields:
+            transport_type: TransportType = model_fields[name]
+            return transport_type.get_state(getattr(obj, name))
+        else:
+            return getattr(obj, name)
+
+    @classmethod
+    def derive_state(cls, m_object: Ts) -> "ModelState[Ts]":
+        m_cls = m_object.__class__
+        fields = tuple(m_object.api_storage_fields.union(m_object.__pydantic_fields_set__))
+        dmap = {f: cls.get_field_state(m_object, f) for f in m_object.api_storage_fields.union(m_object.__pydantic_fields_set__)}
+        return ModelState(Map(dmap), m_object.__class__)
+
+    def __init__(self, state: Map[str, Any], cls: type[Ts]):
+        self.state = state
+        self.model_class = cls
+
+    def __getattr__(self, attr: str) -> Any:
+        if attr in self.model_fields:
+            return self.state[attr]
+        else:
+            raise AttributeError("Unknown model field", attr)
+
+    def __getitem__(self, name: str) -> Any:
+        return self.state.__getitem__(name)
+
+    def keys(self) -> Iterable[str]:
+        return self.state.keys()
+
+    def values(self) -> Iterable:
+        return self.state.values()
+
+    def items(self) -> Iterable[tuple[str, Any]]:
+        return self.state.items()
+
+    def __iter__(self) -> Iterator[str]:
+        return self.state.__iter__()
+
+
 Tobject = TypeVar("Tobject", bound="ApiObject")
 
 
