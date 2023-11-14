@@ -15,7 +15,7 @@ import pyfx.dispatch.oanda as dispatch
 from pyfx.dispatch.oanda.transport.data import ApiObject
 from pyfx.dispatch.oanda.models import GetAccountInstruments200Response, GetInstrumentCandles200Response, CurrencyPair
 import pyfx.dispatch.oanda.util.log as log
-from pyfx.dispatch.oanda.util.console_io import console_io, ConsoleStreamWriter
+from pyfx.dispatch.oanda.util.console import console_io, ConsoleStreamWriter
 from pyfx.dispatch.oanda.api.default_api import ApiController
 import pytz
 from typing_extensions import Protocol, TypeVar

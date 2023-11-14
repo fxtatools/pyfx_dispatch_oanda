@@ -14,7 +14,7 @@ from pyfx.dispatch.oanda.models import (
 from dataclasses import dataclass, field
 import logging
 from pyfx.dispatch.oanda.api.default_api import ApiController
-from pyfx.dispatch.oanda.util.console_io import console_io
+from pyfx.dispatch.oanda.util.console import console_io
 from pyfx.dispatch.oanda.models.common_types import AccountId
 from pyfx.dispatch.oanda.transport.transport_fields import TransportFieldInfo
 import sys

@@ -16,9 +16,9 @@ from . import naming  # noqa: E402
 __all__.extend(exporting(naming, ...))
 from .naming import *  # noqa: F403, E402
 
-from . import console_io  # noqa: E402
-__all__.extend(exporting(console_io, ...))
-from .console_io import *  # noqa: F403, E402
+from . import console  # noqa: E402
+__all__.extend(exporting(console, ...))
+from .console import *  # noqa: F403, E402
 
 from . import paths  # noqa: E402
 __all__.extend(exporting(paths, ...))
