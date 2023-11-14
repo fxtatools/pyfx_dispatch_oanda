@@ -92,7 +92,7 @@ from abc import ABC
 from collections.abc import Mapping
 from types import new_class
 from typing import Annotated, Any, Literal, Optional, Union
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import ClassVar, TypeAlias, TypeVar
 
 from ..util.naming import exporting
 
@@ -140,9 +140,6 @@ class TradeDependentDetails(ApiObject, ABC, metaclass=TradeDependentClass):
     """The Client Extensions to add to the trade-dependent Order when created.
     """
 
-    @classmethod
-    def __init_subclass__(cls):
-        cls.ensure_transport_type()
 
     @classmethod
     def ensure_transport_type(cls) -> Optional[TransportType]:
@@ -158,42 +155,46 @@ class TradeDependentDetails(ApiObject, ABC, metaclass=TradeDependentClass):
                 return rtyp
             else:
                 name = "Transport" + cls.__name__ + "Type"
-                txcls = new_class(name, (TransportTradeDependent,), None, None)
-                txcls.storage_class = cls
-                txcls.storage_type = cls
+
+                def init_ns(namespace: dict):
+                    namespace["serialization_type"] = TransportTradeDependent.serialization_type
+                    namespace["serialization_class"] = TransportTradeDependent.serialization_class
+                    namespace["storage_type"] = cls
+                    namespace["storage_class"] = cls
+
+                txcls = new_class(name, (TransportTradeDependent,), None, init_ns)
+                repository.bind_transport_type(cls, txcls)
                 cls.transport_type = txcls
-                # repository.bind_transport_type(cls, txcls)
                 return txcls
         else:
-            return
+            raise RuntimeError("Unable to infer transport type", cls)
 
 
 TradeDependentObject: TypeAlias = Union[TradeDependentDetails, Literal[None]]
 TradeDependentIntermediate: TypeAlias = Union[Mapping[str, Any], Literal[None]]
 
 T_trade = TypeVar("T_trade", bound=TradeDependentObject)
-# T_trade = TypeVar("T_trade", bound=TradeDependentDetails)
 
 
-class TransportTradeDependent(TransportObjectType[T_trade, TradeDependentIntermediate], ABC):  # type: ignore[type-arg]
+class TransportTradeDependent(TransportObjectType[T_trade, TradeDependentIntermediate], ABC):
     """Transport type for nullable trade-dependent transaction values"""
 
-    serialization_type = TradeDependentObject
-    serialization_class = object
+    serialization_type: ClassVar[type] = TradeDependentObject
+    serialization_class: ClassVar[type] = object
 
     @classmethod
-    def parse(cls, unparsed: T_trade | IntermediateObject) -> T_trade:
+    def parse(cls, unparsed: Union[T_trade, IntermediateObject]) -> T_trade:
         if unparsed:
             return super().parse(unparsed)
         else:
             return None
 
     @classmethod
-    def unparse_py(cls, o: T_trade) -> IntermediateObject:
-        if o is None:
+    def unparse_py(cls, value: T_trade) -> IntermediateObject:
+        if value is None:
             return None
         else:
-            return super().unparse_py(o)
+            return super().unparse_py(value)
 
     @classmethod
     def unparse_bytes(cls, value: T_trade) -> bytes:

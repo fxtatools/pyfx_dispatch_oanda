@@ -163,7 +163,7 @@ class TransportInterface(Generic[Ti, To]):
 
     @classmethod
     def initialize_attrs(cls):
-        """Initialize attributes of the class"""
+        """Initialize attributes of the TransportInterface class"""
         if ABC in cls.__bases__:
             return
         attrs = cls.__dict__
@@ -174,7 +174,6 @@ class TransportInterface(Generic[Ti, To]):
         ## of the cls
         for gen_base in get_original_bases(cls):
             origin = get_origin(gen_base)
-            # if origin and issubclass(origin, TransportTypeBase):
             if origin and issubclass(origin, TransportInterface):
                 args = get_args(gen_base)
                 if len(args) is not int(2):
