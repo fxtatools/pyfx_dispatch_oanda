@@ -97,6 +97,15 @@ def parse_tz(input: Union[str, tzinfo, None]) -> tzinfo:
     else:
         return dateutil.tz.UTC
 
+def ensure_account_id(input: Union[str, AccountId]) -> AccountId:
+    if isinstance(input, AccountId):
+        return input
+    else:
+        if __debug__:
+            if not isinstance(input, str):
+                raise AssertionError("Account ID provided as a non-string value")
+        return AccountId(input)
+
 
 class ConfigurationModel(BaseModel):
     '''Configuration settings for the API client.
@@ -134,7 +143,7 @@ class ConfigurationModel(BaseModel):
     access_token: Annotated[Credential, Field(...)]
     '''Access token for the v20 API'''
 
-    account_id: Annotated[AccountId, Field(AccountId.create_deferred())]
+    account_id: Annotated[AccountId, ConfigField(..., default_factory=AccountId.create_deferred, parse_func=ensure_account_id)]
 
     datetime_format: str = "%x %X %Z"
     '''datetime format for user interface'''
@@ -588,7 +597,7 @@ class Configuration(ConfigurationModel):
             self._current_profile = self._profiles[self._current_profile_name]
 
         profile = self._current_profile
-        ## proceses all profile-unique kwargs, storing directly to the active profile map
+        ## process all profile-unique kwargs, storing directly to the active profile map
         for key, value in kwargs.items():
             profile[key] = self.parse_config_input(key, value)
 
