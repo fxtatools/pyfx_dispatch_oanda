@@ -5,20 +5,18 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from pytest import mark
-from typing import Annotated, Mapping
+from typing import Annotated, Mapping, TYPE_CHECKING
 from assertpy import assert_that  # type: ignore[import-untyped]
+from zope.password.password import SHA1PasswordManager
 
-
-from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue
+from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue, AccountId
 
 from pyfx.dispatch.oanda.test import ModelTest, MockFactory, run_tests
 from pyfx.dispatch.oanda.transport.transport_fields import TransportField
 from pyfx.dispatch.oanda.transport.transport_base import TransportTimestampType
 from pyfx.dispatch.oanda.transport.data import ApiObject
 
-from pyfx.dispatch.oanda.transport.repository import TransportBaseRepository
-
-from pyfx.dispatch.oanda.transport.transport_base import TransportBoolType, TransportFieldInfo, TransportFloatStrType, TransportIntType, TransportStrType, TransportType
+from pyfx.dispatch.oanda.transport.transport_base import TransportBoolType, TransportFieldInfo, TransportFloatStrType, TransportIntType, TransportStrType, TransportType, TransportSecretStrType
 
 
 class TestDataModel(ModelTest):
@@ -34,21 +32,22 @@ class TestDataModel(ModelTest):
 
     class FieldsObject(ApiObject):
         # base class for model mock tests, using polyfactory
-        field_dt: Annotated[pd.Timestamp,TransportField(..., alias="fieldDt")]
-        field_np_double: Annotated[np.double,TransportField(..., alias="fieldNpDouble")]
+        field_dt: Annotated[pd.Timestamp, TransportField(..., alias="fieldDt")]
+        field_np_double: Annotated[np.double, TransportField(..., alias="fieldNpDouble")]
 
-        field_int: Annotated[int,TransportField(..., alias="fieldInt")]
+        field_int: Annotated[int, TransportField(..., alias="fieldInt")]
         field_str: Annotated[str, TransportField(...)]
-        field_str_list: Annotated[list[str],TransportField(...)]
+        field_str_list: Annotated[list[str], TransportField(...)]
         field_acct_units: Annotated[AccountUnits, TransportField(...)]
         field_price: Annotated[PriceValue, TransportField(...)]
         field_lots: Annotated[LotsValue, TransportField(...)]
+
+        field_acct: Annotated[AccountId, TransportField(...)]
 
     class Factory(MockFactory[FieldsObject]):
         pass
 
     __factory__ = Factory
-
 
     def test_literal_types(self):
         specs: Mapping[type[TransportType], tuple[type, type]] = {
@@ -66,7 +65,6 @@ class TestDataModel(ModelTest):
         time_nat = pd.NaT
         assert_that(TransportTimestampType.parse('0') is time_nat).is_true()
         assert_that(TransportTimestampType.unparse_py(time_nat)).is_equal_to('0')
-
 
     @mark.dependency()
     def test_fields_map(self):
@@ -95,18 +93,49 @@ class TestDataModel(ModelTest):
         mock = cls.gen_mock()
         for attr, fieldinfo in mock_cls.model_fields.items():
             val = getattr(mock, attr)
-            transport_type: type[TransportType] = fieldinfo.transport_type
-            ## unparse as an intermediate value for transport encoding, generally a string
-            unparsed = transport_type.unparse_py(val, None)
+            transport_type: TransportType = fieldinfo.transport_type
+            ## unparse an intermediate literal value for transport encoding
+            unparsed = transport_type.unparse_py(val, None)  # type: ignore[arg-type]
             assert_that(isinstance(unparsed, transport_type.serialization_class)).is_true()
-            ## reparse as a Python value
+            ## reparse as a storage value
             reparsed = transport_type.parse(unparsed)
             assert_that(isinstance(reparsed, transport_type.storage_class)).is_true()
             ## test for equivalence of the original and reparsed values
             assert_that(reparsed).is_equal_to(val)
 
+    def test_encoding(self):
+        cls = self.__class__
+        mock = cls.gen_mock()
+
+        ## test hashable support for account ID
+        acct_id: AccountId = mock.field_acct
+        assert_that(len(acct_id.get_secret_value())).is_not_equal_to(0)
+        table = dict()
+        table[acct_id] = hash(acct_id)
+        assert_that(table[acct_id]).is_equal_to(hash(acct_id))
+
+        ## test shadow support for account ID
+        encoder = SHA1PasswordManager()
+        ## first, ensure a consistent encoding in the IPasswordManager implementation
+        ## - this should pass, when using the MD5 or SHA1 encoder
+        ## - this may fail with BCRYPTPasswordManager and SMD5PasswordManager,
+        ##   each of which may return a different value for the same string,
+        ##   on each call to <...>.encodePassword()
+        ## - other IPasswordManager implementations not yet tested
+        mgr = SHA1PasswordManager()
+        enc_first: bytes = mgr.encodePassword(acct_id.get_secret_value())
+        enc_second: bytes = mgr.encodePassword(acct_id.get_secret_value())
+        assert_that(enc_first).is_equal_to(enc_second)
+        ## test encoding under <Credential>.get_shadow_value()
+        shadowed = acct_id.get_shadow_value(encoder)
+        assert_that(shadowed).is_equal_to(enc_first)
+        ## test memoization
+        shadowed_memoized = acct_id.get_shadow_value(encoder)
+        assert_that(shadowed).is_equal_to(shadowed_memoized)
+
 
 if __name__ == '__main__':
+
     run_tests(__file__)
     # from pprint import pformat
     # print("Mock: " + pformat(TestDataModel.gen_mock()))
