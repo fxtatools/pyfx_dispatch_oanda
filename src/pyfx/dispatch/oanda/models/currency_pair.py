@@ -6,7 +6,7 @@ from ..mapped_enum import MappedEnum
 
 
 from types import NotImplementedType
-from typing import Self, Union
+from typing import Callable, Self, Union
 from typing_extensions import ClassVar
 
 from .currency import Currency
@@ -207,7 +207,13 @@ class CurrencyPair(MappedEnum):
         either a concatenated currency pair name, e.g `"CHFJPY"`
         or a delimited currency pair name, e.g `"AUD_USD"`
         """
+        if __debug__:
+            if not isinstance(name, str):
+                raise AssertionError("not a currency pair name", name)
         return cls.from_str(name) if len(name) == 6 else cls.from_delimited_str(name)
+
+    _missing_value_: ClassVar[Callable[[int], Self]] = from_int
+    _missing_name_: ClassVar[Callable[[str], Self]] = from_str
 
     def __index__(self) -> int:
         return self.value
