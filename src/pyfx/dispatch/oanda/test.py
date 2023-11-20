@@ -35,13 +35,47 @@ from .models import Order, Transaction, CreateOrderRequest, Time, InstrumentName
 ABSTRACT_CLASSES: frozenset[type[ApiObject]] = frozenset({Order, Transaction, CreateOrderRequest})
 
 __all__ = (
+    "assert_recursive_eq",
     "MockFactoryClass",
     "MockFactory",
+    "PytestTest",
     "ComponentTest",
     "ModelTest",
 )
 
 Timpl = TypeVar("Timpl", bound=ApiObject)
+
+
+def assert_recursive_eq(inst_a, inst_b):
+    acls = inst_a.__class__
+    bcls = inst_b.__class__
+
+    assert_that(issubclass(acls, bcls)).is_true()
+
+    if issubclass(acls, ApiObject):
+        fset_a: set = inst_a.__pydantic_fields_set__
+        fset_b: set = inst_b.__pydantic_fields_set__
+        # assert_that(fset_a).is_equal_to(fset_b)
+        assert_that(fset_b.difference(fset_a)).is_equal_to(set())
+        for f in fset_a:
+            f_a = getattr(inst_a, f)
+            f_b = getattr(inst_b, f)
+            assert_recursive_eq(f_a, f_b)
+    elif isinstance(inst_a, str):
+        assert_that(inst_a).is_equal_to(inst_b)
+    elif isinstance(inst_a, Sequence):
+        len_a = len(inst_a)
+        len_b = len(inst_b)
+        assert_that(len_a).is_equal_to(len_b)
+        for n in range(0, len_a):
+            nth_a = inst_a[n]
+            nth_b = inst_b[n]
+            assert_recursive_eq(nth_a, nth_b)
+    elif inst_a is pd.NaT:
+        assert_that(inst_a is inst_b).is_true()
+    else:
+        assert_that(inst_a).is_equal_to(inst_b)
+
 
 
 class MockFactoryClass(ABCMeta):
@@ -201,36 +235,6 @@ class ModelTest(ComponentTest, TestCase, Generic[Timpl]):
     #     pass
 
     @classmethod
-    def assert_recursive_eq(cls, inst_a, inst_b):
-        acls = inst_a.__class__
-        bcls = inst_b.__class__
-
-        # assert_that(issubclass(bcls, acls)).is_true()
-        assert_that(issubclass(acls, bcls)).is_true()
-
-        if issubclass(acls, ApiObject):
-            fset_a: set = inst_a.__pydantic_fields_set__
-            fset_b: set = inst_b.__pydantic_fields_set__
-            # assert_that(fset_a).is_equal_to(fset_b)
-            assert_that(fset_b.difference(fset_a)).is_equal_to(set())
-            for f in fset_a:
-                f_a = getattr(inst_a, f)
-                f_b = getattr(inst_b, f)
-                cls.assert_recursive_eq(f_a, f_b)
-        elif isinstance(inst_a, str):
-            assert_that(inst_a).is_equal_to(inst_b)
-        elif isinstance(inst_a, Sequence):
-            len_a = len(inst_a)
-            len_b = len(inst_b)
-            assert_that(len_a).is_equal_to(len_b)
-            for n in range(0, len_a):
-                nth_a = inst_a[n]
-                nth_b = inst_b[n]
-                cls.assert_recursive_eq(nth_a, nth_b)
-        else:
-            assert_that(inst_a).is_equal_to(inst_b)
-
-    @classmethod
     def get_model_class(cls) -> type[ApiObject]:
         factory_cls: type[MockFactory] = cls.__factory__
         # using generic type parameters, determine the model class
@@ -323,14 +327,14 @@ class ModelTest(ComponentTest, TestCase, Generic[Timpl]):
             return
 
         inst: Timpl = self.__class__.gen_mock()
-        self.assert_recursive_eq(inst, inst)
+        assert_recursive_eq(inst, inst)
 
         dct = inst.to_dict()
         assert_that(isinstance(dct, Mapping)).is_true()
 
         dct_inst = inst.__class__.from_dict(dct)
         assert_that(dct_inst.__class__ is inst.__class__).is_true()
-        self.__class__.assert_recursive_eq(inst, dct_inst)
+        assert_recursive_eq(inst, dct_inst)
 
     @mark.dependency(depends_on="test_model_cls_fields")
     def test_json_transform(self):
@@ -339,7 +343,7 @@ class ModelTest(ComponentTest, TestCase, Generic[Timpl]):
             return
 
         inst: Timpl = self.__class__.gen_mock()
-        self.assert_recursive_eq(inst, inst)
+        assert_recursive_eq(inst, inst)
 
         icls = inst.__class__
 
@@ -362,7 +366,7 @@ class ModelTest(ComponentTest, TestCase, Generic[Timpl]):
             raise exc
         assert_that(j_inst.__class__ is inst.__class__).is_true()
         ## test equiv ...
-        self.__class__.assert_recursive_eq(inst, j_inst)
+        assert_recursive_eq(inst, j_inst)
 
 
 def run_tests(*files: str):
