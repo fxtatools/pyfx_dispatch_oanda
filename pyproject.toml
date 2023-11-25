@@ -51,11 +51,9 @@ requires-python = ">= 3.11.0, < 3.12"
 [project.optional-dependencies]
 typing = [
     "pandas-stubs",
-    "dateutils-stubs",
     "types-PyYAML",
     "types-python-dateutil",
     "types-appdirs",
-    "yaml-stubs"
 ]
 socks = ["httpx[socks]", "socksio"]
 
