@@ -7,7 +7,7 @@ from aenum import Enum, EnumType, extend_enum   # type: ignore[import-untyped]
 from immutables import Map
 from .finalizable import FinalizationState, Finalizable
 
-from typing import Any, Callable, Iterator, Self, Union
+from typing import Any, Callable, Iterable, Self, Union
 
 
 class MappedEnumType(Finalizable, EnumType):
@@ -132,8 +132,8 @@ class MappedEnumType(Finalizable, EnumType):
             gen = attrs.get("__gen__", False)
             if gen:
                 if __debug__:
-                    if not isinstance(gen, (Callable, Iterator,)):  # type: ignore[arg-type]
-                        raise AssertionError("__gen__ value is neither callable nor an iterator", gen)
+                    if not isinstance(gen, (Callable, Iterable,)):  # type: ignore[arg-type]
+                        raise AssertionError("__gen__ value is neither callable nor iterable", gen)
                 del attrs["__gen__"]
             to_finalize = attrs.get("__finalize__", False)
             if to_finalize:
@@ -223,12 +223,15 @@ class MappedEnum(Enum, metaclass=MappedEnumType):
 
     @classmethod
     def get(cls, arg):
-        """Return any enum member, or raise KeyError
+        """Return any enum member, or raise ValueError
 
         If `arg` denotes a key in `cls._member_map_`, returns the value for that key,
-        else raises `KeyError`
+        else raises `ValueError`
         """
-        return cls.__getitem__(arg)
+        try:
+            return cls._member_map_[arg]
+        except KeyError as exc:
+            raise ValueError("No enum member found for name", arg) from exc
 
 
 __all__ = "MappedEnumType", "MappedEnum"
