@@ -53,7 +53,7 @@ class CoFuture(cofutures.Future[T], Generic[T]):
             # self.add_done_callback(lambda future: pool.dequeue(future))
         self.pool = pool
 
-    async def poll(self) -> Awaitable[T]:
+    async def apoll(self) -> Awaitable[T]:
         timeout = self.timeout
         interval = self.interval
         while True:
@@ -61,6 +61,22 @@ class CoFuture(cofutures.Future[T], Generic[T]):
                 return self.result(timeout=timeout)
             except TimeoutError:
                 await aio.sleep(interval)
+
+    def poll(self) -> T:
+        timeout = self.timeout
+        interval = self.interval
+        while True:
+            try:
+                return self.result(timeout=timeout)
+            except TimeoutError:
+                time.sleep(interval)
+
+    def try_set_result(self, result: T) -> bool:
+        set_p = False
+        with suppress(cofutures.InvalidStateError):
+            self.set_result(result)
+            set_p = True
+        return set_p
 
     def _repr_state(self) -> str:
         # Known Limitation:
@@ -88,7 +104,7 @@ class CoFuture(cofutures.Future[T], Generic[T]):
         )
 
     def __await__(self) -> Generator[Any, None, T]:
-        return self.poll().__await__()
+        return self.apoll().__await__()
 
     def __enter__(self) -> Self:
         return self
@@ -109,15 +125,12 @@ class CoFuture(cofutures.Future[T], Generic[T]):
     async def __aexit__(self, exc_type, exc, tb):
         return self.__exit__(exc_type, exc, tb)
 
-    def get_loop(self):
-        # portability shim
-        return safe_running_loop() or aio.get_event_loop_policy().get_event_loop()
 
 
 class CoFuturePool(CoFuture):
 
     if TYPE_CHECKING:
-        pooled: list[cofutures.Future]
+        pooled: Mapping[cofutures.Future, cofutures.Future]
         pool_lck: threading.RLock
 
     def __init__(self,
@@ -134,7 +147,7 @@ class CoFuturePool(CoFuture):
         )
         ## this would interfere with exceptions under close():
         # self.add_done_callback(lambda _: self.close())
-        self.pooled = []
+        self.pooled = dict()
         self.pool_lck = threading.RLock()
 
     def __repr__(self) -> str:
@@ -144,21 +157,21 @@ class CoFuturePool(CoFuture):
             self._repr_state(), pool_repr, id(self),
         )
 
-    def future(self, *args, **kw) -> CoFuture:
+    def create_future(self, *args, **kw) -> CoFuture:
         with self.pool_lck:
             if self.done():
                 raise RuntimeError("%s is closed" % self.__class__.__name__)
 
             kw['pool'] = self
             future = CoFuture(*args, **kw)
-            self.pooled.append(future)
+            self.pooled[future] = future
             return future
 
     def enqueue(self, future: cofutures.Future):
         with self.pool_lck:
             if self.done():
                 raise RuntimeError("%s is closed" % self.__class__.__name__)
-            self.pooled.append(future)
+            self.pooled[future] = future
             # if isinstance(future, CoFuture):
             #     future.pool = self
 
@@ -168,55 +181,46 @@ class CoFuturePool(CoFuture):
         #         raise AssertionError("Future is not assigned to this pool", future, self)
         if future.done():
             exc = None
+            removed = False
             with self.pool_lck:
-                with suppress(ValueError):
-                    self.pooled.remove(future)
-            with suppress(cofutures.CancelledError, cofutures.TimeoutError):
-                exc = future.exception(self.timeout)
-            if exc:
-                raise exc
+                with suppress(KeyError):
+                    del self.pooled[future]
+                    removed = True
+            if removed:
+                with suppress(cofutures.CancelledError, cofutures.TimeoutError):
+                    exc = future.exception(self.timeout)
+                if exc:
+                    raise exc
         else:
             raise ValueError("Future has not completed", future)
 
     def close(self):
-        exception_unique = set()
-        exceptions_ordered = []
+        # process all remaining futures in the pool, cancelling
+        # each and gathering exceptions into an exception group
+        exc_table = {}
         with self.pool_lck:
             self.cancel()
-            pooled = self.pooled
-            if pooled:
-
-                def discard(_):
-                    pass
-                interval = self.interval
-                for future in pooled.copy():
+            interval = self.interval
+            for future in self.pooled:
+                if future.cancel():
                     #
-                    # this assumes that the future is done
-                    # or in a cancellable state
+                    # allow exceptions to propagate
+                    # from callbacks
                     #
-                    if future.cancel():
-                        #
-                        # allow exceptions to propagate
-                        # from callbacks
-                        #
-                        timer = threading.Timer(interval, lambda: _)
-                        timer.join()
-                    with exceptiongroup.catch({
-                        cofutures.TimeoutError: discard,
-                        cofutures.CancelledError: discard,
-                        Exception: exceptions_ordered.append
-                    }):
-                        exc = future.exception()
-                        if exc:
-                            if exc not in exception_unique:
-                                exceptions_ordered.append(exc)
-                                exception_unique.add(exc)
-                        else:
-                            _ = future.result(self.timeout)
-                    with suppress(ValueError):
-                        pooled.remove(future)
-        if exceptions_ordered:
-            raise ExceptionGroup("Exceptions in %r" % self, exceptions_ordered)
+                    def discard():
+                        pass
+                    timer = threading.Timer(interval, discard)
+                    timer.start()
+                    timer.join()
+                exc = None
+                if future.cancelled():
+                    continue
+                with suppress(cofutures.CancelledError, cofutures.TimeoutError):
+                    exc = future.exception(0)
+                if exc and exc not in exc_table:
+                    exc_table[exc] = future
+        if exc_table:
+            raise ExceptionGroup("Exceptions in %r" % self, tuple(exc_table.keys()))
 
     def __enter__(self):
         return self

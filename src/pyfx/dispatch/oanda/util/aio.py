@@ -43,7 +43,7 @@ def safe_add_callback(future: AnyFuture, callback: Callable[[AnyFuture], Any]):
         future.add_done_callback(callback)
 
 
-def cancel_when_done(origin, dest, value = None):
+def cancel_when_done(origin, dest):
     if isinstance(dest, cofutures.Future):
         def cancel_cb(dest: cofutures.Future, origin: AnyFuture):
                 dest.cancel()
