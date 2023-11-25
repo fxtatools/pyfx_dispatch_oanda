@@ -628,6 +628,10 @@ class TransportIntStr(TransportStr, TransportInterface[int, str]):
     def unparse_url_bytes(cls, value: str) -> bytes:
         cls.unparse_url_str().encode()
 
+    @classmethod
+    def get_display_string(cls, value: str) -> str:
+        return str(value)
+
 
 class TransportIntStrType(TransportIntStr[int, str], TransportType[int, str]):
     pass
