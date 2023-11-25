@@ -11,9 +11,10 @@ from collections import ChainMap
 from collections.abc import Generator, Mapping
 from contextlib import asynccontextmanager, contextmanager, suppress
 from functools import partial
+import httpcore
 import httpx
 import inspect
-import ijson
+import ijson  # type: ignore[import-untyped]
 import reprlib
 from immutables import Map
 import logging
@@ -29,7 +30,9 @@ from typing_extensions import ClassVar, TypeAlias, TypeVar
 
 from ..finalizable import Finalizable
 from ..util.singular_map import SingularMap
-from ..util.aio import safe_running_loop, chain_cancel_callback
+from ..util.aio import safe_running_loop, chain_cancel_callback, cancel_when_done
+from ..util.log import configure_logger
+from ..util.cofuture import CoFuture
 
 from ..configuration import FxHostInfo
 
@@ -37,7 +40,7 @@ from ..api.transport_client import TransportClient
 from ..exceptions import ApiException
 from ..response_common import REST_CONTENT_TYPE
 from ..parser import ModelBuilder
-from ..io.segment import AsyncSegmentChannel
+from ..io.segment import AsyncSegmentChannel, DataError
 
 from ..models.response_mixins import ApiResponse, ApiErrorResponse, UnknownErrorResponse
 
@@ -65,6 +68,9 @@ def set_future_exception(future: aio.Future, exception: Exception) -> Optional[a
     loop.
     """
     if not future.done():
+        if isinstance(future, CoFuture):
+            future.set_exception(exception)
+            return
         loop: aio.AbstractEventLoop = future.get_loop()
         running = safe_running_loop()
         if running is loop:
@@ -85,6 +91,9 @@ def set_future_result(future: aio.Future, result: Any) -> Optional[aio.Handle]:
     loop.
     """
     if not future.done():
+        if isinstance(future, CoFuture):
+            future.set_result(result)
+            return
         loop = future.get_loop()
         if aio.get_running_loop() is loop:
             with suppress(aio.InvalidStateError, aio.CancelledError):
@@ -117,10 +126,18 @@ Response_contra = TypeVar("Response_contra", bound=ApiResponse, contravariant=Tr
 
 
 class RequestController(ExecController):
+    ## Stateless request controller class for the v20 API
 
     __slots__ = tuple(list(ExecController.__slots__) + ["rest_client"])
 
     rest_client: TransportClient
+
+    @classmethod
+    def configure_loggers(cls):
+        super().configure_loggers()
+        handlers = logging.getLogger().handlers
+        configure_logger("hpack", handlers=handlers,
+                         level=logging.WARNING)
 
     def initialize_defaults(self):
         super().initialize_defaults()
@@ -133,9 +150,12 @@ class RequestController(ExecController):
         request_class: type[T_request_co]
         request_args: Union[dict[str, Any], Map[str, Any]]
 
-        ## type hints for common arg=>attr values
         if TYPE_CHECKING:
+            ## type hints for common request arg <=> builder attr values
             controller: "RequestController"
+            ## A Response Future should generally not be initialized
+            ## within a request builder scope. The future should be
+            ## initialized uniquely, to each individual Request object
             # future: aio.Future[Response_contra]
 
         def __init__(self, request_class: type[T_request_co], **request_kw):
@@ -167,7 +187,7 @@ class RequestController(ExecController):
 
         def build(self, **kw) -> tuple[T_request_co, aio.Future[Response_contra]]:
             if not ("future" in kw or "future" in self.request_args):
-                kw["future"] = aio.Future()
+                kw["future"] = self.controller.add_cofuture(self.request_class.request_path)
             args = self.override_args(kw)
             future = args["future"]
             return self.request_class(**args), future
@@ -221,9 +241,11 @@ class RequestController(ExecController):
         async with super().async_context() as tg:
             async with self.rest_client:
                 yield tg
+            if __debug__:
+                logger.debug("exiting async context")
+        if __debug__:
+            logger.debug("exited task group")
 
-    def exit(self, code: int, immediate: bool = False):
-        super().exit(code, immediate)
 
 #
 # Request Classes
@@ -234,18 +256,71 @@ PathTokens: TypeAlias = tuple[Union[bytes, ParamInfo]]
 
 
 class ApiRequestClass(InterfaceClass, type):
+    """Metaclass for ApiRequest definitions"""
 
     request_method: RequestMethod
+    """The HTTP request method"""
+
     request_path: str
+    """Parameterized path for the request
+
+    This value should be provided as an absolute URL path,
+    such that may be appended to the host path for a request.
+
+    For v20 API requests, this string should not include
+    the path component '/v3', such that would provided in
+    the host path.
+    """
     path_tokens: PathTokens
+
     path_params: Optional[Map[str, ParamInfo]]
+    """Parameters for the request path, if applicable.
+
+    When defined as a Mapping object, each parameter in
+    the mapping denotes a required parameter for the
+    request class.
+
+    When defined as the value None, the request will not
+    accept path parameters.
+    """
+
     query_params: Optional[Map[str, ParamInfo]]
+    """Query parameters for the request, if applicable."""
+
     response_types: Map[int, type[ApiObject]]
+    """Mapping of response type codes to expected response types.
+
+    This mapping is derived from the original v20 JSON API description.
+
+    For a server response code not in this mapping or a response provied
+    with a response code outside of the range `[200, 299]` (inclusive),
+    the response would generally be qualified as a server error response
+    and raised with an exception during response processing.
+
+    This mapping will generally define at most once response code
+    within the range `[200, 299]` (inclusive). The corresponding response
+    type will be defined under the `primary_type` attribute for the
+    request class.  The server response code for this type will  be defined
+    as the `primary_status` for the request class.
+    """
 
     primary_status: ClassVar[int]
-    ## status code for primary response object type, may be set or inferred
+    """Primary status code for a successful server response under the
+    request class.
+
+    If this value is not set within the definition of the request class,
+    then the value will be inferred from the contents of the request class'
+    `response_types` mapping.
+    """
+
     primary_type: type[ApiObject]
-    ## primary response object type, may be set or inferred
+    """Primary response object type for a successful server response under
+    the request class.
+
+    If this value is not set within the definition of the request class,
+    then the value will be inferred from the contents of the requests class'
+    `response_types` mapping.
+    """
 
     def __repr__(cls):
         unbound = "<unbound>"
@@ -254,6 +329,14 @@ class ApiRequestClass(InterfaceClass, type):
         return "<%s %s %s>" % (cls.__name__, mtd, path)
 
     def simplify_param_model(cls, model: Mapping[str, ParamInfo]) -> Optional[Mapping[str, ParamInfo]]:
+        """Reduce a parameters model to None, a SingularMap, or an immutable Map.
+
+        If the parameters model `model` contains no mapped values, returns `None`
+
+        If the model contains one mapped value, returns a new SingularMap.
+
+        Else, returns an immutable Map for the provided paratemters model.
+        """
         if not model:
             return None
         n_mapped = len(model)
@@ -266,6 +349,7 @@ class ApiRequestClass(InterfaceClass, type):
             return Map(model)
 
     def init_field_info(self, field_name: str, info: TransportFieldInfo):
+        """Initialize a ParamInfo object for the request class"""
         super().init_field_info(field_name, info)
         if isinstance(info, PathParamInfo):
             path_params = self.path_params
@@ -288,6 +372,8 @@ class ApiRequestClass(InterfaceClass, type):
                 bases: tuple[type, ...],
                 attrs: dict[str, Any],
                 **kw) -> Self:
+        """Initialize a new request class"""
+
         if "path_params" not in attrs:
             attrs["path_params"] = dict()
         if "query_params" not in attrs:
@@ -339,31 +425,62 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
     #
 
     request_path: ClassVar[str]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.request_path`"""
+
     request_method: ClassVar[RequestMethod]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.request_method`"""
+
     path_tokens: ClassVar[PathTokens]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.path_tokens`"""
+
     path_params: ClassVar[Optional[Map[str, PathParamInfo]]]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.path_params`"""
+
     query_params: ClassVar[Optional[Map[str, QueryParamInfo]]]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.query_params`"""
 
     primary_status: ClassVar[int]
-    ## status code for primary response object type, may be set or inferred
-    primary_type: type[ApiObject]
-    ## primary response object type, may be set or inferred
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.primary_status`"""
+
+    primary_type: ClassVar[type[ApiObject]]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.primary_type`"""
 
     response_types: ClassVar[Map[int, type[ApiObject]]]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.response_types`"""
 
     #
     # Common ApiRequest instance fields
     #
 
-    future: Annotated[aio.Future[T_response], ApplicationField(default_factory=aio.Future)]
-    controller: Annotated[RequestController, ApplicationField(default=...)]
+    # future: Annotated[aio.Future[T_response], ApplicationField(..., default_factory=aio.Future)]
+    ## nuts !
+    future: Annotated[Union[CoFuture[T_response], aio.Future[T_response]], ApplicationField(..., default_factory=CoFuture)]
+    """Response future for the API request"""
+
+    controller: Annotated[RequestController, ApplicationField(...)]
+    """Request controller for the API request"""
 
     host: Annotated[FxHostInfo, path_param(...)]
+    """Destination host definition for the API request
+
+    In application for v20 API requests, the FxHostInfo value represents a generalization of
+    REST and Streaming endpoint hosts. The actual hostname will determined for the request
+    endpoint, when the request is dispatched.
+
+    For v20 API requests, streaming requests will use a different host than general REST
+    requests. Sach set of REST and Streaming hosts will differ respectively for fxPractice
+    and fxLive accounts.
+
+    This value would generally be inferred by a request bulder, using the configuration for
+    the request controller. If the configuration is for a demo i.e practice account
+    (the default), this value should be `FxHostInfo.fxPractice`. For live account
+    requests, `FxHostInfo.fxLive`
+    """
 
     @field_validator("controller", check_fields=False, mode="plain")
     @classmethod
     def validate_controller(cls, controller):
-        # interop for pydantic
+        """Interoperability for parameter validation in Pydantic 2"""
         if isinstance(controller, RequestController):
             return controller
         else:
@@ -384,6 +501,8 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
 
     @classmethod
     def tokenize_path(cls, path: str) -> Iterator[Union[str, ParamInfo]]:
+        """Tokenize a request path, returning a sequcence of parameter info
+        and contiguous string values"""
         if __debug__:
             if not isinstance(path, str):
                 raise AssertionError("Not a string", path)
@@ -420,12 +539,13 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
 
     @classmethod
     def process_param_str(self, param: Union[bytes, ParamInfo], values: Mapping[str, Any]) -> str:
-        ## process a path parameter to a URL string, given field values for a request,
-        ## or return param if param is a URL string component
-        ##
-        ## values: generally produced from `path_values()`
-        ##
-        ## param: a string value or a path parameter, as via `fill_path_str()``
+        """process a path parameter to a URL string, given field values for a request,
+        or return param if param is a URL string component
+
+        values: generally produced from `path_values()`
+
+        param: a string value or a path parameter, as via `fill_path_str()``
+        """
         if isinstance(param, str):
             ## literal param token
             return param
@@ -442,40 +562,76 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
 
     @classmethod
     def fill_path_str(self, values) -> bytes:
-        ## process the request class' tokenized URL path to a string
-        ##
-        ## this string will not include any generally optional query segment
+        """process the request class' tokenized URL path to a string
+
+        this string will not include any generally optional query segment
+        """
         return "/".join(self.process_param_str(token, values) for token in self.path_tokens)
 
     @classmethod
     def path_values(cls, instance: Self) -> Optional[Mapping[str, Any]]:
-        ## return a mapping of path parameter names to instance field values, if the instance
-        ## is defined with path parameters, else None.
-        ##
-        ## if a mapping, the mapping will represent an effective subset of instance field values,
-        ## for only those field values that may be applied in filling path parameters
+        """return a mapping of path parameter names to instance field values, if the instance
+        is defined with path parameters, else None.
+
+        Each key in the mapping will represent a JSON parameter name. Each value will
+        represent a value from a bound field of the instance.
+        """
         params = cls.path_params
-        return {params[name].json_name: getattr(instance, name) for name in instance.model_fields_set.intersection(params.keys())} if params else None
+        if params:
+            path_param_names = instance.model_fields_set.intersection(frozenset(params.keys()))
+            if path_param_names:
+                return {params[name].json_name: getattr(instance, name) for name in path_param_names}
 
     @classmethod
     def query_values(cls, instance: Self) -> Optional[Mapping[str, Any]]:
-        ## return a mapping of query parameter names to instance field values,
-        ## if the instance is defined with query parameters, else None.
-        ##
+        """return a mapping for query parameters bound within a request instance
+
+        Each key in the mapping will represent an internal field name from the
+        set of query parameters for the request class, `cls`. Each value will
+        represent a field value expressly bound in the request `instance`.
+
+        This function may applied as a filter for values to be provided to
+        {py:obj}`fill_query_str()`
+        """
         params = cls.query_params
         if params:
-            set_p = instance.model_fields_set.intersection(params.keys())
-            if len(set_p) is not int(0):
-                return {params[name].json_name: getattr(instance, name) for name in set_p}
-        return None
+            query_param_names = instance.model_fields_set.intersection(set(params.keys()))
+            if query_param_names:
+                return {name: getattr(instance, name) for name in query_param_names}
 
     @classmethod
     def fill_query_str(cls, values: Optional[Mapping[str, Any]] = None) -> Optional[str]:
+        """Return any query string for a request, provided with a mapping for request
+        parameter values.
+
+        Returns None if `values` does not provide any query parameters for the request
+        clss.
+
+        ### Implementation Notes
+
+        This method has been implemented as, in effect, a direct transformatiom from
+        internal field names and values in a `values` mapping to a URL query string
+        using JSON parameter names.
+
+        The `values` mapping may be produced generally with {py:obj}`query_values()`
+        such as to limit the `values` mapping to the set of query parameter fields
+        bound within a request instance.
+
+        Additional caveats, for this implementation:
+
+        - The return value will be either `None` or a contiguous string. If a string,
+          the value will represent a URL-encoded string, not including the query
+          prefix `"?"`. The value `None` would indicate that the `values` did not
+          include any query components for the request class.
+
+        - This method will return None if the class does not define any query
+          parameters
+        """
         if values:
-            fields: Optional[Mapping[str, TransportFieldInfo]] = cls.json_fields
-            if fields:
+            query_fields: Optional[Mapping[str, TransportFieldInfo]] = cls.query_params
+            if query_fields:
                 return "&".join(
-                    fields[name].json_name + "=" + fields[name].transport_type.unparse_url_str(value)
+                    query_fields[name].json_name + "=" + query_fields[name].transport_type.unparse_url_str(value)
                     for name, value in values.items()
                 )
 
@@ -518,7 +674,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
         if "future" in builder:
             return builder["future"], builder
         else:
-            future = aio.Future()
+            future = builder.controller.add_cofuture()
             bld = builder.mutate(future=future)
             return future, bld
 
@@ -527,8 +683,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
                               future: aio.Future[T_response]) -> Optional[aio.Task[T_co]]:
         # utility function for add_success_callback, given a callback provided as a coroutine function
         if not (future.cancelled() or future.exception()):
-                return self.controller.add_task(callback(future.result()))
-
+            return self.controller.add_task(callback(future.result()))
 
     def callback_func_success(self,
                               callback: Callable[[T_response], Any],
@@ -543,7 +698,6 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
         else:
             func = partial(self.callback_func_success, callback)
         self.future.add_done_callback(func)
-
 
     @classmethod
     def activate_from(cls,
@@ -578,6 +732,9 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
 
     def activate_from_cb(self, future: aio.Future):
         future.add_done_callback(self.activate_callback)
+
+    async def aeach_object(self, timeout: Union[int, float] = 0) -> AsyncIterator[T_value]:
+        raise NotImplementedError(self.aeach_object)
 
     async def get_response_type(self, client_response: httpx.Response,
                                 stream: AsyncSegmentChannel[bytes]) -> Optional[Union[type[ApiObject], Literal[False]]]:
@@ -666,16 +823,19 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
         else:
             # here, the request is probably initialized under a worker thread.
             cf = aio.run_coroutine_threadsafe(coro, main)
-            chain_cancel_callback(self.future, cf)
+            chain_cancel_callback(response_future, cf)
+            interval = sys.getswitchinterval()
+            while not cf.done():
+                await aio.sleep(interval)
             client_response = cf.result()
         try:
             yield client_response
         finally:
-            with suppress(aio.CancelledError):
+            with suppress(cofutures.CancelledError, aio.CancelledError):
                 await self.future
             ## ! closing the client response here, as a fallback
-            await client_response.aclose()
-
+            with suppress(aio.CancelledError):
+                await client_response.aclose()
 
     async def dispatch_request(self) -> Awaitable[aio.Future[T_response]]:
         request = await self.prepare_request()
@@ -706,19 +866,24 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
                 if __debug__:
                     logger.debug("process_response: dispatch to parse_response thread")
 
-                thr_future = await self.controller.dispatch(
+                thr_future = self.controller.dispatch(
                     self.parse_response, stream, client_response, initial_request
                 )
-                chain_cancel_callback(response_future, thr_future)
+                cancel_when_done(response_future, thr_future)
 
-                async for chunk in client_response.aiter_bytes():
-                    if response_future.done():
-                        return
-                    await stream.feed(chunk)
+                try:
+                    async for chunk in client_response.aiter_bytes():
+                        if response_future.done():
+                            return
+                        await stream.feed(chunk)
+                except Exception as exc:
+                    ## break on short read, e.g when closing a streaming request
+                    pass
 
                 ## feed EOF and close the client_response
                 if not stream.closed():
-                    await stream.feed(b'', True)
+                    with suppress(DataError):
+                        await stream.feed(b'', True)
                 await client_response.aclose()
 
                 ## keep the context manager and this end of the stream open,
@@ -726,15 +891,16 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
                 await response_future
 
                 ## await end-of-parse
-                await thr_future
+                # await thr_future
 
             if __debug__:
                 logger.debug("process_response: parse_response => %r", thr_future)
         except Exception:
             etyp, exc, tb = sys.exc_info()
+            set_future_exception(response_future, exc)
             self.controller.present_exception(etyp, exc, tb)
             await stream.aclose()
-            set_future_exception(response_future, exc)
+            raise
 
     def parse_response(self, stream: AsyncSegmentChannel,
                        client_response: httpx.Response,
@@ -924,25 +1090,35 @@ class ApiIterativeRequest(ApiRequest[T_response, T_value], ABC):
             ## dispatch to set the response future
             return await super().dispatch_response(response, client_response, initial_request)
         ## dispatch to any next request
-        if not self.future.done():
-            if __debug__:
-                logger.info("Processing next request")
+        future = self.future
+        if not future.done():
             next_url = self.get_next_url(response, client_response)
             if next_url:
+                if __debug__:
+                    logger.info("Processing next request")
+
                 ## updating the initial_request object for the next URL
                 initial_request.url = httpx.URL(next_url)
 
-                async def process_next(self, next_request):
+                async def process_next(self: Self, next_request, future):
                     ## coroutine for request=>response model with modified initial_request
                     ## to be run under the same loop as self.future, typically the loop where
                     ## the initial async HTTP client was created
+                    if future.done():
+                        return
                     async with self.request_stream(next_request) as linked_response:
                         await self.process_response(linked_response, next_request)
 
-                ftr: cofutures.Future = aio.run_coroutine_threadsafe(process_next(self, initial_request), self.future.get_loop())
-                chain_cancel_callback(self.future, ftr)
-                with suppress(cofutures.CancelledError):
-                    ftr.result()
+                loop = self.controller.main_loop
+                cf: cofutures.Future = aio.run_coroutine_threadsafe(process_next(self, initial_request, future), loop=loop)
+                self.future.add_done_callback(lambda _: cf.cancel())
+                # poll until next request has completed
+                interval = sys.getswitchinterval()
+                while not cf.done():
+                    try:
+                        return cf.result(0)
+                    except cofutures.TimeoutError:
+                        await aio.sleep(interval)
             else:
                 logger.warning("Received no next URL for linked response in %r", self)
 

@@ -1,52 +1,102 @@
 """Logging utilities"""
 
-import configparser as cf
+import io
 import logging.config
 import logging
-import os
-from immutables import Map
-import sys
+import logging.handlers
+import multiprocessing as mp
+import queue
 
-from typing import Any, Mapping, Optional
-from typing_extensions import TypeAlias
+from typing import Iterable, Optional, Union
 
-from .paths import Pathname, expand_path
 
-LogConfig: TypeAlias = Mapping[str, Any]
-LogConfigDefaults: TypeAlias = Mapping[str, LogConfig]
+def log_formatter() -> logging.Formatter:
+    """Create a log formatter
 
-LOGGER_DEFAULTS: Map[str, LogConfig] = Map(
-    logger_hpack = dict(level = logging.WARNING),
-    logger_root = dict(level = logging.INFO)
+    The log formatter will provide formatting for the following fields:
+    Process ID; Timestamp for the LogRecord, including milliseconds;
+    Thread ID; Logger name and log level; Message text and optional
+    exception information.
+
+    Returns:
+        logging.Formatter: A new log formatter
+    """
+    return logging.Formatter(
+        "[%(process)d %(asctime)s.%(msecs)d %(thread)x] [%(name)s] [%(levelname)s] %(message)s",
+        datefmt="%F %X"
     )
 
-LOGGER_DEFAULT_PROFILE: Pathname = "console_debug_logger.ini"
 
-def configure_loggers(
-    config: Optional[Pathname] = None,
-    formatter_defaults: Optional[LogConfigDefaults] = None,
-    handler_defults: Optional[LogConfigDefaults] = None,
-    logger_defaults: Optional[LogConfigDefaults] = LOGGER_DEFAULTS,
-    filter_defaults: Optional[LogConfigDefaults] = None
-    ):
-    global LOGGER_DEFAULT_PROFILE
+def queue_handler(queue: Union[mp.Queue, queue.Queue, queue.SimpleQueue],
+                  formatter: Optional[logging.Formatter] = None,
+                  ) -> logging.handlers.QueueHandler:
+    """Create a logging queue handler
 
-    config_ini = expand_path(config or LOGGER_DEFAULT_PROFILE, os.path.dirname(__file__))
-    if not os.path.exists(config_ini):
-        sys.stderr.print("configure_loggers: File not found: %s", config_ini)
-        return False
+    Args:
+        queue (Union[mp.Queue, queue.Queue, queue.SimpleQueue]):
+            LogRecord Queue for the handler
 
-    defaults = dict()
-    if formatter_defaults:
-        defaults['formatters'] = formatter_defaults
-    if handler_defults:
-        defaults['handlers'] = handler_defults
-    if logger_defaults:
-        defaults['loggers'] = logger_defaults
-    if filter_defaults:
-        defaults['filters'] = filter_defaults
+        formatter (Optional[logging.Formatter], optional):
+            Optional formatter. If not provided, a formatter will
+            be created with `log_formatter()`
 
-    logging.config.fileConfig(config_ini, disable_existing_loggers=False, defaults=defaults)
+    Returns:
+        logging.handlers.QueueHandler: A new logging handler
+    """
+    recordq = queue or mp.Queue()
+    handler = logging.handlers.QueueHandler(recordq)
+    handler.formatter = formatter or log_formatter()
+    return handler
+
+def console_handler(stream: Optional[io.IOBase],
+                    formatter: Optional[logging.Formatter] = None,
+                    ) -> logging.StreamHandler:
+    handler = logging.StreamHandler(stream) if stream else logging.StreamHandler(stream)
+    handler.formatter = formatter or log_formatter()
+    return handler
 
 
-__all__  = "LogConfig", "LogConfigDefaults", "LOGGER_DEFAULTS", "configure_loggers"
+def configure_logger(name: Optional[str] = None,
+                     level: Optional[Union[int, str]] = None,
+                     handlers: Optional[Union[logging.Handler, Iterable[logging.Handler]]] = None,
+                     handlers_override: bool = False
+                     ) -> logging.Logger:
+    """Configure a logger
+
+    Args:
+        name (Optional[str], optional):
+            Logger name. If not provided, the root logger will be configured
+
+        level (Optional[Union[int, str]], optional):
+            Optional log level, if provided
+
+        handlers (Optional[list[logging.Handler]], optional):
+            Optional handlers for the logger
+
+        handlers_override (bool, optional):
+            When a `handlers` list is provided, indicates whether to override
+            the existing handlers for the logger. If true, any previous list
+            of handlers  will be removed from the logger - in effect, replaced
+            with the provided `handlers` list. Otherwise, the logger's handlers
+            list will be  extended with the provided `handlers`.
+
+    Returns:
+        logging.Logger: The logger, as selected per the value of `name`
+    """
+    logger = logging.getLogger(name) if name else logging.getLogger()
+    if level:
+        logger.setLevel(level)
+    if handlers:
+        if handlers_override:
+            logger.handlers = [handlers] if isinstance(handlers, logging.Handler) else list(handlers)
+        elif isinstance(handlers, Iterable):
+            for hdl in handlers:
+                logger.addHandler(hdl)
+        else:
+            logger.addHandler(handlers)
+    return logger
+
+
+__all__ = (
+    "log_formatter", "queue_handler", "console_handler", "configure_logger"
+)

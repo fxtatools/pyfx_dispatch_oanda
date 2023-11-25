@@ -15,9 +15,11 @@ from pyfx.dispatch.oanda.transport.data import ApiObject, ApiClass, JsonTypesRep
 from pyfx.dispatch.oanda.io import AsyncSegmentChannel
 from pyfx.dispatch.oanda.parser import ModelBuilder
 from pyfx.dispatch.oanda.models import (
+    ListAccounts200Response,
+    GetAccount200Response,
+    GetAccountSummary200Response,
     GetAccountInstruments200Response,
     GetInstrumentCandles200Response,
-    GetAccountSummary200Response,
     GetTransactionRange200Response,
     ListOrders200Response,
     ListTrades200Response
@@ -27,56 +29,46 @@ pytest_plugins = ('pytest_asyncio',)
 
 EXAMPLES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),  "json_samples"))
 
+T_model = TypeVar("T_model", bound=ApiObject)
+
 
 class TestParseUnparse(PytestTest):
     """Component Tests for parser and encoder frameworks"""
 
-
-    async def run_builder_async(self, cls: ApiClass, examples_dir) -> ApiObject:
+    async def run_builder_async(self, cls: type[T_model], examples_dir) -> T_model:
+        """Parse a sample JSON file, returning an object of the file's model type"""
         JsonTypesRepository.__finalize_instance__()
-
-        # examples_dir: Pathname = self.examples_dir
 
         example_file = expand_path(cls.__name__ + ".json", examples_dir)
         if not os.path.exists(example_file):
             raise ValueError("No example file found", example_file)
 
-        ## read the example JSON data into a bytes sequence for the parser
-        data: bytes = b''
-        with open(example_file, "rb") as f:
-            data = f.read()
-
-        ## test the stream API and the parser
-        async with AsyncSegmentChannel() as stream:
-            await stream.feed(data, eof=True)
-            builder: ModelBuilder = ModelBuilder(cls)
-
-            async for event, value in ijson.basic_parse_async(stream, use_float=True):
-                await builder.aevent(event, value)
-
-            return builder.instance
+        return await cls.afrom_file(example_file)
 
     def json_bytes(self, object: ApiObject):
-        ## return the bytes produced by the ApiObject's byte-wise JSON encoder
+        """return the bytes produced by an ApiObject's byte-wise JSON encoder"""
         return object.to_json_bytes()
-
 
     @pytest.fixture
     def examples_dir(self):
         return EXAMPLES_DIR
 
     @pytest.mark.asyncio
+    @pytest.mark.dependency()
     @pytest.mark.parametrize(
         "model_cls", [
+            ListAccounts200Response,
+            GetAccount200Response,
+            GetAccountSummary200Response,
             GetAccountInstruments200Response,
             GetInstrumentCandles200Response,
-            GetAccountSummary200Response,
             GetTransactionRange200Response,
             ListOrders200Response,
             ListTrades200Response
         ]
     )
     async def test_parse_unparse(self, model_cls, examples_dir):
+        """Test parse, unparse, and value equivalence for models, using sample JSON data"""
         ## test parse
         rslt = await self.run_builder_async(model_cls, examples_dir)
         ## test unparse

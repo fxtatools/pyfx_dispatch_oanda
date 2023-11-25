@@ -2,16 +2,13 @@
 
 import asyncio as aio
 import concurrent.futures
+from enum import IntEnum, Enum
 import os
 from queue import SimpleQueue, Empty
 import sys
 from typing import Awaitable, Generic, Iterator, Literal, Optional, Union
 from typing_extensions import Generic, TypeVar
 from ..util.sequence_like import IndexedSequenceLike
-
-
-from enum import IntEnum, Enum
-
 
 Tdata = TypeVar("Tdata", bound=IndexedSequenceLike)
 
@@ -601,11 +598,15 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
         self.eof = True
         ftr = self.closed_future
         ftr_loop = ftr.get_loop()
-        running_loop = aio.get_running_loop()
+        running_loop = None
+        try:
+            running_loop = aio.get_running_loop()
+        except RuntimeError:
+            pass
         try:
             if ftr_loop is running_loop:
                 self.close_current()
-            else:
+            elif ftr_loop.is_running():
                 hdl = ftr_loop.call_soon_threadsafe(self.close_current)
                 # await ftr
         except aio.InvalidStateError:
@@ -623,4 +624,8 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
 
         closes this segment channel, as with `aclose()`
         """
-        await self.aclose()
+        try:
+            await self.aclose()
+        except:
+            self.close_current()
+            raise

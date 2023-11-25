@@ -1,20 +1,25 @@
 """ExecController definition"""
 
-from concurrent.futures import CancelledError
+
 from abc import ABC, abstractmethod
 from appdirs import AppDirs
+import atexit
 import argparse as ap
 import asyncio as aio
+import atexit
+from concurrent.futures import CancelledError
 from contextlib import contextmanager, asynccontextmanager, suppress
 from contextvars import ContextVar
-from .configuration import Configuration
-from .config_manager import load_config
-from .util.paths import Pathname, expand_path
+from itertools import chain
 import logging
+import logging.config
 import os
+import platform
 import signal
 import stat
 import threading
+if platform.system != "Windows":
+    import uvloop
 
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures as cofutures
@@ -29,21 +34,28 @@ from typing import (
     Awaitable,
     Callable,
     Collection,
-    ContextManager,
     Coroutine,
     Iterator,
     Literal,
     Mapping,
     Optional,
     Self,
+    Sequence,
     Union,
+    TYPE_CHECKING
 )
 from typing_extensions import ClassVar, TypeVar
 
-from .util.dist import find_distribution, module_dir, PackageNotFoundError
+from .util.dist import class_distribution, module_dir, PackageNotFoundError
 from .util.args import argparser
-from .util.log import configure_loggers, LOGGER_DEFAULT_PROFILE
-from .util.aio import chain_cancel_callback
+from .util.log import log_formatter, console_handler, configure_logger
+from .util.aio import chain_cancel_callback, safe_running_loop
+from .util.cofuture import CoFuture, CoFuturePool
+from .util.paths import Pathname, expand_path
+
+from .configuration import Configuration
+from .config_manager import load_config
+
 
 T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
@@ -65,28 +77,6 @@ See also:
 - ExecController.dispatch()
 - ExecController.async_context() [context manager]
 """
-
-
-@contextmanager
-def timeout(interval: Optional[float] = None,
-            exception_type: type[Exception] = CancelledError,
-            exception_args=("Timeout",),
-            exception_kwargs={}
-            ) -> ContextManager[threading.Timer]:
-    "Timeout context manager"
-
-    def cancel_cb(exception_type, *args, **kwargs):
-        raise exception_type(*args, **kwargs)
-    try:
-        timer = threading.Timer(interval, function=cancel_cb, args=(exception_type, *exception_args,), kwargs=exception_kwargs)
-        timer.start()
-        yield timer
-        timer.join()
-    except exception_type:
-        pass
-    finally:
-        timer.cancel()
-
 
 
 # https://zopeinterface.readthedocs.io/en/latest/README.html#defining-interfaces
@@ -184,7 +174,7 @@ class ExecController(ABC):
     method, `add_task()`
     """
 
-    exit_future: aio.Future
+    exit_future: CoFuturePool
     """The exit future for this controller.
 
     This future will be applied to ensure that any context manager onto
@@ -196,6 +186,10 @@ class ExecController(ABC):
     """
 
     logger: logging.Logger
+    """Logger for this controller"""
+
+    exceptions: set[Exception]
+    """Exceptions received by present_exception()"""
 
     app_name: ClassVar[str]
     appdirs: ClassVar[AppDirs]
@@ -205,19 +199,11 @@ class ExecController(ABC):
         return os.path.join(cls.appdirs.user_config_dir, "config.ini")
 
     @classmethod
-    def get_default_log_config_file(cls):
-        profile = expand_path(LOGGER_DEFAULT_PROFILE, module_dir("pyfx.dispatch.oanda.util.log"))
-        if __debug__:
-            if not os.path.exists(profile):
-                logger.critical("Default logging profile not found", profile)
-        return profile
-
-    @classmethod
     def __init_subclass__(cls, *args, **kw):
         super(*args, **kw)
         if not hasattr(cls, "app_name"):
             try:
-                cls.app_name = find_distribution(cls.__module__).name
+                cls.app_name = class_distribution(cls).name
             except PackageNotFoundError:
                 cls.app_name = cls.__name__
         if not hasattr(cls, "appdirs"):
@@ -238,6 +224,10 @@ class ExecController(ABC):
         ## fairly a broken implementation, this
         with argparser(p, description=desc) as parser:
             # fmt: off
+            net_grp = parser.add_argument_group("network")
+            net_grp.add_argument("--no-proxy", dest="no_proxy",
+                                    action="store_true", default=False,
+                                    help="Disable proxy support")
             config_grp = parser.add_argument_group("configuration")
             config_grp.add_argument('-c', "--config", dest="config_file",
                                     default=cls.get_default_config_file(),
@@ -247,9 +237,9 @@ class ExecController(ABC):
                                     help="Override configuration <option> with <value>, e.g -D timestamp_format '<strftime...>'")
             config_grp.add_argument("-L", "--log-level", dest="log_levels", metavar=("<logger>", "<level>",),
                                     nargs=2, action="append", default=[],
-                                    help="Set log level for <logger>, 'root' for root logger")
+                                    help="Set log <level> for <logger>, 'root' or empty string '' for root logger")
             config_grp.add_argument("--log-config", dest="log_config_file", metavar="ini_file",
-                                    default=cls.get_default_log_config_file(),
+                                    default=None,
                                     help="Load custom logger configuration")
             # fmt: on
             yield parser
@@ -279,24 +269,32 @@ class ExecController(ABC):
         `thread_loop.get()`
         """
         try:
+            if self.exit_future.done():
+                raise RuntimeError("init_worker_thread while exiting", self)
             aio.set_event_loop_policy(self.loop_policy)
             loop = self.loop_policy.new_event_loop()
             aio.set_event_loop(loop)
             thread_loop.set(loop)
             self.managed_loops.put(loop)
-        except Exception as exc:
+        except Exception:
             self.present_exception(sys.exc_info(), msg="Exception when initializing thread")
+
+            raise
 
     def initialize_defaults(self):
         """
         Initialize all default properties for this controller
 
+        - Called after configuration has been initialized for
+          the instance
+
         - Initialize the controller's thread pool executor,
           using the  `max_thread_workers` property selected
           in this controller's configuration.
 
-        - Initialize an internal loop management queue for
-          worker threads
+        - Initialize an internal loop management queue, for
+          reference to the primary asyncio loop in each
+          worker thread
 
         The executor will be created with an initializer
         calling `init_worker_thread()` for this controller.
@@ -307,27 +305,91 @@ class ExecController(ABC):
         an asumption that this controller's `close()` function will
         be called within at most one thread.
         """
-        max_workers = self.config.max_thread_workers
+        global logger
+        config = self.config
+        max_workers = config.max_thread_workers
         if not hasattr(self, "executor"):
-            exc = ThreadPoolExecutor(
+            exec_cb = config.__class__.get_callable(config.executor)
+            exc = exec_cb(
                 max_workers=max_workers,
                 thread_name_prefix="exec_",
                 initializer=self.init_worker_thread
             )
             self.executor = exc
+
+        ## main_loop is initialized typically under from_args ...
         self.main_loop.set_default_executor(self.executor)
-        self.managed_loops = SimpleQueue[aio.AbstractEventLoop]()
+
+        self.managed_loops = SimpleQueue()
         if not hasattr(self, "task_group"):
             self.task_group = aio.TaskGroup()
         if not hasattr(self, "exit_future"):
-            self.exit_future = self.main_loop.create_future()
+            self.exit_future = CoFuturePool("main", result_value=0)
         if not hasattr(self, "logger"):
-            self.logger = logger
+            ## the controller's logger is used under present_exception()
+            self.logger = logging.getLogger(self.app_name)
+        if not hasattr(self, "exceptions"):
+            self.exceptions = set()
 
+    @classmethod
+    def get_log_formatter(cls) -> logging.Formatter:
+        """Return a log formatter for use with `configure_loggers()`
+
+        This method may be overridden or extended, in extending classes
+        """
+        return log_formatter()
+
+    @classmethod
+    def get_log_handlers(cls) -> list[logging.Handler]:
+        """Return a console log handler for use with `configure_loggers()`
+
+        The console handler - as a log stream handler - will produce
+        logging output to `sys.stderr`, using a formatter initialized by
+        `cls.get_log_formatter()`
+
+        This method may be overridden or extended, in extending classes
+        """
+        formatter = cls.get_log_formatter()
+        return [console_handler(stream=sys.stderr, formatter=formatter)]
+
+    @classmethod
+    def configure_loggers(cls):
+        """
+        Configure loggers for this controller
+
+        This method on ExecController will initialize the root logger,
+        using log handlers initialized with `cls.get_log_handlers()`.
+
+        The default log handlers list will include a stream handler
+        producing log output to `sys.stderr`, with a formatter
+        initialized to provide process ID, timestamp, thread ID,
+        logger, and log message information. This handlers list will
+        be applied to extend the set of existing root log handlers.
+
+        This method may be overridden or extended, in extending classes.
+
+        ### Implementation Note: Logging configuration in `from_args()`
+
+        When the args list provided to `from_args()` has specified
+        a logging config  file, the logging configuration in that
+        file will be applied as  instead of calling `configure_loggers()`.
+        Additional loggers can be initialized per instance, such as
+        within a `process_args()` method defined in an extending class,
+        or as previous to calling the class method, `from_args()`.
+
+        Independent to the configuration for log formatting and
+        log process handling, logging level may be set for
+        individual loggers, using args provided to `from_args()`.
+
+        The exact args syntax for `from_args()` may generally be
+        determined by calling the respective `__main__` module
+        with the arg `--help`
+        """
+        handlers = cls.get_log_handlers()
+        configure_logger(handlers=handlers)
 
     @classmethod
     def create_config_file(cls, path: Pathname):
-        ## FIXME generalize this to a console app class
         if not os.isatty(sys.stdin.fileno()):
             raise RuntimeError("Unable to create configuration file, interactive input unavailable")
         print()
@@ -370,25 +432,49 @@ class ExecController(ABC):
     ) -> Self:
         with cls.argparser() as parser:
             parse_args: Collection[str] = ()
+
             if args == sys.argv:
                 parser.prog = os.path.basename(args[0])
                 parse_args = args[1:]
             else:
                 parse_args = args
+
             # parse args, without activating a cmd func
             options, rest_args = parser.parse_known_args(parse_args)
 
-            configure_loggers()
+            #
+            # initialize loggers
+            #
+            log_cfg: Optional[Pathname] = options.log_config_file
+            if log_cfg:
+                try:
+                    logging.config.fileConfig(log_cfg)
+                except:
+                    logger.critical("Unable to parse log config file %r", log_cfg, exc_info=sys.exc_info())
+                    logger.critical("Using default log config")
+                    cls.configure_loggers()
+            else:
+                cls.configure_loggers()
 
+            logging_ns = logging.__dict__
             for logname, level in options.log_levels:
-                level: str
-                l = logging.getLogger(logname)
-                use_level = logging.__dict__.get(level.upper(), None)
+                if TYPE_CHECKING:
+                    logname: str
+                    level: str
+                try:
+                    use_level = int(level)
+                except ValueError:
+                    use_level = logging_ns.get(level.upper(), None)
+
                 if use_level and isinstance(use_level, int):
-                    l.setLevel(use_level)
+                    named = logging.getLogger(logname)
+                    named.setLevel(use_level)
                 else:
                     logger.critical("Unknown log level %r", level)
 
+            #
+            # parse config
+            #
             cfg_file = options.config_file
             logger.info("Using config file %s", cfg_file)
             cfg_path = expand_path(cfg_file)
@@ -397,34 +483,8 @@ class ExecController(ABC):
                 print("Configuration not found: %s" % cfg_file)
                 cls.create_config_file(cfg_path)
 
-            ## initialize the exec controller
             ##
-            ## order of precedence for config overrides:
-            ## - if cmdline overrides are provided via the parsed args,
-            ##   those will override any values in 'overrides' and any
-            ##   defaults in the config
-            ##
-            ## - any values in a truthy 'overrides' arg will override
-            ##   any config options, excepting those overriden from
-            ##   cmdline args
-            ##
-            ## - defaults will be applied from the Configuration class,
-            ##   when applicable
 
-            ##
-            ## an auth_token must be specified in at least one of:
-            ##
-            ## - the configuration file. This file may have been
-            ##   newly created with the required auth token, under
-            ##   cls.create_config_file()
-            ##
-            ## - the 'overrides' arg, for instance if the auth token was
-            ##   initialized outside of the configuration file
-            ##  (e.g empty exec_token in the config file, loading the actual
-            ##   token from a keyring)
-            ##
-            ## - cmdline arg '-d exec_token <token>' arg, this being the
-            ##   least secure possible approach
             inst: ExecController = cls.__new__(cls)
             over = dict(config_overrides) if config_overrides else dict()
             opt_overrides = options.config_override
@@ -441,16 +501,36 @@ class ExecController(ABC):
             config = load_config(cfg_file, over)
             inst.config = config
 
-            policy_cb = config.__class__.get_callable(config.event_loop_policy)
-            policy = policy_cb()
-            main_loop = None
-            inst.loop_policy = policy
-            aio.set_event_loop_policy(policy)
+            if options.no_proxy:
+                config.proxy = None
+
             if loop:
                 main_loop = loop
             else:
-                main_loop = policy.get_event_loop()
+                running_loop = None
+                with suppress(RuntimeError):
+                    running_loop = aio.get_running_loop()
+                if running_loop is not None:
+                    ## e.g running under IPython, Jupyter, ...
+                    ##
+                    ## skipping the configured event loop policy here
+                    main_loop = running_loop
+                else:
+                    policy_cb = config.__class__.get_callable(config.event_loop_policy)
+                    policy: aio.AbstractEventLoopPolicy = policy_cb()
+                    if platform.system != "Windows" and isinstance(policy, uvloop.EventLoopPolicy):
+                        uvloop.install()
+
+                    inst.loop_policy = policy
+                    aio.set_event_loop_policy(policy)
+
+                    try:
+                        main_loop = policy.get_event_loop()
+                    except RuntimeError:
+                        main_loop = policy.new_event_loop()
+
             inst.main_loop = main_loop  # type: ignore
+
             exec_cb = config.__class__.get_callable(config.executor)
             # Pre-initialize the executor, given cmdline args and config
             # Caveat: The executor callback must accept the following args
@@ -487,12 +567,11 @@ class ExecController(ABC):
         initialized, such as typically within the controller's `main_loop`.
         """
         try:
-            async with self.exit_future:
-                pass
+            await self.exit_future.apoll()
         except:  # nosec B110
             pass
 
-    async def dispatch(self, func: Callable[..., T], *args, **kwargs) -> aio.Future[T]:
+    def dispatch(self, func: Callable[..., T], *args, **kwargs) -> aio.Future[T]:
         """
         Dispatch a synchronous function call to a threaded worker under this controller
 
@@ -526,37 +605,34 @@ class ExecController(ABC):
         3. Pause asynchronously for `sys.getswitchinterval()` seconds
         before return, to allow for normal exit under cancelled tasks
         """
-        tg = self.task_group
-        delay = sys.getswitchinterval()
-        with suppress(aio.CancelledError, aio.InvalidStateError):
-            self.exit_future.cancel()
-        if not immediate:
+        delay = None if immediate else sys.getswitchinterval()
+        self.exit_future.close()
+        if delay:
             time.sleep(delay)
-        q = self.managed_loops
-        # for each worker loop and the main loop:
-        # 1) Cancel all tasks under the loop,
-        #    logging task exceptions
-        # 2) stop the loop
-        # 3) close the loop
-        try:
-            ## close worker loops
-            while not q.empty():
-                worker_loop = q.get()
-                try:
-                    for task in aio.all_tasks(worker_loop):
-                        with suppress(aio.InvalidStateError, aio.CancelledError):
-                            task.cancel()
-                finally:
-                    worker_loop.stop()
-                    # if not immediate:
-                    #     time.sleep(delay)
-                    # with suppress(RuntimeError):
-                    #     worker_loop.close()
-            ## close worker threads
-            self.executor.shutdown(wait=False, cancel_futures=True)
-        finally:
-            pass
-    def exit(self, code: int, immediate: bool = False):
+        loop_queue = self.managed_loops
+        ## close worker loops
+        if __debug__:
+            logger.debug("closing worker loops")
+        while not loop_queue.empty():
+            worker_loop = loop_queue.get()
+            try:
+                for task in aio.all_tasks(worker_loop):
+                    task.cancel()
+            finally:
+                worker_loop.stop()
+                if delay:
+                    time.sleep(delay)
+                with suppress(RuntimeError):
+                    worker_loop.close()
+        if delay:
+            time.sleep(delay)
+        ## close worker threads
+        if __debug__:
+            logger.debug("closing executor")
+        # cofutures.thread._threads_queues.clear()
+        self.executor.shutdown(wait=False, cancel_futures=True)
+
+    def exit(self, code: Optional[int] = 0, immediate: bool = False):
         logger.critical("Exiting: %r (%r)", code, immediate)
         self.close(immediate)
         sys.exit(code)
@@ -617,9 +693,15 @@ class ExecController(ABC):
         application is in an exit state.
         """
         async with self.async_context():
-            with suppress(aio.CancelledError):
-                await self.run_async()
-                await self.exit_future
+            with suppress(cofutures.CancelledError, aio.CancelledError):
+                try:
+                    return await self.run_async()
+                finally:
+                    if __debug__:
+                        logger.debug("run_trampoline: await exit_future")
+                    await self.exit_future
+                    if __debug__:
+                        logger.debug("run_trampoline: return")
 
     @contextmanager
     def run_context(self) -> Iterator[Self]:
@@ -643,18 +725,25 @@ class ExecController(ABC):
         on the implementing ExecController
         """
         initial_sigint_handler = None
+        own_loop = True
         try:
+            atexit.register(self.close, True)
             with suppress(ValueError):
-                initial_sigint_handler = signal.signal(signal.SIGINT, self.exit)
+                initial_sigint_handler = signal.signal(signal.SIGINT, lambda *_: self.exit_future.cancel())
             yield self
             loop = self.main_loop
-            if loop.is_running():
-                cf = aio.run_coroutine_threadsafe(self.await_exit(), loop=loop)
-                self.exit_future.add_done_callback(lambda _: cf.set_result(True))
-                with suppress(cofutures.CancelledError):
-                    _ = cf.result()
-            else:
+            own_loop = not loop.is_running()
+            running_loop = None
+            with suppress(RuntimeError):
+                ## poratbility for ipython
+                running_loop = aio.get_running_loop()
+            if own_loop and running_loop is None:
                 _ = self.main_loop.run_until_complete(self.run_trampoline())
+            elif running_loop:
+                raise RuntimeError("Found a running event loop. %s must be run under a separate thread" % self.__class__.__name__)
+            else:
+                ## could be reached if the main_loop is already running
+                raise RuntimeError("%s unable to run event loop" % self.__class__.__name__)
         except:
             # fmt:" off
             self.present_exception(*sys.exc_info(),
@@ -665,8 +754,33 @@ class ExecController(ABC):
         finally:
             if initial_sigint_handler:
                 signal.signal(signal.SIGINT, initial_sigint_handler)
+            self.close()
+            if own_loop:
+                if __debug__:
+                    logger.debug("closing main loop")
+                loop = self.main_loop
+                for task in aio.all_tasks(loop):
+                    task.cancel()
+                loop.stop()
+                loop.close()
+                if __debug__:
+                    logger.debug("main loop closed")
 
-    def add_task(self, coro: Callable[..., Awaitable[T_co]]) -> aio.Task[T_co]:
+            # return
+
+            interval = sys.getswitchinterval()
+            for thread in tuple(threading._active.values()):
+                if TYPE_CHECKING:
+                    thread: threading.Thread
+                with suppress(Exception):
+                    thread.join(interval)
+            threading._threading_atexits.clear()
+            threading._shutdown_locks.clear()
+
+    def add_cofuture(self) -> CoFuture:
+        return self.exit_future.create_future()
+
+    def add_task(self, coro: Coroutine) -> aio.Task[T_co]:
         """Task inteface for the exec controller's task group
 
         `add_task()` will create a task calling the provided
@@ -690,6 +804,9 @@ class ExecController(ABC):
         except Exception as exc:
             logger.critical("Failed to start task %r : %r", coro, exc)
             raise
+
+    def add_cofuture(self, name: Optional[str] = None, **kw) -> CoFuture:
+        return self.exit_future.create_future(name, **kw)
 
     def get_future_callback(
         self, call_to: Callable[..., Coroutine], *args, **kwargs
@@ -722,10 +839,13 @@ class ExecController(ABC):
     def present_exception(
         self, etype=None, exception=None, tbk=None, msg="Error", msg_args=()
     ):
-        # fmt: off
-        self.logger.critical(msg, *msg_args,
-                             exc_info=(etype, exception, tbk,))
-        # fmt: on
+        exc = exception or etype
+        if exc not in self.exceptions:
+            # fmt: off
+            self.logger.critical(msg, *msg_args,
+                                exc_info=(etype, exception, tbk,))
+            # fmt: on
+            self.exceptions.add(exc)
 
     @asynccontextmanager
     async def async_context(self) -> AsyncIterator[aio.TaskGroup]:
@@ -749,8 +869,83 @@ class ExecController(ABC):
                 yield tg
             finally:
                 thread_loop.reset(loop_pre)
+                if hasattr(tg, "_tasks"):
+                    for task in tg._tasks:
+                        task.cancel()
 
+    def main(self) -> int:
+        with self.exit_future:
+            with self.run_context():
+                if __debug__:
+                    term_program = os.environ.get("TERM_PROGRAM", None)
+                    if term_program == "vscode" and "debugpy" in sys.modules:
+                        #
+                        # load additional debugger support for multi-
+                        # threaded applications in VS Code
+                        # https://stackoverflow.com/a/3242780/1061095
+                        #
+                        try:
+                            import pydevd  # type: ignore[import-untyped]
+                            pydevd.connected = True
+                            pydevd.settrace(suspend=False)
+                        except:
+                            logger.warning("Failed to initialize pydevd", exc_info=sys.exc_info())
+        try:
+            result = self.exit_future.result(0)
+            return result if isinstance(result, int) else 1
+        except:
+            return 1
 
+    @classmethod
+    def run_threaded(cls, additional_args: Optional[Sequence[str]] = None) -> tuple[Self, threading.Thread]:
+        import traceback
+        try:
+            def run(cls: Self, args, future: CoFuture):
+                if True:
+                    try:
+                        controller = cls.from_args(args)
+                        if __debug__:
+                            logger.debug("run: %r", controller)
+                        future.set_result(controller)
+                        if __debug__:
+                            logger.debug("main: %r", controller)
+                        controller.main()
+                    except Exception as exc:
+                        with suppress(cofutures.InvalidStateError, cofutures.CancelledError):
+                            future.set_exception(exc)
+            # inst_future = CoFuture()
+            inst_future = cofutures.Future()
+            import threading
+            thread = threading.Thread(target=run, args=(cls, additional_args or (), inst_future,), daemon=True)
+            if __debug__:
+                logger.debug("Running %s under new thread 0x%x", cls.__name__, thread.native_id or 0)
+            thread.start()
+            while True:
+                with suppress(cofutures.TimeoutError):
+                    controller = inst_future.result()  # why does this block now?
+                    break
+                time.sleep(sys.getswitchinterval())
+            return controller, thread
+        except:
+            info = sys.exc_info()
+            traceback.print_exception(*info, file=sys.stderr)
+            logger.critical("%s.run_threaded: Exiting", cls.__name__, exc_info=info)
 
-
+    @classmethod
+    def run_main(cls, additional_args: Optional[Sequence[str]] = None):
+        running_loop = safe_running_loop()
+        main_args = [] if additional_args is None else list(additional_args)
+        if running_loop is None:
+            #
+            # using sys.argv and any additional args
+            #
+            if __debug__:
+                logger.debug("Running %s under current thread", cls.__name__)
+            return cls.from_args(sys.argv + main_args).main()
+        else:
+            #
+            # discarding sys.argv when running in a thread
+            # beside an existing event loop
+            #
+            cls.run_threaded(additional_args)
 __all__ = ("thread_loop", "ExecController")

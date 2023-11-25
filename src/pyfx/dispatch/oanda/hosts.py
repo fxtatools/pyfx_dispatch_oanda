@@ -1,5 +1,6 @@
 # common host information for OANDA v20 fxTrade and fxPractice endpoints
 
+from typing import TYPE_CHECKING
 from typing_extensions import ClassVar
 import encodings.idna
 from .mapped_enum import MappedEnum
@@ -53,11 +54,15 @@ class FxHost:
 class FxHostInfo(MappedEnum):
     """Host definitions for fxTrade Practice and fxTrade Live endpoints"""
 
-    fxPractice: FxHost = FxHost(
+    if TYPE_CHECKING:
+        name: str
+        value: FxHost
+
+    FXPRACTICE = FxHost(
         rest_host=EndpointBase.fxpractice_rest + FxHost.api_path,
         stream_host=EndpointBase.fxpractice_streaming + FxHost.api_path
     )
-    fxLive: FxHost = FxHost(
+    FXLIVE = FxHost(
         rest_host=EndpointBase.fxlive_rest + FxHost.api_path,
         stream_host=EndpointBase.fxlive_streaming + FxHost.api_path
     )

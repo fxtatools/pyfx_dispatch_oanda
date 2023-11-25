@@ -3,7 +3,7 @@
 from datetime import datetime
 from json import JSONEncoder
 from numpy import double
-from typing import Literal, Optional, Self, Union
+from typing import Literal, Optional, Self, Union, TYPE_CHECKING
 from typing_extensions import ClassVar
 
 from ..util.naming import exporting
@@ -47,16 +47,17 @@ class AccountId(Credential, TransportSecretStr, metaclass=TransportSecretStrType
 
     storage_class: ClassVar[type] = Credential
     storage_type: ClassVar[type] = Credential
+    hash_code: int
 
     @classmethod
     def create_deferred(cls) -> Self:
         return cls('')
 
     def deferred(self) -> bool:
-        return len(self._secret_value) is int(0) if hasattr(self, "_secret_value") else True
+        return len(self._secret_value) == 0 if hasattr(self, "_secret_value") else True
 
     def __repr__(self) -> str:
-        if not self.shadowed() and self.deferred():
+        if self.deferred() and not self.shadowed():
             return self.__class__.__name__ + "(<deferred>)"
         else:
             return super().__repr__()
@@ -80,6 +81,10 @@ class InstrumentName(str, TransportEnum[CurrencyPair, str], metaclass=TransportE
     storage_class = CurrencyPair
     storage_type = CurrencyPair
 
+    if TYPE_CHECKING:
+        name: str
+        value: CurrencyPair
+
     def __new__(cls, arg: Union[CurrencyPair, str]):
         """Return a CurrencyPair for the provided arg"""
         if isinstance(arg, str):
@@ -91,7 +96,7 @@ class InstrumentName(str, TransportEnum[CurrencyPair, str], metaclass=TransportE
             return arg
 
     @classmethod
-    def get_display_string(cls, value: CurrencyPair):
+    def get_display_string(cls, value: CurrencyPair) -> str:
         return value.name
 
     @classmethod
@@ -189,8 +194,8 @@ class LotsValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
     """
     a numeric value representing a quanity of trade units
 
-    This value represents a measure units, lots or pips
-    within the scope of a defining trade instrument.
+    This value represents a measure of units, colloquially
+    lots or pips within the scope of a defining trade instrument.
 
     Transport encoding: String-encoded Decimal
     Runtime encoding: numpy.double

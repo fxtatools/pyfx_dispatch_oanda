@@ -125,7 +125,7 @@ class ApiClient(object):
 
         ## generalization for fxPractice and fxLive endpoints
         # fmt: off
-        host_info = (FxHostInfo.fxPractice if self.config.fxpractice else FxHostInfo.fxLive)
+        host_info = (FxHostInfo.FXPRACTICE if self.config.fxpractice else FxHostInfo.FXLIVE)
         ## generalization for endpoints using streaming or conventional REST responses
         host = host_info.stream_host if streaming else host_info.rest_host
         base_url = host + resource_path

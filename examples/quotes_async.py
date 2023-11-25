@@ -10,14 +10,11 @@ import asyncio as aio
 from abc import abstractmethod
 from io import IOBase
 import logging
-import os
 import pyfx.dispatch.oanda as dispatch
 from pyfx.dispatch.oanda.transport.data import ApiObject
 from pyfx.dispatch.oanda.models import GetAccountInstruments200Response, GetInstrumentCandles200Response, CurrencyPair
-import pyfx.dispatch.oanda.util.log as log
 from pyfx.dispatch.oanda.util.console import console_io, ConsoleStreamWriter
 from pyfx.dispatch.oanda.api.default_api import ApiController
-import pytz
 from typing_extensions import Protocol, TypeVar
 
 T = TypeVar("T", bound=ApiObject)
@@ -57,7 +54,7 @@ class ScriptController(ApiController):
         async for account_props in api_instance.accounts(self):
             account_id = account_props.id
             dt_format = config.datetime_format
-            tz = pytz.timezone(os.environ['TZ']) if 'TZ' in os.environ else config.timezone
+            tz = config.timezone
             tasks = []
 
             async with console_io(loop=self.main_loop) as pipe:
@@ -106,7 +103,7 @@ class ScriptController(ApiController):
                                     f"\t[{component:s}] o:{o:^ 12.0{precision}f}  h:{h:^ 12.0{precision}f}  l:{l:^ 12.0{precision}f}  c:{c:^ 12.0{precision}f}",
                                     file=out
                                 )
-                    task = self.add_task(check_exit())
+                    task: aio.Task = self.add_task(check_exit())
                     self.exit_future.add_done_callback(lambda _: None if task.done() else task.cancel())
 
                 def acct_instrument_cb(reqftr: aio.Future):
@@ -126,7 +123,7 @@ class ScriptController(ApiController):
                     for inst in instruments:
                         iname = inst.name
                         instrument_info[iname] = inst
-                        inst_task = self.add_task(
+                        inst_task: aio.Task = self.add_task(
                             api_instance.get_instrument_candles_by_account(account_id,
                                                                            iname,
                                                                            count=5,
@@ -140,7 +137,7 @@ class ScriptController(ApiController):
                 ## Initial Task creation, beginning with each account
                 ##
 
-                acct_task = self.add_task(api_instance.get_account_instruments(account_id))
+                acct_task: aio.Task = self.add_task(api_instance.get_account_instruments(account_id))
                 acct_task.add_done_callback(acct_instrument_cb)
                 try:
                     await self.exit_future
@@ -149,14 +146,7 @@ class ScriptController(ApiController):
 
 
 if __name__ == "__main__":
-    ## debug logging will be enabled if DEBUG is set in the environment
-    dbg = __debug__ and 'DEBUG' in os.environ
-    if dbg:
-        log.configure_loggers()
     logger = logging.getLogger("pyfx.dispatch.oanda")
-    logger.info("Loading configuration")
-
-    examples_path = dispatch.util.paths.expand_path("account.ini", os.path.dirname(__file__))
 
     with ScriptController.from_args([]).run_context() as controller:
         ## set a custom datetime format, used in the example

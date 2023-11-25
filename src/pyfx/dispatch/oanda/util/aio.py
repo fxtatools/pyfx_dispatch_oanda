@@ -4,7 +4,7 @@ import asyncio as aio
 from contextlib import suppress
 import concurrent.futures as cofutures
 from functools import partial
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 from typing_extensions import TypeAlias, TypeVar
 
 
@@ -18,8 +18,57 @@ def safe_running_loop() -> Optional[aio.AbstractEventLoop]:
         return aio.get_running_loop()
 
 
-def chain_cancel_callback(origin: AnyFutureUnion, dest: AnyFutureUnion,
-                          dest_concurrent: bool = False) -> Callable[[AnyFuture], None]:
+def set_result_any(future: AnyFuture, value):
+    if isinstance(future, cofutures.Future):
+        future.set_result(value)
+    else:
+        if TYPE_CHECKING:
+            future: aio.Future
+        f_loop = future.get_loop()
+        loop = safe_running_loop()
+        if loop and loop is f_loop:
+            future.set_result(value)
+        else:
+            _ = f_loop.call_soon_threadsafe(future.set_result, value)
+
+
+def safe_add_callback(future: AnyFuture, callback: Callable[[AnyFuture], Any]):
+    if isinstance(future, aio.Future):
+        f_loop = future.get_loop()
+        if f_loop is safe_running_loop():
+            future.add_done_callback(callback)
+        else:
+            f_loop.call_soon_threadsafe(future.add_done_callback, callback)
+    else:
+        future.add_done_callback(callback)
+
+
+def cancel_when_done(origin, dest, value = None):
+    if isinstance(dest, cofutures.Future):
+        def cancel_cb(dest: cofutures.Future, origin: AnyFuture):
+                dest.cancel()
+    elif hasattr(dest, "get_loop"):
+        def cancel_cb(dest: aio.Future, origin: AnyFuture):
+            if dest.done():
+                return
+            loop = dest.get_loop()
+            if loop is safe_running_loop():
+                if loop.is_closed():
+                    return
+                dest.cancel()
+            else:
+                loop.call_soon_threadsafe(dest.cancel)
+    else:
+        def cancel_cb(dest, origin):
+            dest.cancel()
+
+    cb = partial(cancel_cb, dest)
+    safe_add_callback(origin, cb)
+    return cb
+
+
+def chain_cancel_callback(origin: AnyFutureUnion, dest: Union[AnyFutureUnion, aio.Handle]
+                          ) -> Callable[[AnyFuture], None]:
     """Bind and return a callback function, cancelling the `dest` future
     when the `origin` future is cancelled.
 
@@ -27,50 +76,31 @@ def chain_cancel_callback(origin: AnyFutureUnion, dest: AnyFutureUnion,
     If the future is cancelled and the `dest` future is not done,
     then the callback will cancel the `dest` future as with
     `dest.cancel()`
-
-    If `dest_concurrent` is a _falsey_ value (the default) or `dest`
-    is not a concurrent future, then the callback will be defined such
-    that the `dest` future will be cancelled with a thread-safe call.
-    When the callback is dispatched under a running asyncio loop
-    other than the `dest` future's asyncio loop and the `dest` future's
-    asyncio loop is not closed, the `dest.cancel()`  call will be dispatched
-    using `loop.call_soon_threadsafe()` given  `dest.get_loop() == loop`.
-    Else, when the callback is dispatched under the same asyncio loop as
-    the asyncio future `dest`, then `dest.cancel()` will be called directly.
-
-    When `dest_concurrent` is a _truthy_ value or `dest` is a
-    `concurrent.futures.Future`, then the `dest` future will be assumed
-    to represent a concurrent future, permitting a direct call to
-    `dest.cancel()` from within the calling thread for the callback.
-
-    Before return, the callback function will be bound to the `origin`
-    future, using the `add_done_callback` method onto the `origin`
-    future.
-
-    The callback function will be returned. For an asyncio `origin` future,
-    the return value may be used to remove the callback from the `origin`
-    future.
     """
-    if dest_concurrent or isinstance(dest, cofutures.Future):
+    if isinstance(dest, cofutures.Future):
         def cancel_cb(dest: cofutures.Future, origin: AnyFuture):
             if origin.cancelled() and not dest.done():
                 dest.cancel()
-    else:
+    elif hasattr(dest, "get_loop"):
         def cancel_cb(dest: aio.Future, origin: AnyFuture):
-            loop = dest.get_loop()
             if origin.cancelled():
                 if dest.done():
                     return
+                loop = dest.get_loop()
                 if loop is safe_running_loop():
                     if loop.is_closed():
                         return
                     dest.cancel()
                 else:
                     loop.call_soon_threadsafe(dest.cancel)
+    else:
+        def cancel_cb(dest, origin):
+            if origin.cancelled():
+                dest.cancel()
 
     cb = partial(cancel_cb, dest)
-    origin.add_done_callback(cb)
+    safe_add_callback(origin, cb)
     return cb
 
 
-__all__ = "safe_running_loop", "AnyFutureUnion", "AnyFuture", "chain_cancel_callback"
+__all__ = "safe_running_loop", "AnyFutureUnion", "AnyFuture", "safe_add_callback", "cancel_when_done", "chain_cancel_callback"

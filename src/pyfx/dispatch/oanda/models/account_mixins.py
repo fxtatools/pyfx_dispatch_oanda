@@ -14,7 +14,7 @@ from .guaranteed_stop_loss_order_parameters import GuaranteedStopLossOrderParame
 
 
 class AccountStateBase(ApiObject, ABC):
-    """Mixin class for account state fields"""
+    """Mixin class for commmon account state fields"""
 
     balance: Annotated[Optional[AccountUnits], TransportField(None)]
     """

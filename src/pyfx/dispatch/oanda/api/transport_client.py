@@ -1,13 +1,19 @@
 """TransportClient base class (API client support)"""
 
+from anyio import ClosedResourceError
+import asyncio as aio
 from contextlib import suppress
 import httpx
+import logging
 from immutables import Map
 import ssl
+import sys
 
 from ..exec_controller import ExecController
 from ..response_common import REST_CONTENT_TYPE_BYTES
 
+
+logger = logging.getLogger(__name__)
 
 class TransportClient():
     """Client wrapper for HTTP requests
@@ -24,6 +30,7 @@ class TransportClient():
 
     def __init__(self, controller: ExecController):
         self.controller = controller
+        controller.exit_future.add_done_callback(lambda _: self.close())
         config = controller.config
 
         maxconn = config.max_connections
@@ -47,6 +54,9 @@ class TransportClient():
 
         proxy_in = config.proxy
         proxy = httpx.Proxy(proxy_in) if proxy_in is not None and not isinstance(proxy_in, httpx.Proxy) else proxy_in
+        if __debug__:
+            if proxy:
+                logger.debug("Using proxy %r", proxy)
 
         headers = Map({
             b'Authorization': b'Bearer ' + config.access_token.encode(),
@@ -81,11 +91,22 @@ class TransportClient():
         # in the RequestController.async_context() context
         # manager.
         #
-        with suppress(Exception):
+        with suppress(ClosedResourceError):
             if hasattr(self, "client"):
+                if __debug__:
+                    logger.debug("closing client")
                 await self.client.aclose()
             if hasattr(self, "transport"):
-                await self.transport.aclose()
+                if __debug__:
+                    logger.debug("closing transport")
+                with suppress(aio.TimeoutError):
+                    async with aio.timeout(sys.getswitchinterval()):
+                        await self.transport.aclose()
+                if __debug__:
+                    logger.debug("closed transport")
+
+    def close(self):
+        cf = aio.run_coroutine_threadsafe(self.aclose(), loop=self.controller.main_loop)
 
     async def __aenter__(self):
         return self

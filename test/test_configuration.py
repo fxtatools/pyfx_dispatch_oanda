@@ -38,17 +38,17 @@ class TestConfiguration(ComponentTest):
         assert_that(isinstance(demo_inst.debug_header, str)).is_true
 
         assert_that(demo_inst.fxpractice).is_equal_to(True)
-        assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxPractice.value)
+        assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.FXPRACTICE.value)
 
         ## switch to the live profile and test host info
         demo_inst.use_fxlive_profile()
         assert_that(demo_inst.fxpractice).is_equal_to(False)
-        assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxLive.value)
+        assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.FXLIVE.value)
 
         ## switch to original profile and test host info
         demo_inst.use_fxpractice_profile()
         assert_that(demo_inst.fxpractice).is_equal_to(True)
-        assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxPractice.value)
+        assert_that(demo_inst.get_host()).is_equal_to(hosts.FxHostInfo.FXPRACTICE.value)
 
     def test_live_profile(self):
         ## test initialization for an fxLive (fxpractice = False) configuration
@@ -56,17 +56,17 @@ class TestConfiguration(ComponentTest):
         live_inst = config.Configuration(fxpractice=False, access_token=token)
         assert_that(live_inst.access_token).is_equal_to(token)
         assert_that(live_inst.fxpractice).is_equal_to(False)
-        assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxLive.value)
+        assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.FXLIVE.value)
 
         ## switch to fxpractice profile and test host info
         live_inst.use_fxpractice_profile()
         assert_that(live_inst.fxpractice).is_equal_to(True)
-        assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxPractice.value)
+        assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.FXPRACTICE.value)
 
         ## switch to original profile and test host info
         live_inst.use_fxlive_profile()
         assert_that(live_inst.fxpractice).is_equal_to(False)
-        assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.fxLive.value)
+        assert_that(live_inst.get_host()).is_equal_to(hosts.FxHostInfo.FXLIVE.value)
 
     def test_failure_case(self):
         assert_that(config.Configuration).raises(ValidationError).when_called_with()
@@ -89,7 +89,4 @@ class TestConfiguration(ComponentTest):
         
 
 if __name__ == '__main__':
-    import importlib
-    import sys
-    importlib.reload(sys.modules["pyfx.dispatch.oanda.configuration"])
     run_tests(__file__)

@@ -226,11 +226,8 @@ class ExampleController(ApiController):
 
 
 if __name__ == "__main__":
-    ## debug logging will be enabled if DEBUG is set in the environment
-    if __debug__ and 'DEBUG' in os.environ:
-        log.configure_loggers()
 
-    logger.info("Initialzing application")
+    print("-- Initialzing application --")
 
     with ExampleController.from_args(sys.argv, loop=False).run_context() as controller:
 

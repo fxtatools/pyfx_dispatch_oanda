@@ -167,7 +167,6 @@ class RESTClientObject(TransportClient):
                     await response_future
                     return response_future.result()
 
-
     async def process_response(self, response_future: aio.Future, client_response: httpx.Response,
                                response_types_map: Mapping[int, type[ApiObject]],
                                content_type: str, content_encoding: Optional[str] = None):
@@ -180,12 +179,12 @@ class RESTClientObject(TransportClient):
                 response_future.add_done_callback(lambda _: stream.close())
                 if __debug__:
                     logger.debug("process_response: dispatch to parse_response thread")
-                thr_future: aio.Future = await self.controller.dispatch(
+                thr_future: aio.Future = self.controller.dispatch(
                     self.parse_response, response_future, stream, content_type, response_type, client_response
                     )
 
                 if client_response.is_closed:
-                    logger.critical("Received a closed response", stream, self)
+                    logger.critical("Received a closed response: %r @ %r", stream, self)
                     return
 
                 async for chunk in client_response.aiter_bytes():

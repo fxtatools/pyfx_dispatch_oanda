@@ -152,8 +152,22 @@ class TransportInterface(Generic[Ti, To]):
 
     @classmethod
     def get_state(cls, object):
-        ## default method for scalar values ..
+        ## default method for scalar values
         return object
+
+    @classmethod
+    def restore_state(cls, field, m_object, state):
+        ## default method for scalar values, where 'state' is the  value itself
+        ##
+        ## note that this method does not need to affect __pydantic_fields_set__ in the object
+        m_object.__dict__[field] = state
+
+    @classmethod
+    def restore_member_state(cls, field, m_object, m_value):
+        ## scalar values can be stored literally within sequence types and in model state information
+        ##
+        ## this method is used mainly in TransportValuesType.restore_state(...)
+        return m_value
 
     @classmethod
     def __init_subclass__(cls, *args, **kw):
@@ -373,7 +387,22 @@ class TransportValuesType(TransportType[TRANSPORT_VALUES_STORAGE_CLASS[Ti], list
 
     @classmethod
     def get_state(cls, object):
-        return tuple(cls.member_transport_type.get_state(v) for v in object)
+        mtyp = cls.member_transport_type
+        return tuple(mtyp.get_state(v) for v in object)
+
+    @classmethod
+    def restore_state(cls, field, m_object, state):
+        # mtyp = cls.member_transport_type
+        # return TRANSPORT_VALUES_STORAGE_CLASS(mtyp.restore_state(v) for v in state)
+        mtyp = cls.member_transport_type
+        value = TRANSPORT_VALUES_STORAGE_CLASS(mtyp.restore_member_state(field, m_object, v) for v in state)
+        setattr(m_object, field, value)
+
+    @classmethod
+    def restore_member_state(cls, field, m_object, m_value):
+        logger.critical("Nested value sequences are not supported in this version of the serialization API: Class %s field %s", m_object.__class__.__name, field)
+        ## returning the value, unprocessed - this transport type does not support arbitrary nesting or recursion for member transport types
+        return m_value
 
     @classmethod
     def __init_subclass__(cls, *, member_class=None, **kw):
@@ -541,6 +570,7 @@ class TransportStrType(TransportStr, TransportType[str, str]):
 
 
 class TransportSecretStr(TransportStr, TransportInterface[SecretStr, str]):
+
     @classmethod
     def unparse_py(cls, value: SecretStr,
                    encoder: Optional[JSONEncoder] = None) -> str:

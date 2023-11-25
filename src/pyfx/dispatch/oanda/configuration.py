@@ -1,9 +1,10 @@
 ##  Configuration for ApiClient
 
 import asyncio as aio
-from aenum import StrEnum
+from aenum import StrEnum   # type: ignore[import-untyped]
 from collections import ChainMap
 from concurrent.futures import ThreadPoolExecutor
+# from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from datetime import tzinfo
 import dateutil.tz
 import importlib.util
@@ -60,8 +61,8 @@ def ConfigField(default, *, parse_func, **kw):
 
 class ProfileName(StrEnum):
     """Enum for host-specific identification of configuration profiles"""
-    FXPRACTICE: str = FxHostInfo.fxPractice.name
-    FXLIVE: str = FxHostInfo.fxLive.name
+    FXPRACTICE: str = FxHostInfo.FXPRACTICE.name
+    FXLIVE: str = FxHostInfo.FXLIVE.name
 
 
 PROXY_ENV_NAMES: frozenset[str] = frozenset({"https_proxy", "HTTPS_PROXY", "ALL_PROXY", "all_proxy"})
@@ -83,18 +84,14 @@ def environ_proxy() -> Optional[str]:
     return None
 
 
-def parse_tz(input: Union[str, tzinfo, None]) -> tzinfo:
-    if isinstance(input, str):
-        info = dateutil.tz.gettz(input)
-        if info:
-            return info
-        else:
-            logger.warn("Unknown timezone %r, using UTC", input)
-            return dateutil.tz.UTC
-    elif input:
-        assert isinstance(input, tzinfo)
-        return input
+def parse_tz(value: Union[str, tzinfo, None]) -> tzinfo:
+    if isinstance(value, str):
+        return dateutil.tz.gettz(value) or dateutil.tz.UTC
+    elif isinstance(value, tzinfo):
+        return value
     else:
+        if value:
+            logger.warning("Unknown timezone type, %s @ %r; Using UTC", value.__class__.__name__,  value)
         return dateutil.tz.UTC
 
 def ensure_account_id(input: Union[str, AccountId]) -> AccountId:
@@ -200,7 +197,7 @@ class ConfigurationModel(BaseModel):
     Default value is 100. None means no client-side limit.
     '''
 
-    request_timeout: Optional[float] = None
+    request_timeout: Optional[float] = 5
 
     max_keepalive_connections: int = 10
     '''Client-side limit for number of conccurrent HTTP keepalive connections'''
@@ -413,9 +410,9 @@ class Configuration(ConfigurationModel):
 
     def get_host(self) -> FxHostInfo:
         if self.fxpractice:
-            return FxHostInfo.fxPractice.value
+            return FxHostInfo.FXPRACTICE.value
         else:
-            return FxHostInfo.fxLive.value
+            return FxHostInfo.FXLIVE.value
 
     def get_fxlive_profile(self) -> ChainMap[str, Any]:
         return self.get_profile(str(ProfileName.FXLIVE))
@@ -646,7 +643,7 @@ class Configuration(ConfigurationModel):
         if assume_model or key in Configuration.model_fields:
             profile = self._current_profile
             if key in profile:
-                self.__pydantic_fields_set__.remove(key)
+                self.__pydantic_fields_set__.discard(key)
                 return profile.__delitem__(key)
         else:
             raise KeyError("Configuration field not found", key)

@@ -1,12 +1,12 @@
 """Currency Pair encoding for applications"""
 
-from aenum import extend_enum
+from aenum import extend_enum  # type: ignore[import-untyped]
 from ..finalizable import FinalizationState
 from ..mapped_enum import MappedEnum
 
 
 from types import NotImplementedType
-from typing import Callable, Self, Union
+from typing import Callable, Self, Union, TYPE_CHECKING
 from typing_extensions import ClassVar
 
 from .currency import Currency
@@ -50,6 +50,10 @@ class CurrencyPair(MappedEnum):
     """
 
     __finalization_state__: ClassVar[FinalizationState] = FinalizationState.NEVER
+
+    if TYPE_CHECKING:
+        name: str
+        value: int
 
     @property
     def base_digits(self) -> int:

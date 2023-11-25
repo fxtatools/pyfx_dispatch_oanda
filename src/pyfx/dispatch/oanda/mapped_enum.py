@@ -1,8 +1,9 @@
 """Enum classes extending aenum in application of immutables.Map"""
 
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from typing_extensions import ClassVar
-from aenum import Enum, EnumType, extend_enum
+from aenum import Enum, EnumType, extend_enum   # type: ignore[import-untyped]
 from immutables import Map
 from .finalizable import FinalizationState, Finalizable
 
@@ -11,17 +12,18 @@ from typing import Any, Callable, Iterator, Self, Union
 
 class MappedEnumType(Finalizable, EnumType):
 
-    _member_map_: Union[dict[str, Any], Map[str, Any]]
-    """See also: MappedEnum. _member_map_"""
+    if TYPE_CHECKING:
+        _member_map_: Union[dict[str, Any], Map[str, Any]]
+        """See also: MappedEnum. _member_map_"""
 
-    _value2member_map_: Union[dict[str, Any], Map[str, Any]]
-    """See also: MappedEnum._value2member_map_"""
+        _value2member_map_: Union[dict[str, Any], Map[str, Any]]
+        """See also: MappedEnum._value2member_map_"""
 
-    _member_names_: Union[list[str], tuple[str, ...]]
-    """See also: MappedEnum._member_names_"""
+        _member_names_: Union[list[str], tuple[str, ...]]
+        """See also: MappedEnum._member_names_"""
 
-    _missing_value_: Callable[[Any], "MappedEnum"]
-    """See also: MappedEnum._missing_value_"""
+        _missing_value_: Callable[[Any], "MappedEnum"]
+        """See also: MappedEnum._missing_value_"""
 
     @property
     def __members__(cls) -> Union[dict, Map]:
@@ -40,7 +42,6 @@ class MappedEnumType(Finalizable, EnumType):
         else:
             return cls._member_map_.copy()  # type: ignore
 
-    # def __finalize_instance__(cls):
     @contextmanager
     def __finalization__(cls):
         """Finalize the enum class, if not already finalized.

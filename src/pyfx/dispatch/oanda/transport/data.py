@@ -6,6 +6,7 @@ from datetime import datetime
 from enum import Enum
 # from reprlib import repr
 from immutables import Map
+import ijson
 from json import JSONEncoder
 import logging
 from numpy import datetime64, double
@@ -19,7 +20,9 @@ from types import new_class, NoneType
 from typing import Any, Generic, Iterable, Iterator, Optional, TypeAlias, Union, TYPE_CHECKING
 from typing_extensions import ClassVar, Self, TypeVar, TypeAlias, Union, get_origin, get_type_hints
 
-from ..finalizable import FinalizableClass
+from ..finalizable import Finalizable, FinalizableClass
+from ..util.cofuture import CoFuture
+from ..util.paths import Pathname
 from ..util.typeref import get_type_class, get_literal_value, resolve_forward_reference
 from ..util.naming import exporting
 from .transport_common import IntermediateObject
@@ -35,6 +38,9 @@ from .transport_base import (
 from .application_fields import ApplicationFieldInfo
 from .repository import TransportBaseRepository
 from .encoder_constants import EncoderConstants
+
+if TYPE_CHECKING:
+    from ..exec_controller import ExecController, thread_loop
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +89,8 @@ class TransportModelRepository(TransportBaseRepository):
         found = self.find_transport_type(value_type, storage_cls)
         if found:
             return found
+        elif not hasattr(self, "__finalization_state__"):  # DEBUG
+            raise RuntimeError("Finalizble instance has no __finalized__ property", isinstance(self, Finalizable), get_type_hints(self.__class__))
         elif self.__finalized__:
             raise ValueError("Repository is finalized", self)
         elif issubclass(storage_cls, ApiObject):
@@ -109,9 +117,6 @@ class InterfaceClass(ModelMetaclass, FinalizableClass, ABC):
 
     transport_type: "TransportObjectType"
     """When bound, the transport type for the class onto the class' types repository"""
-
-    api_storage_fields: frozenset[str]
-    """This field is Documented as a class variable in ApiObject"""
 
     types_repository: "TransportModelRepository"
     """This field is Documented as a class variable in ApiObject"""
@@ -275,9 +280,6 @@ class InterfaceClass(ModelMetaclass, FinalizableClass, ABC):
         new_cls.json_fields = json_fields
         new_cls.json_field_names = json_field_names
 
-        ## common
-        new_cls.api_storage_fields = frozenset({"__pydantic_fields_set__", "__pydantic_extra__", "__pydantic_private__"})
-
         new_cls.ensure_transport_type()
 
 
@@ -326,58 +328,103 @@ class ApiClass(InterfaceClass, ABC):
         return new_cls
 
 
-Ts = TypeVar("Ts", bound="ApiObject")
+T_o = TypeVar("T_o", bound="ApiObject")
 
 
-class ModelState(Generic[Ts]):
-    __slots__ = ("state", "model_class")
-    state: Map[str, Any]
-    model_class: "type[Ts]"
+class ModelState(Generic[T_o]):
+    __slots__ = "field_state", "state_class", "extra_fields", "private_fields"
 
-    @property
-    def model_fields(self) -> Mapping[str, TransportFieldInfo]:
-        return self.model_class.model_fields  # type: ignore[return-value]
+    field_state: Map[str, Any]
+    state_class: "type[T_o]"
 
-    @classmethod
-    def get_field_state(cls, obj: "ApiObject", name: str):
-        model_fields = obj.__class__.model_fields
-        if name in model_fields:
-            transport_type: TransportType = model_fields[name]
-            return transport_type.get_state(getattr(obj, name))
-        else:
-            return getattr(obj, name)
+    # __pydantic_extra__:
+    extra_fields: Optional[Mapping[str, Any]]
+    # __pydantic_private__:
+    private_fields: Optional[Mapping[str, Any]]
 
     @classmethod
-    def derive_state(cls, m_object: Ts) -> "ModelState[Ts]":
-        m_cls = m_object.__class__
-        fields = tuple(m_object.api_storage_fields.union(m_object.__pydantic_fields_set__))
-        dmap = {f: cls.get_field_state(m_object, f) for f in m_object.api_storage_fields.union(m_object.__pydantic_fields_set__)}
-        return ModelState(Map(dmap), m_object.__class__)
+    def derive_state(cls, m_object: T_o) -> "ModelState[T_o]":
+        # field-oriented model state construction. implementation for ApiObjbect.__getstate__()
+        m_cls: type[T_o] = m_object.__class__
+        fields = m_cls.model_fields
+        dct = m_object.__dict__
+        ## Implementation Note:
+        ##
+        ## This serialization procedure will filter out any unset default
+        ## values in m_object.__dict__ i.e values that do not match any
+        ## field name in m_object.__pydantic_fields_set__
+        ##
+        m_fields = m_object.__pydantic_fields_set__
+        dct_keys = m_fields.intersection(set(dct.keys()))
+        if __debug__:
+            no_dct = m_fields.difference(dct_keys)
+            if no_dct:
+                logger.critical("Model fields set not present in model data for %s instance: %s", m_cls.__name__, ", ".join(no_dct))
+        dmap = {f: fields[f].transport_type.get_state(dct[f]) for f in dct_keys}
+        return cls(Map(dmap), m_object.__class__, m_object.__pydantic_extra__, m_object.__pydantic_private__)
 
-    def __init__(self, state: Map[str, Any], cls: type[Ts]):
-        self.state = state
-        self.model_class = cls
+    def __init__(self, field_state: Map[str, Any], m_cls: type[T_o],
+                 extra: Optional[Mapping[str, Any]] = None,
+                 private: Optional[Mapping[str, Any]] = None):
+        self.field_state = field_state
+        self.state_class = m_cls
+        self.extra_fields = extra
+        self.private_fields = private
 
-    def __getattr__(self, attr: str) -> Any:
-        if attr in self.model_fields:
-            return self.state[attr]
-        else:
-            raise AttributeError("Unknown model field", attr)
+    def merge_slot(self, attr: str, values: Optional[Mapping[str, Any]], m_object: T_o):
+        if hasattr(m_object, attr):
+            att_val = getattr(m_object, attr)
+            if att_val is not None:
+                if __debug__:
+                    if not isinstance(att_val, Mapping):
+                        raise AssertionError("Not a mapping", att_val, attr, m_object)
+                for name, val in values.items():
+                    att_val[name] = val
+                return
+        setattr(m_object, attr, values)
+
+    def restore_state(self, m_object: T_o):
+        ## implementation for ApiModel.__setstate__()
+        self.merge_slot("__pydantic_extra__", self.extra_fields, m_object)
+        self.merge_slot("__pydantic_private__", self.private_fields, m_object)
+        model_fields = m_object.model_fields
+        o_dct = m_object.__dict__
+        for field, state in self.field_state.items():
+            info = model_fields.get(field, None)
+            if info:
+                # o_dct[field] = info.transport_type.restore_state(state)
+                info.transport_type.restore_state(field, m_object, state)
+            else:
+                if m_object.__pydantic_extra__ is None:
+                    m_object.__pydantic_extra__ = {field: state}
+                else:
+                    m_object.__pydantic_extra__[field] = state
+        state_fields = set(self.field_state.keys())
+        for unset_field in set(o_dct.keys()).difference(state_fields):
+            del o_dct[unset_field]
+        m_object.__pydantic_fields_set__ = state_fields
+
+    def reify(self) -> T_o:
+        ## initialize a new object from this ModelState
+        m_cls = self.state_class
+        m_obj = m_cls.__new__(m_cls)
+        m_obj.__setstate__(self)
+        return m_obj
 
     def __getitem__(self, name: str) -> Any:
-        return self.state.__getitem__(name)
+        return self.field_state.__getitem__(name)
 
     def keys(self) -> Iterable[str]:
-        return self.state.keys()
+        return self.field_state.keys()
 
     def values(self) -> Iterable:
-        return self.state.values()
+        return self.field_state.values()
 
     def items(self) -> Iterable[tuple[str, Any]]:
-        return self.state.items()
+        return self.field_state.items()
 
     def __iter__(self) -> Iterator[str]:
-        return self.state.__iter__()
+        return self.field_state.__iter__()
 
 
 Tobject = TypeVar("Tobject", bound="ApiObject")
@@ -434,6 +481,23 @@ class TransportObject(TransportInterface[Tobject, IntermediateObject]):
                 val = transport_type.unparse_py(val, encoder)
                 m[name] = val
         return m
+
+    @classmethod
+    def get_state(cls, m_object: Tobject) -> ModelState[Tobject]:
+        return ModelState.derive_state(m_object)
+
+    @classmethod
+    def restore_state(cls, field, m_object, state: ModelState):
+        dct = m_object.__dict__
+        if field in dct:
+            obj = dct[field]
+            state.restore_state(obj)
+        else:
+            dct[field] = state.reify()
+
+    @classmethod
+    def restore_member_state(cls, field, m_object, m_value: ModelState[T_o]) -> T_o:
+        return m_value.reify()
 
     @classmethod
     def iter_transport_field_bytes(cls, obj: Tobject):
@@ -506,7 +570,6 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
     # InterfaceModel initialization
     #
 
-    # @staticmethod
     def __new__(cls, **kw):
         """construct an InterfaceModel without field validation
 
@@ -525,6 +588,7 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
             object.__setattr__(inst, arg, value)
         fields_kw = set(cls.model_fields.keys()).intersection(set(kw.keys()))
         object.__setattr__(inst, "__pydantic_fields_set__", fields_kw)
+        object.__setattr__(inst, "__pydantic_private__", None)
         return inst
 
     @classmethod
@@ -617,8 +681,8 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
             default = field.default
             if default is PydanticUndefined:
                 raise AttributeError("Unable to unset a field with no default value", name)
-            self.__setattr__(self, name, default, True)
-            self.__pydantic_fields_set__.remove(name)
+            self.__setattr__(name, default, True)
+            self.__pydantic_fields_set__.discard(name)
         else:
             raise AttributeError("Model field not found", name)
 
@@ -635,7 +699,7 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
         For a `key` not matching a model field for the instance, raises KeyError."""
         fields = self.__class__.model_fields
         if assume_model or key in fields:
-            return self.__getattr__(self, key, True)
+            return self.__getattr__(key, True)
         else:
             raise KeyError("Model field not found", key)
 
@@ -650,9 +714,6 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
         Known Limitations:
         - Not thread-safe for concurrent read and modification of model fields
         """
-        if __debug__:
-            if hasattr(self, "__state__"):
-                raise ValueError("Object is immutable", self)
         if assume_model or key in self.__class__.model_fields:
             return setattr(self, key, value)
         else:
@@ -715,21 +776,6 @@ class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
     value or default facdtory.
     """
 
-    api_storage_fields: ClassVar[frozenset[str]]
-    """Fields to serialize for storage
-
-    Memoized storage for field names, denoting the set of fields that should be
-    processed for serialization to storage, complimentary to fields that would
-    be serialized for transport for a given instance of this class
-
-    Similar to the value of `api_transport_fields`, this would be supplemental
-    to the instance-scoped set of field names `__pydantic_fields_set__` for
-    each ApiObject instance.
-
-    Each field denoted in this set must be set in the instance, or the field
-    must have been defined with a default value or default factory.
-    """
-
     #
     # serialization state and hashing support
     #
@@ -742,28 +788,31 @@ class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
         The object may be considered immutable after this method has been
         called.
         """
-        if hasattr(self, "__state__"):
-            return self.__state__
-        else:
-            cls = self.__class__
-            if not hasattr(cls, "transport_type"):
-                cls.ensure_transport_type()
-            return self.transport_type.get_state(self)
+        cls = self.__class__
+        return self.transport_type.get_state(self)
 
-    def __setstate__(self, state: ModelState[Self]):  # type: ignore[override]
-        # utility method for object initialization under ZODB
-        #
-        # Implementation Note: This will dispatch to object.setattr()
-        #
-        # - This avoids a call to BaseModel.__setattr__() such that may fail
-        #   when __pydantic_private__ has not yet been set
-        #
-        # - It's assumed that the `state`  data would be from a trusted and
-        #   API-compatible source
-        #
-        for attr, value in state.items():
-            object.__setattr__(self, attr, value)
-        self.__state__ = state
+    def __setstate__(self, state: ModelState[Self]):
+        if __debug__:
+            if not isinstance(state, ModelState):
+                raise AssertionError("Unsupported state type", state.__class__)
+        state.restore_state(self)
+
+    @classmethod
+    def from_state(cls, state: ModelState[T_o]) -> T_o:
+        if __debug__:
+            if not isinstance(state, ModelState):
+                raise AssertionError("Unsupported state type", state.__class__)
+        return state.reify()
+
+    def get_display_string(self, field: str) -> str:
+        ## utility method @ ApiObject - dispatch to get_display_string for the field's transport type
+        dct = self.__dict__
+        if field in dct:
+            value = dct[field]
+            info = self.__class__.model_fields[field]
+            return info.transport_type.get_display_string(value)
+        else:
+            return ''
 
     def __hash__(self) -> int:
         return hash(self.__getstate__())
@@ -774,6 +823,48 @@ class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
         elif self.__class__ is not other.__class__:
             return False
         return self.__getstate__() == other.__getstate__()
+
+    @classmethod
+    async def afrom_file(cls: type[T_o], file: Pathname, encoding: Optional[str] = None) -> T_o:
+        # localizing the parser import, to prevent a circular dependency
+        from ..parser import ModelBuilder
+        from ..io.segment import AsyncSegmentChannel
+
+        builder = ModelBuilder(cls)
+
+        async with AsyncSegmentChannel[bytes]() as stream:
+            ## loading the bytes data, using synchronous read
+            ## in the current thread - tpically a short duration
+            with open(file, "rb", encoding=encoding) as bytestream:
+                await stream.feed(bytestream.read(), True)
+
+            async for event, value in ijson.basic_parse_async(stream, use_float=True):
+                ## parse the loaded bytes
+                ##
+                ## if ijson has reverted to using the yajl-like Python API - as may be
+                ## due to a missing yajl lib, fairly common on Windows platforms outside
+                ## of conda - then performance for e.g large OHLC quotes series may be less
+                ## than stellar here. also pretty clunky under ipython, strangely
+                ##
+                ## Not typically an issue with yajl installed, and using uvloop on other
+                ## host platforms (and not in inpython - is it the tornado novelty there?)
+                ##
+                await builder.aevent(event, value)
+        return builder.instance
+
+    @classmethod
+    def from_file(cls: type[T_o], controller: "ExecController", file: Pathname, encoding: Optional[str] = None) -> T_o:
+        from ..exec_controller import thread_loop
+        future = controller.add_cofuture()
+
+        def parse_in_thread(cls: Self, file: Pathname, encoding, future: CoFuture):
+            global thread_loop
+            loop = thread_loop.get()
+            with future:
+                future.set_result(loop.run_until_complete(cls.afrom_file(file, encoding)))
+
+        _ = controller.dispatch(parse_in_thread, cls, file, encoding)
+        return future.poll()
 
     #
     # methods after the original .models.* classes produced with OpenAPI Generator
@@ -790,8 +881,7 @@ class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
     @classmethod
     def from_json(cls, json_data: Union[str, bytes]) -> Self:
         """Create an instance of the ApiObject class from a JSON string"""
-        ## localizing the import to the method scope should serve to prevent
-        ## a circular dependency from ..parser
+        # localizing the import, to prevent a circular dependency
         from ..parser import ModelBuilder
         return ModelBuilder.from_text(cls, json_data)
 
@@ -991,7 +1081,9 @@ class AbstractApiObject(ApiObject, ABC, Generic[Td], metaclass=AbstractApiClass)
                     raise ValueError("Subclass has unexpected designator_type binding", key_hint)
                 literal_value = get_literal_value(key_hint)
                 binding = {literal_value: cls}
-                logger.debug("%s bind %r => %s", base.__name__, literal_value, cls.__name__)
+                if __debug__:
+                    ## reached if debug logging was enabled before import
+                    logger.debug("%s bind implementation %r => %s", base.__name__, literal_value, cls.__name__)
 
                 # register the subclass to the abstract base class
                 base.bind_types(binding)

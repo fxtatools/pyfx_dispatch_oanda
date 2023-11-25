@@ -6,6 +6,7 @@ from typing import Literal
 import asyncio as aio
 from datetime import datetime
 from immutables import Map
+import logging
 import sys
 import time
 from typing import (
@@ -17,7 +18,8 @@ from typing_extensions import Annotated
 
 from pydantic import Field
 
-from ..util import exporting
+from ..util.naming import exporting
+from ..util.log import configure_logger
 from ..exec_controller import ExecController
 from ..transport.data import ApiObject
 from .. import models
@@ -107,7 +109,7 @@ class ApiController(ExecController):
     ## Usage
 
     As an extension to the abstract ExecController
-    class, DispatchController provides additional
+    class, ApiController provides additional
     support for initializing an API client to the
     controller.
 
@@ -124,6 +126,13 @@ class ApiController(ExecController):
 
     api_client: ApiClient
     api: "DefaultApi"
+    @classmethod
+    def configure_loggers(cls):
+        super().configure_loggers()
+        handlers = logging.getLogger().handlers
+        configure_logger("hpack", handlers=handlers,
+                         level=logging.WARNING)
+
 
     def initialize_defaults(self):
         """
@@ -1985,112 +1994,6 @@ class DefaultApi(object):
             path_params=_path_params,
             body=_body_params,
             response_types_map=_response_types_map, future=future)
-
-    @validate_request
-    async def stream_pricing(self,
-                             model_callback: Callable[[ApiObject], Any],
-                             account_id: AccountId, instruments: Sequence[str],
-                             snapshot: Optional[bool] = None,
-                             callback_heartbeat: bool = False,
-                             future: Optional[aio.Future[Literal[True]]] = None
-                             ):  # -> Awaitable[StreamPricing200Response]:
-        """Price Stream
-
-        Get a stream of Account Prices starting from when the request is made. This pricing stream does not include every single price created for the Account, but instead will provide at most 4 prices per second (every 250 milliseconds) for each instrument being requested. If more than one price is created for an instrument during the 250 millisecond window, only the price in effect at the end of the window is sent. This means that during periods of rapid price movement, subscribers to this stream will not be sent every price. Pricing windows for different connections to the price stream are not all aligned in the same way (i.e. they are not all aligned to the top of the second). This means that during periods of rapid price movement, different subscribers may observe different prices depending on their alignment.
-
-        >>> response = api.stream_pricing(account_id, instruments, snapshot)
-
-
-        :param model_callback: Callback for model objects. This callback will called for each
-               normal response object decoded from the streaming server messages.
-
-               For the `stream_pricing()` request, each server response message will be
-               decoded as a `StreamPricing200Response` object. This object will contain
-               information about ask and bid prices for the requested endpoints.
-
-               The callback should be either a synchronous or asynchronous callable, such
-               that will will receive each succesful sucessive `StreamPricing200Response`
-               object.
-
-               If callback_heartbeat is True, the callback will also receive decoded server
-               heartbeat messages of a type `PricingHeartbeat`
-
-        :param callback_heartbeat: If True, the callback will receive an ApiObject for each
-               streaming heartbeat message. By default, streaming heatbeat messages will be
-               skipped by the JSON decoder process.
-
-        :param account_id: Account Identifier (required)
-        :type account_id: AccountId
-        :param instruments: List of Instruments to stream Prices for. (required)
-        :type instruments: List[str]
-        :param snapshot: Flag that enables/disables the sending of a pricing snapshot when initially connecting to the stream.
-        :type snapshot: bool
-
-        :return: TBD
-        :rtype: TBD
-
-        Exceptions: TBD
-        """
-
-        assert len(instruments) is not int(0), "No instruments provided in request" # nosec B101
-
-        _path_params = {'accountID': account_id}
-
-        _query_params: dict[str, Any] = {'instruments': instruments}
-        _collection_formats = {'instruments': 'csv'}
-
-        if snapshot:
-            _query_params['snapshot'] = snapshot
-
-        _response_types_map = {
-            0: models.PricingHeartbeat,
-            200: models.StreamPricing200Response
-        }
-
-        types_callback = self.__class__.get_streaming_type_callback(_response_types_map, callback_heartbeat)
-        receiver = ModelBuilder.from_receiver_gen(types_callback, model_callback)
-
-        return await self.api_client.call_api(
-            '/accounts/{accountID}/pricing/stream', RequestMethod.GET,
-            path_params=_path_params,
-            query_params=_query_params,
-            collection_formats=_collection_formats,
-            streaming=True, receiver=receiver,
-            future=future)
-
-    @validate_request
-    async def stream_transactions(self,
-                                  callback: Union[CoroutineType, FunctionType],
-                                  account_id: AccountId,
-                                  future: Optional[aio.Future[Literal[True]]] = None
-                                  ) -> Awaitable[StreamTransactions200Response]:
-        """Transaction Stream
-
-        Get a stream of Transactions for an Account starting from when the request is made.
-
-        >>> response = api.stream_transactions(account_id)
-
-        :param account_id: Account Identifier (required)
-        :type account_id: AccountId
-        :return: Returns the response object.
-        :rtype: tuple(StreamTransactions200Response, status_code(int), headers(HTTPHeaderDict))
-        """
-
-        _path_params = {'accountID': account_id}
-
-        _response_types_map = {
-            0: models.TransactionHeartbeat,
-            200: models.StreamTransactions200Response
-        }
-
-        types_callback = self.__class__.get_streaming_type_callback(_response_types_map)
-
-        receiver = ModelBuilder.from_receiver_gen(types_callback, callback)
-
-        return await self.api_client.call_api(
-            '/accounts/{accountID}/transactions/stream', RequestMethod.GET,
-            path_params=_path_params, streaming=True, receiver=receiver,
-            future=future)
 
 
 __all__ = exporting(__name__, ...)

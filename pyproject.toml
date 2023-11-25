@@ -25,9 +25,11 @@ dependencies = [
     "aioconsole",
     "certifi",
     "currency-symbols",
-    "httpcore[http2]",
-    "httpx[http2] >= 0.24.1",
+    "exceptiongroup > 1.1.0",
+    "httpcore[http2] >= 1.0.2",
+    "httpx[http2] >= 0.25.1",
     "ijson",
+    "immutables >= 0.20",
     "importlib_metadata",
     "isocodes",
     "numpy",
@@ -36,13 +38,13 @@ dependencies = [
     "pydantic >2, <3",
     "python-dateutil >= 2.8.2",
     "pyyaml",
-    "pytz",
     "typing_extensions",
-    "immutables >= 0.20",
-    "BTrees >= 5.1.0",
+    "tzdata",
     "uvloop; platform_system != 'Windows'",
-    "ZODB >= 5.8.1",
+    "ZODB >= 5.8.0",
     "zope.password",
+    "persistent >= 5.0.0",
+    "transaction >= 3.1.0"
 ]
 requires-python = ">= 3.11.0, < 3.12"
 
@@ -61,23 +63,23 @@ socks = ["httpx[socks]", "socksio"]
 
 dev = [
     "pyfx.dispatch.oanda[typing]",
+    "assertpy",
+    # attrs: a dependency for polyfactory (19.6.2)
+    "attrs",
     "autopep8",
     "black",
-    "line_profiler",
-    "pytest >= 7.2.1",
-    "pytest-asyncio",
-    "assertpy",
-    "pytest-dependency",
     "flake8 >=4.0.0",
     "Flake8-pyproject",
     "ipython",
     "jedi>=0.19.1",
     "keyring >= 24.1.1",
-    "polyfactory",
-    # attrs: a dependency for polyfactory (19.6.2)
-    "attrs",
+    "line_profiler",
+    "mypy",
     "pip-tools",
-    "mypy"
+    "polyfactory",
+    "pytest >= 7.2.1",
+    "pytest-asyncio",
+    "pytest-dependency",
 ]
 
 [tool.mypy]

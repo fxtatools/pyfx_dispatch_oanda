@@ -1,15 +1,15 @@
 """Unit tetsts for pyfx.dispatch.oanda data model"""
 
-from aenum import StrEnum, IntEnum
+from aenum import StrEnum, IntEnum  # type: ignore[import-untyped]
 from datetime import datetime
 import numpy as np
 import pandas as pd
 from pytest import mark
 from typing import Annotated, Mapping, TYPE_CHECKING
 from assertpy import assert_that  # type: ignore[import-untyped]
-from zope.password.password import SHA1PasswordManager
+from zope.password.password import SHA1PasswordManager  # type: ignore[import-untyped]
 
-from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue, AccountId
+from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue, AccountId, TransactionId
 
 from pyfx.dispatch.oanda.test import ModelTest, MockFactory, run_tests
 from pyfx.dispatch.oanda.transport.transport_fields import TransportField
@@ -41,6 +41,7 @@ class TestDataModel(ModelTest):
         field_acct_units: Annotated[AccountUnits, TransportField(...)]
         field_price: Annotated[PriceValue, TransportField(...)]
         field_lots: Annotated[LotsValue, TransportField(...)]
+        field_txn_id: Annotated[TransactionId, TransportField(...)]
 
         field_acct: Annotated[AccountId, TransportField(...)]
 
@@ -84,7 +85,7 @@ class TestDataModel(ModelTest):
             assert_that(isinstance(info, TransportFieldInfo)).is_true()
             assert_that(info.defining_class).is_equal_to(mock_cls)
         assert_that('field_str_list' in model_fields).is_true()
-        assert_that(model_fields['field_str_list'].transport_type.member_transport_type).is_equal_to(TransportStrType)
+        assert_that(model_fields['field_str_list'].transport_type.member_transport_type).is_equal_to(TransportStrType)  # type: ignore[attr-defined]
 
     @mark.dependency(depends_on=['test_fields_map'])
     def test_field_recoding(self):
@@ -132,6 +133,15 @@ class TestDataModel(ModelTest):
         ## test memoization
         shadowed_memoized = acct_id.get_shadow_value(encoder)
         assert_that(shadowed).is_equal_to(shadowed_memoized)
+
+    def test_transport_display_string(self):
+        cls = self.__class__
+        mock_cls = cls.FieldsObject
+        mock = cls.gen_mock()
+        for attr, fieldinfo in mock_cls.model_fields.items():
+            value = getattr(mock, attr)
+            display = fieldinfo.transport_type.get_display_string(value)
+            assert_that(isinstance(display, str)).is_true()
 
 
 if __name__ == '__main__':

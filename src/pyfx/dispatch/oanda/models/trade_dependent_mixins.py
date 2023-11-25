@@ -96,7 +96,7 @@ from typing_extensions import ClassVar, TypeAlias, TypeVar
 
 from ..util.naming import exporting
 
-from ..transport.data import ApiObject, ApiClass, TransportObjectType
+from ..transport.data import ApiObject, ApiClass, ModelState, TransportObjectType
 from ..transport.transport_fields import TransportField
 from ..transport.transport_base import TransportType, TransportNone
 from ..transport.transport_common import IntermediateObject
@@ -217,6 +217,21 @@ class TransportTradeDependent(TransportObjectType[T_trade, TradeDependentInterme
     def get_state(cls, object):
         if object:
             return super().get_state(object)
+
+    @classmethod
+    def restore_state(cls, field, m_object, state: ModelState):
+        if state:
+            super().restore_state(field, m_object, state)
+        else:
+            cls.__dict__[field] = None
+
+    @classmethod
+    def restore_member_state(cls, field, m_object, m_value: Optional[ModelState[T_trade]]) -> Optional[ModelState[T_trade]]:
+        if m_value:
+            return super().restore_member_state(field, m_object, m_value)
+        else:
+            return None
+
 
     @classmethod
     def get_display_string(cls, value: T_trade) -> str:

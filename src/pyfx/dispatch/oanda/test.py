@@ -1,7 +1,7 @@
 ## test.py - test support for pyfx.dispatch.oanda development
 
 from abc import ABC, ABCMeta
-from assertpy import assert_that
+from assertpy import assert_that  # type: ignore[import-untyped]
 from datetime import datetime
 import os
 from polyfactory.factories import pydantic_factory
@@ -41,6 +41,8 @@ __all__ = (
     "PytestTest",
     "ComponentTest",
     "ModelTest",
+    "RequestTest",
+    "run_tests"
 )
 
 Timpl = TypeVar("Timpl", bound=ApiObject)

@@ -57,4 +57,4 @@ def module_dir(module: ModuleLike) -> Pathname:
     raise ValueError("Unrecognized module", module)
 
 
-__all__ = ("find_distribution", "module_dir")
+__all__ = ("module_distribution", "class_distribution", "module_dir")
