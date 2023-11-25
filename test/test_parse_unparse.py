@@ -1,19 +1,17 @@
 """Parser/Encoder Tests"""
 
-import asyncio as aio
-from contextlib import closing
-import concurrent.futures as cofutures
-import ijson  # type: ignore[import-untyped]
+from assertpy import assert_that  # type: ignore[import-untyped]
 import os
+import pandas as pd
+from pprint import pprint
 import pytest
-from typing import Union
+from typing import TYPE_CHECKING
+from typing_extensions import TypeVar
 
 from pyfx.dispatch.oanda.test import PytestTest, run_tests
 
-from pyfx.dispatch.oanda.util.paths import expand_path, Pathname
-from pyfx.dispatch.oanda.transport.data import ApiObject, ApiClass, JsonTypesRepository
-from pyfx.dispatch.oanda.io import AsyncSegmentChannel
-from pyfx.dispatch.oanda.parser import ModelBuilder
+from pyfx.dispatch.oanda.util.paths import expand_path
+from pyfx.dispatch.oanda.transport.data import ApiObject, JsonTypesRepository
 from pyfx.dispatch.oanda.models import (
     ListAccounts200Response,
     GetAccount200Response,
