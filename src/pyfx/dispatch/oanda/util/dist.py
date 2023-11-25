@@ -5,24 +5,64 @@ from importlib.util import find_spec
 from importlib.machinery import NamespaceLoader, SourceFileLoader, ExtensionFileLoader
 import os
 import sys
+from typing import Union
 
 from .paths import Pathname
 from .naming import ModuleLike, ModuleType
 
 
-def find_distribution(pkg: str) -> Distribution:
-    """Return the Distribution for a provided package name"""
+def module_distribution(module: ModuleLike) -> Distribution:
+    """Return the `importlib_metadata.Distribution` providing a module.
+
+    The `module` may be provided as a string, a module object, or generally
+    any object providing a `__name__` property denoting a module name.
+
+    Raises `importlib_metadata.PackageNotFoundError` if no distribution
+    can be located for the module.
+    """
+    name = module if isinstance(module, str) else module.__name__
     try:
-        return distribution(pkg)
+        return distribution(name)
     except PackageNotFoundError:
-        basepkg = pkg.rsplit(".", maxsplit=1)[0]
-        if basepkg == pkg:
+        basepkg = module.rsplit(".", maxsplit=1)[0]
+        if basepkg == module:
             raise
         else:
-            return find_distribution(basepkg)
+            return module_distribution(basepkg)
+
+def class_distribution(cls: type) -> Distribution:
+    """Return the `importlib_metadata.Distribution` for the
+    distribution providing a class definition.
+
+    The `cls` may be specified as any object providing a
+    `__module__` property denoting a module name string.
+
+    Raises `ValueError` if the class' module cannot be determined,
+    generally as when the class' `__module__` property holds the
+    value `None`.
+
+    Raises `importlib_metadata.PackageNotFoundError` if no distribution
+    can be located for the class' module.
+    """
+    if __debug__:
+        if not isinstance(cls, type):
+            raise AssertionError("Arg is not a class", cls)
+    m = cls.__module__
+    if m:
+        return module_distribution(m)
+    else:
+        raise ValueError("Class does not provide a __module__", cls)
 
 
 def module_dir(module: ModuleLike) -> Pathname:
+    """Return the pathname of the directory containing a module's code
+
+    Raises ValueError if the module denotes a namesapace module provided
+    from more than one directory under the Python environment.
+
+    If the module is provided as a string and the named module is not
+    present in `sys.modules`, the pathname will be determined using importlib.
+    """
     if isinstance(module, str):
         if module in sys.modules:
             return module_dir(sys.modules[module])
@@ -40,7 +80,7 @@ def module_dir(module: ModuleLike) -> Pathname:
                 else:
                     raise ValueError("Unable to locate a single path for namespace module", module,  paths)
             elif isinstance(loader, ExtensionFileLoader):
-                ## test interactively with "mypyc.ir.class_ir"
+                # test interactively with e.g "mypyc.ir.class_ir"
                 return os.path.dirname(loader.get_filename())
             else:
                 raise ValueError("Module loader not recognized", loader, spec)
