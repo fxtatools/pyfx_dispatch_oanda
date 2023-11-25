@@ -36,4 +36,15 @@ class CandlestickGranularity(ApiEnum):
     M = 'M'
 
 
-__all__ = ("CandlestickGranularity",)
+class CandlestickPeriod(ApiEnum):
+    """Pandas DatetimeIndex frequency for each CandlestickGranularity"""
+
+    __finalize__: ClassVar[Literal[True]] = True
+
+    __gen__ = (
+        (name, ("1" + name[0]) if len(name) == 1 else ((name[1:] + "Min") if name.startswith("M") else (name[1:] + name[0]),))
+        for name in CandlestickGranularity._member_map_.keys()
+        )
+
+
+__all__ = ("CandlestickGranularity", "CandlestickPeriod")
