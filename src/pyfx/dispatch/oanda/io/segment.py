@@ -6,6 +6,7 @@ from enum import IntEnum, Enum
 import os
 from queue import SimpleQueue, Empty
 import sys
+from collections.abc import Collection
 from typing import Awaitable, Generic, Iterator, Literal, Optional, Union
 from typing_extensions import Generic, TypeVar
 
@@ -39,7 +40,7 @@ class Segment(Generic[Tdata]):
     Synchronous Segment implementation
     """
 
-    __slots__ = "data", "slen", "cursor", "last", "eof"
+    __slots__ = "data", "slen", "cursor", "last", "eof", "__weakref__"
 
     data: Tdata
     """Segment Data
@@ -105,7 +106,7 @@ class SegmentChannelBase(Generic[T_seg_co, Tdata]):
     # fmt: off
     __slots__ = ("read_queue", "closed_future", "eof",
                  "empty_sequence", "line_separator",
-                 "current_segment",
+                 "current_segment", "__weakref__"
                  )
     # fmt: on
 
@@ -430,13 +431,6 @@ class AsyncSegment(Segment[Tdata]):
 class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
     """asynchronous segment channel
 
-    This class provides an asynchronous implementation for SegmentChannel I/O methods
-    - `feed()`
-    - `feed_line()`
-    - `read()`
-    - `readline()`
-    - `readuntil()`
-
     The `aclose()` method is provided as a matter of convention. This method dispatches
     to synchronous `close()`.
     """
@@ -493,17 +487,14 @@ class AsyncSegmentChannel(SegmentChannelBase[AsyncSegment[Tdata], Tdata]):
                 return None
             else:
                 try:
-                    async with aio.timeout(delay):
-                        seg = self.read_queue.get()
-                except aio.TimeoutError:
-                    pass
-                except aio.CancelledError:
-                    return None
+                    seg = self.read_queue.get(False)
+                except Empty:
+                    await aio.sleep(delay)
         self.current_segment = seg
         return seg
 
     async def feed_line(self, data: Tdata, eof: bool = False):
-        return await self.feed(data + self.line_separator, eof)  # type: ignore
+        await self.feed(data + self.line_separator, eof)  # type: ignore
 
     async def read(self, n: int = -1) -> Awaitable[Tdata]:  # type: ignore
         to_read = n if n >= 0 else ReaderConst.INF
