@@ -37,7 +37,6 @@ dependencies = [
     "isocodes",
     "numpy",
     "pandas",
-    "prompt_toolkit >= 3.0.0",
     "pydantic >2, <3",
     "python-dateutil >= 2.8.2",
     "pyyaml",
@@ -46,13 +45,33 @@ dependencies = [
     "tzdata",
     "tzlocal",
     "uvloop; platform_system != 'Windows'",
-    "ZODB >= 5.8.0",
     "zope.password",
     "persistent >= 5.0.0",
     "transaction >= 3.1.0"
 ]
 
 [project.optional-dependencies]
+## e.g "-e '.[dev,app,ta]'"
+app = [
+    # FIXME prompt_toolit is used mainly for config init in the examples,
+    # singularly under exec_controller, qtfx
+    "prompt_toolkit >= 3.0.0",
+    "ZODB >= 5.8.0"
+]
+ta = [
+   "numba"
+]
+ui = [
+   "pyqtgraph"
+]
+pyside6 = [
+   "pyfx.dispatch.oanda[ui]",
+   "pyside6"
+]
+pyqt6 = [
+   "pyfx.dispatch.oanda[ui]",
+   "pyqt6"
+]
 typing = [
     "pandas-stubs",
     "types-PyYAML",
@@ -60,9 +79,7 @@ typing = [
     "types-appdirs",
 ]
 socks = ["httpx[socks]", "socksio"]
-
 dev = [
-    "numba",
     "tox",
     "pyfx.dispatch.oanda[typing]",
     "assertpy",
