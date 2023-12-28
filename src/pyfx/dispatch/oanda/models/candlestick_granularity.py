@@ -187,6 +187,8 @@ def frequency_alias(granularity: Union[str, CandlestickGranularity],
             # not necessarily accurate for weeks having a non-trading day on Monday
             #
             return pd.offsets.Week if as_type else pd.offsets.Week(1, weekday=0)
+        elif label == "S":
+            return pd.offsets.Second if as_type else pd.offsets.Second(1)
         else:
             cls = FREQUENCY_TYPE_MAP.get(label, None)
             if cls is None:
