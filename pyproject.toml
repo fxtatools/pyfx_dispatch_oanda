@@ -62,6 +62,7 @@ typing = [
 socks = ["httpx[socks]", "socksio"]
 
 dev = [
+    "tox",
     "pyfx.dispatch.oanda[typing]",
     "assertpy",
     # attrs: a dependency for polyfactory (19.6.2)
