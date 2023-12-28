@@ -5,7 +5,7 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
-from pyfx.dispatch.oanda.test import ComponentTest
+from pyfx.dispatch.oanda.test import ComponentTest, run_tests
 
 from pyfx.dispatch.oanda.util.ndata import dataframe_from_npz
 from pyfx.dispatch.oanda.kernel.fx_const import FxLabel
@@ -69,7 +69,7 @@ class TestPriceFiler(ComponentTest):
         # the column of the corresponding price series
         #
         colname = FxLabel[summary.name].value  # e.g "o" given "OPEN"
-        filter = PriceFilter(ask, mode=summary)
+        filter = PriceFilter(mode=summary)
         prices = filter.apply(ask)
         assert_that(prices.shape).is_equal_to(ask.index.shape)
         assert_that(isinstance(prices, pd.Series)).is_true()
@@ -81,7 +81,7 @@ class TestPriceFiler(ComponentTest):
         #
         # test the median price filter
         #
-        filter = PriceFilter(ask, mode=PriceSummary.MEDIAN)
+        filter = PriceFilter(mode=PriceSummary.MEDIAN)
         prices = filter.apply(ask)
         assert_that(prices.shape).is_equal_to(ask.index.shape)
         assert_that(isinstance(prices, pd.Series)).is_true()
@@ -93,7 +93,7 @@ class TestPriceFiler(ComponentTest):
         #
         # test the typiccal price filter
         #
-        filter = PriceFilter(ask, mode=PriceSummary.TYPICAL)
+        filter = PriceFilter(mode=PriceSummary.TYPICAL)
         prices = filter.apply(ask)
         assert_that(prices.shape).is_equal_to(ask.index.shape)
         assert_that(isinstance(prices, pd.Series)).is_true()
@@ -105,7 +105,7 @@ class TestPriceFiler(ComponentTest):
         #
         # test the weighted price filter with ask.allow_duplicate_labels=True
         #
-        filter = PriceFilter(ask, mode=PriceSummary.WEIGHTED)
+        filter = PriceFilter(mode=PriceSummary.WEIGHTED)
         ask = ask.set_flags(allows_duplicate_labels=True, copy=False)
         prices = filter.apply(ask)
         assert_that(prices.shape).is_equal_to(ask.index.shape)
@@ -119,7 +119,7 @@ class TestPriceFiler(ComponentTest):
         #
         # test the weighted price filter with ask.allow_duplicate_labels=False
         #
-        filter = PriceFilter(ask, mode=PriceSummary.WEIGHTED)
+        filter = PriceFilter(mode=PriceSummary.WEIGHTED)
         ask = ask.set_flags(allows_duplicate_labels=False, copy=False)
         prices = filter.apply(ask)
         assert_that(prices.shape).is_equal_to(ask.index.shape)
@@ -128,3 +128,7 @@ class TestPriceFiler(ComponentTest):
         weighted = np.mean([ask.loc[:, FxLabel.HIGH], ask.loc[:, FxLabel.LOW], close, close], axis=0)
         assert_that((prices == weighted).all()).is_true()
         assert_that(prices.attrs).is_equal_to(ask.attrs)
+
+
+if __name__ == "__main__":
+    run_tests(__file__)
