@@ -11,7 +11,7 @@ import numpy.typing as npt
 import warnings
 
 from pyfx.dispatch.oanda.fx_const import FxLabel
-from pyfx.dispatch.oanda.indicator.common import get_annotation, get_dtype
+from pyfx.dispatch.oanda.indicator.common import get_annotation
 from pyfx.dispatch.oanda.util.typeref import TypeRef
 from pyfx.dispatch.oanda.models.get_instrument_candles200_response import CandlestickGranularity
 from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
@@ -50,7 +50,6 @@ def get_dtype(annot) -> np.dtype:
 #
 # generalized types
 #
-IndexName: TypeAlias = Union[str, int, tuple[Union[str, int], ...]]
 
 T_dt = TypeVar("T_dt", bound=npt.DTypeLike)
 T_data = TypeVar("T_data", bound=npt.ArrayLike)
