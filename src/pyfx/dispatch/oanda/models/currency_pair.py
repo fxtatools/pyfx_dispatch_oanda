@@ -4,15 +4,17 @@ from aenum import extend_enum  # type: ignore[import-untyped]
 from ..finalizable import FinalizationState
 from ..mapped_enum import MappedEnum
 
-
-from types import NotImplementedType
-from typing import Callable, Self, Union, TYPE_CHECKING
-from typing_extensions import ClassVar
+from typing import Callable, Union, TYPE_CHECKING
+from typing_extensions import ClassVar, Self, TypeAlias
 
 from .currency import Currency
 
 CURRENCY_PAIR_BASE_SHIFT: int = 16
 CURRENCY_PAIR_QUOTE_MASK: int = 0xffff
+
+
+# portable NotImplementedType
+NotImplementedType: TypeAlias = NotImplemented.__class__
 
 
 class CurrencyPair(MappedEnum):

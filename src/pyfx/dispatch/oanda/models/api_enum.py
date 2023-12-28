@@ -1,7 +1,7 @@
 """ApiEnum definition"""
 
 from ..mapped_enum import MappedEnum, MappedEnumType
-
+from typing import TYPE_CHECKING
 
 class ApiEnumType(MappedEnumType):
     def __finalize_instance__(cls):
@@ -15,13 +15,15 @@ class ApiEnumType(MappedEnumType):
 class ApiEnum(str, MappedEnum, metaclass=ApiEnumType):
     """MappedEnum class for API string constants"""
 
-    # __finalize__: ClassVar[Literal[True]] = True
+    if TYPE_CHECKING:
+        name: str
+        value: str
 
     def __bytes__(self) -> bytes:
         return self._bytes
 
     def __str__(self) -> str:
-        return self.name
+        return self.value
 
 
 __all__ = ("ApiEnumType", "ApiEnum",)

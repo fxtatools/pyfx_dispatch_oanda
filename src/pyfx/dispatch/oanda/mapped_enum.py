@@ -1,13 +1,14 @@
 """Enum classes extending aenum in application of immutables.Map"""
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 from typing_extensions import ClassVar
 from aenum import Enum, EnumType, extend_enum   # type: ignore[import-untyped]
 from immutables import Map
 from .finalizable import FinalizationState, Finalizable
 
-from typing import Any, Callable, Iterable, Self, Union
+from typing import Any, Callable, Iterable, Union
+from typing_extensions import Self
 
 
 class MappedEnumType(Finalizable, EnumType):
@@ -169,57 +170,70 @@ class MappedEnumType(Finalizable, EnumType):
         else:
             return super().__getattr__(name)
 
+    def __iter__(self) -> Iterator[Self]:
+        # the _member_names_ attr provides an index of member
+        # names in order of definition. The _member_map_ attr
+        # may represent an immutables.Map, such that may not
+        # be similarly ordered.
+        #
+        # Separately, the iterator here is not reentrant
+        members = self._member_map_
+        return (members[name] for name in self._member_names_)
+
 
 class MappedEnum(Enum, metaclass=MappedEnumType):
 
-    _member_map_: ClassVar[Union[dict[str, Self], Map[str, Self]]]
-    """Iterable mapping of enum member names to enum objects
 
-    This value should generally not be modified external to
-    the enum class definition.
+    if TYPE_CHECKING:
 
-    See also:
-    - `MappedEnumType.__members__`, as in effect a property
-        at the class scope, for MappedEnum definitions
-    - `aenum.extend_enum()` for applications in runtime
-       definition of an enum member
-    """
+        _member_map_: ClassVar[Union[dict[str, Self], Map[str, Self]]]
+        """Iterable mapping of enum member names to enum objects
 
-    __members__: ClassVar[Union[dict[str, Self], Map[str, Self]]]
-    """Iterable mapping of enum member names to enum objects
+        This value should generally not be modified external to
+        the enum class definition.
 
-    See also: `_member_map_`
-    """
+        See also:
+        - `MappedEnumType.__members__`, as in effect a property
+            at the class scope, for MappedEnum definitions
+        - `aenum.extend_enum()` for applications in runtime
+            definition of an enum member
+        """
 
-    _value2member_map_: ClassVar[Union[dict[Any, Self], Map[Any, Self]]]
-    """Iterable mapping of enum member values to enum objects
+        __members__: ClassVar[Union[dict[str, Self], Map[str, Self]]]
+        """Iterable mapping of enum member names to enum objects
 
-    In extension to `aenum.Enum._value2member_map_`: When the MappedEnum
-    is finalized, this mapping will be defined  as an `immutables.Map`
-    """
+        See also: `_member_map_`
+        """
 
-    _member_names_: ClassVar[Union[list[Any], tuple[Any, ...]]]
-    """Sequence of enum member names
+        _value2member_map_: ClassVar[Union[dict[Any, Self], Map[Any, Self]]]
+        """Iterable mapping of enum member values to enum objects
 
-    In extension to `aenum.Enum._member_names_`: When the MappedEnum is
-    finalized, this sequence will be defined as a tuple
-    """
+        In extension to `aenum.Enum._value2member_map_`: When the MappedEnum
+        is finalized, this mapping will be defined  as an `immutables.Map`
+        """
 
-    _missing_value_: ClassVar[Callable[[Any], Self]]
-    """Callable in the form of a static method, applied for enum value reference
+        _member_names_: ClassVar[Union[list[Any], tuple[Any, ...]]]
+        """Sequence of enum member names
 
-    The `_missing_value_` function is introduced in aenum, such as for
-    application when dereferncing an enum value via the constructor for
-    the defining enum class. The function will be called in the form of
-    a static method, with the provided enum value as its only arg, when
-    the provided arg was not located in the set of existing enum member
-    name..
+        In extension to `aenum.Enum._member_names_`: When the MappedEnum is
+        finalized, this sequence will be defined as a tuple
+        """
 
-    Within MappedEnum definitions, if a `_missing_value_` function is not
-    provided in the class' definition, a `_missing_vlaue_` function will
-    be defined  to dispatch to the class method `get()` for the defining
-    enum class.
-    """
+        _missing_value_: ClassVar[Callable[[Any], Self]]
+        """Callable in the form of a static method, applied for enum value reference
+
+        The `_missing_value_` function is introduced in aenum, such as for
+        application when dereferncing an enum value via the constructor for
+        the defining enum class. The function will be called in the form of
+        a static method, with the provided enum value as its only arg, when
+        the provided arg was not located in the set of existing enum member
+        name..
+
+        Within MappedEnum definitions, if a `_missing_value_` function is not
+        provided in the class' definition, a `_missing_vlaue_` function will
+        be defined  to dispatch to the class method `get()` for the defining
+        enum class.
+        """
 
     @classmethod
     def get(cls, arg):

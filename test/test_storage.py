@@ -30,7 +30,7 @@ from pyfx.dispatch.oanda.models import (
 
 pytest_plugins = ('pytest_asyncio',)
 
-EXAMPLES_DIR: Pathname = os.path.abspath(os.path.join(os.path.dirname(__file__),  "json_samples"))
+SAMPLES_DIR: Pathname = os.path.abspath(os.path.join(os.path.dirname(__file__),  "sample_data"))
 
 
 @pytest.fixture
@@ -46,18 +46,18 @@ def zodb_fs_file(tmp_path_factory) -> Path:
 
 class TestStorage(ComponentTest):
 
-    async def run_builder_async(self, cls: type[ApiObject], examples_dir: Pathname) -> ApiObject:
+    async def run_builder_async(self, cls: type[ApiObject], samples_dir: Pathname) -> ApiObject:
         JsonTypesRepository.__finalize_instance__()
 
-        example_file = expand_path(cls.__name__ + ".json", examples_dir)
+        example_file = expand_path(cls.__name__ + ".json", samples_dir)
         if not os.path.exists(example_file):
             raise ValueError("No example file found", example_file)
 
         return await cls.afrom_file(example_file)
 
     @pytest.fixture
-    def examples_dir(self) -> Pathname:
-        return EXAMPLES_DIR
+    def samples_dir(self) -> Pathname:
+        return SAMPLES_DIR
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -72,7 +72,7 @@ class TestStorage(ComponentTest):
             ListTrades200Response
         ]
     )
-    async def test_storage(self, model_cls: type[ApiObject], examples_dir: Pathname, zodb_fs_file: Path):
+    async def test_storage(self, model_cls: type[ApiObject], samples_dir: Pathname, zodb_fs_file: Path):
         fs_filename = str(zodb_fs_file)
 
         #
@@ -85,7 +85,7 @@ class TestStorage(ComponentTest):
         # parse the sample file
         #
 
-        instance = await self.run_builder_async(model_cls, examples_dir)
+        instance = await self.run_builder_async(model_cls, samples_dir)
 
         #
         # test storage, deserialization within the same db session
@@ -118,7 +118,7 @@ class TestStorage(ComponentTest):
             db_next.close()
 
         #
-        # cleanups
+        # cleanups for the testing environment
         #
 
         fs_dir = zodb_fs_file.parent

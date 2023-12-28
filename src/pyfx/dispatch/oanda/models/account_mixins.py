@@ -3,10 +3,12 @@
 from abc import ABC
 from typing import Annotated, Optional
 
+from ..transport.account_id import AccountId
+
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 
-from .common_types import AccountId, AccountUnits, FloatValue, Time
+from .common_types import AccountUnits, FloatValue, Time
 from .currency import Currency
 from .guaranteed_stop_loss_order_mode import GuaranteedStopLossOrderMode
 from .guaranteed_stop_loss_order_mutability import GuaranteedStopLossOrderMutability

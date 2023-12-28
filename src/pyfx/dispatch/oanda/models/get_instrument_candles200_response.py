@@ -2,14 +2,15 @@
 
 import numpy as np
 import pandas as pd
-from typing import Annotated
+from typing import Annotated, Union
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 
 from .candlestick import Candlestick
-from .candlestick_granularity import CandlestickGranularity, CandlestickPeriod
+from .candlestick_granularity import CandlestickGranularity, CandlestickFrequency
 from .common_types import InstrumentName, PriceValue, Time
+from ..kernel.fx_const import FxLabel, FxCol
 
 class GetInstrumentCandles200Response(ApiObject):
     """
@@ -29,18 +30,26 @@ class GetInstrumentCandles200Response(ApiObject):
     """
 
     def to_df(self) -> pd.DataFrame:
-        quotes = ("o", "h", "l", "c")
-        components = ("mid", "ask", "bid")
+
+        quotes = (FxLabel.OPEN.value, FxLabel.HIGH.value, FxLabel.LOW.value, FxLabel.CLOSE.value)
+        components = (FxLabel.MID.value, FxLabel.ASK.value, FxLabel.BID.value)
 
         candles = self.candles
         n_candles = len(candles)
-        times = np.array([pd.NaT] * n_candles, dtype=Time)
-        volume = np.array([0] * n_candles, dtype=int)
+        times = np.array([pd.NaT] * n_candles, dtype=Time, copy=False)
+        volume = np.array([0] * n_candles, dtype=np.uint32, copy=False)
 
         def mk_quote_col(name, n):
-            return (name, np.array([np.nan] * n, dtype = PriceValue))
+            # create a column-like tuple containing an array for storing input price values
+            #
+            # syntax: (<quote_component>, ndarray[double])
+            # for <quote_component> one of "o", "h", "l", "c"
+            dtype=PriceValue.storage_class
+            return (name, np.empty(n, dtype=dtype),)
 
         def mk_component_col(name, n):
+            # create a column-like tuple (<price_component>, <<quote_columns>>)
+            # for <price_component> one of "ask", "bid", "mid"
             return (name, dict(mk_quote_col(q, n) for q in quotes),)
 
         abm_map = dict(mk_component_col(component, n_candles) for component in components)
@@ -48,15 +57,13 @@ class GetInstrumentCandles200Response(ApiObject):
         for n in range(0, n_candles):
             nth = candles[n]
             nth_dct = nth.__dict__
-            # if __debug__:
-            #     print("-- DEBUG -- nth dct " + repr(nth_dct) )
             volume[n] = nth_dct['volume']
             times[n] = nth_dct['time']
             for component in components:
                 nth_component = nth_dct.get(component, None)
                 if nth_component is None:
                     if component in abm_map:
-                        ## remove the unused data arrays, assuming no later
+                        ## remove unused data arrays, assuming no later
                         ## candlestick objects will have this component
                         del abm_map[component]
                     continue
@@ -72,31 +79,45 @@ class GetInstrumentCandles200Response(ApiObject):
 
         abm_keys = tuple(abm_map.keys())
         ## reshape the abm_map price cache, for construction of
-        ## a multi-indexed data frame
-        ##
-        ## The resulting data frame will contain an "ask", "bid",
-        ## and "mid" category within the data frame's multi-index,
-        ## for each of those price components in the response quotes,
-        ## generally for each price component in the initial request.
-        ##
-        ## Each price category will present the columns, 'o', 'h',
-        ## 'l', and 'c' for each of the open, high, low, and close
-        ## quotes for that price category.
-        ##
-        ## The dataframe will also contain a column for quote volume,
-        ## labeled as 'volume' at both levels of the multi-index.
-        ##
-        ## The index will be a Pandas datetime index.
-        ##
-        ## An example dataframe can be viewed with [FIXME add example]
+        ## a data frame with multi-level columns
         ##
         df_map = {(component, q,): abm_map[component][q] for component in abm_keys for q in quotes}
-        vol_label = "volume"
-        df_map[(vol_label, vol_label,)] = volume
-        ## annotate and return the dataframe
-        df: pd.DataFrame = pd.DataFrame(df_map, index=times)
+        df_map[FxCol.VOLUME.value] = volume
+        #
+        # initialize, annotate, and return the dataframe
+        #
+        df: pd.DataFrame = pd.DataFrame(df_map, index=pd.DatetimeIndex(times, freq=None), copy=False)
+        #
+        # ensure the timestamp index is stored in a column
+        #
+        # Implementation note:
+        #
+        # to accomodate quotes from partial periods, merging should be conducted
+        # on a period index derived from the frequency and timestamps of the quotes,
+        # not on the quote timestamp index itself.
+        #
+        # Regardless, this index here would represent the actual timestamp published
+        # by the server, on each quote structure
+        #
+        timestamp_name = FxLabel.TIME.value
+        df.index.name = timestamp_name
+        freq =  CandlestickFrequency.get(self.granularity).value.freqstr
+        tz = df.index[0].tz
+
+        #
+        # The quotes request caller may add any additional metadata.
+        #
+        # The granularity/frequency and instrument name (enum) are
+        # available in this scope.
+        #
+        # The original request parameters would not be available here,
+        # but may be added during request processing
+        #
         df.attrs['instrument'] = self.instrument.name
-        df.attrs['frequency'] = CandlestickPeriod.get(self.granularity).value
+        df.attrs['frequency'] = freq
+        df.attrs["granularity"] = self.granularity.value
+        df.attrs['tz'] = tz
         return df
+
 
 __all__ = ("GetInstrumentCandles200Response",)

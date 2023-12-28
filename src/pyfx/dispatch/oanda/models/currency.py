@@ -1,11 +1,12 @@
 """Currency defininition for applications"""
 
-from currency_symbols import CurrencySymbols
+from aenum import extend_enum
+from currency_symbols import CurrencySymbols  # type: ignore[import-untyped]
 from json import JSONEncoder
 from numpy import ushort
 from immutables import Map
-from typing import Literal, Self, Union
-from typing_extensions import ClassVar
+from typing import Literal, Union
+from typing_extensions import ClassVar, Self
 import isocodes
 
 
@@ -77,13 +78,8 @@ class Currency(int, MappedEnum):
     The currency code "CNH", though commonly used in financial systems, is not recognized as a
     currency code under ISO 4217.
 
-    For purpose of consistent numerical encoding, "CNH" is represented here with the integer 1000.
-    The "CNH" currency code, as such, is inaccessible under a string-encoded three-digit code.
-
-    **Known Limitations**
-
-    There may be additional currency codes in use, outside of the range of three-characater alphabetical
-    codes under IS 4217.
+    For purpose of consistent numerical encoding, "CNH" is represented here with an integer
+    encoding of the ordinal value of characters in the string "CNH", literally the value 0x47e8
 
     **Property accessors**
 
@@ -184,20 +180,54 @@ class Currency(int, MappedEnum):
 
     @classmethod
     def get(cls, ident: Union[int, str]) -> Self:
+        # Implementation note: If ident does not denote a known currency name,
+        # then a new currency enum object will be created with a non-standard
+        # integer code derived from a bitwise shift of each byte in the byte
+        # encoding for characters in the name.
+        #
+        # While this API assumes an unsighed 32-bit numeric encoding for the
+        # integer part of a currency symbol, it is possible that the numeric
+        # encoding for a user-provided string might exceed this bitwise bound.
+        # (The bound is not checked here, but it would be trivial to implement
+        #  an assertion for this. FIXME)
+        #
+        # The market symbol "CNH" will typically have been preloaded under
+        # .currency_pair
+
         if isinstance(ident, str):
-            return cls._member_map_[ident]
+            try:
+                return cls._member_map_[ident]
+            except KeyError:
+                if cls.__finalized__:
+                    raise RuntimeError("Currency name not supported", ident)
+                else:
+                    ccode = cls.ccode(ident)
+                    return extend_enum(cls, ident, ccode)
         elif isinstance(ident, int):
             return cls._value2member_map_[ident]
         else:
             raise ValueError("Unrecognized currency identifier", ident)
 
+    @staticmethod
+    def ccode(ident: str) -> int:
+        ct = len(ident)
+        n = 0
+        for (off, c) in enumerate(ident[::-1]):
+            n |= (ord(c) << off * 4)
+        return n
 
     __gen__ = ((dct["alpha_3"], ushort(dct["numeric"]),)
                for dct in isocodes.currencies.items.copy() + [
-                   dict(alpha_3 = "CNH", numeric="1000")
+                   dict(alpha_3 = "CNH", numeric=str(ccode("CNH")))
                    ])
 
-    __finalize__: ClassVar[Literal[True]] = True
+    ## if freezing the enum, thus making the member map
+    ## an immutable map, it would not permit adding any
+    ## "new" currency symbols such that may not have
+    ## been indexed in the orignial API
+    ##
+    # __finalize__: ClassVar[Literal[True]] = True
+
 
 
 class TransportCurrencyKind(TransportEnumStrType[Currency, str]):
