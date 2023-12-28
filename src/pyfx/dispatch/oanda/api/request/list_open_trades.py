@@ -13,7 +13,7 @@ from ...request_constants import RequestMethod
 from ...transport.data import ApiClass
 from ...api.param_info import path_param
 
-from ...models.common_types import AccountId
+from ...transport.account_id import AccountId
 
 
 class ListOpenTradesRequest(ApiRestRequest[ListOpenTrades200Response, Trade]):

@@ -7,9 +7,10 @@ import pandas as pd
 from pytest import mark
 from typing import Annotated, Mapping, TYPE_CHECKING
 from assertpy import assert_that  # type: ignore[import-untyped]
-from zope.password.password import SHA1PasswordManager  # type: ignore[import-untyped]
+from zope.password.password import SHA1PasswordManager
+from pyfx.dispatch.oanda.transport.account_id import AccountId  # type: ignore[import-untyped]
 
-from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue, AccountId, TransactionId
+from pyfx.dispatch.oanda.models.common_types import AccountUnits, PriceValue, LotsValue, TransactionId
 
 from pyfx.dispatch.oanda.test import ModelTest, MockFactory, run_tests
 from pyfx.dispatch.oanda.transport.transport_fields import TransportField

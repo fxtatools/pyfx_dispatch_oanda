@@ -50,6 +50,7 @@ from ..request_constants import RequestMethod
 from ..transport.transport_base import TransportFieldInfo
 from ..transport.data import InterfaceClass, InterfaceModel, AbstractApiObject, ApiObject
 from ..transport.application_fields import ApplicationField
+from ..transport.account_id import AccountId
 
 from .param_info import ParamInfo, PathParamInfo, QueryParamInfo, path_param
 

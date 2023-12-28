@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
-from .common_types import AccountId
+from ..transport.account_id import AccountId
 
 class AccountProperties(ApiObject):
     """

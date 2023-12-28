@@ -37,33 +37,7 @@ class DoubleConstants(double, MappedEnum):
     ZERO = double(0.0)
 
 
-class AccountId(Credential, TransportSecretStr, metaclass=TransportSecretStrType):
-    """
-    Account identifier credential for the fxTrade v20 API
 
-    Transport encoding: String
-    Runtime encoding: Credential
-    """
-
-    storage_class: ClassVar[type] = Credential
-    storage_type: ClassVar[type] = Credential
-    hash_code: int
-
-    @classmethod
-    def create_deferred(cls) -> Self:
-        return cls('')
-
-    def deferred(self) -> bool:
-        return len(self._secret_value) == 0 if hasattr(self, "_secret_value") else True
-
-    def __repr__(self) -> str:
-        if self.deferred() and not self.shadowed():
-            return self.__class__.__name__ + "(<deferred>)"
-        else:
-            return super().__repr__()
-
-
-class InstrumentName(str, TransportEnum[CurrencyPair, str], metaclass=TransportEnumStrType):
     """
     Symbol name for an instrument in the fxTrade v20 API
 

@@ -4,6 +4,8 @@ from collections.abc import Iterator
 from typing import Annotated, Optional, Mapping
 from typing_extensions import ClassVar, TypeVar
 
+from ...transport.account_id import AccountId
+
 from ..request_base import ApiRestRequest
 from ...models.get_account_instruments200_response import GetAccountInstruments200Response
 from ...models.instrument import Instrument
@@ -11,7 +13,7 @@ from ...request_constants import RequestMethod
 
 from ...transport.data import ApiClass
 from ...api.param_info import path_param, query_param
-from ...models.common_types import AccountId, InstrumentName
+from ...models.common_types import InstrumentName
 from ...util.singular_map import SingularMap
 
 

@@ -10,8 +10,9 @@ import asyncio as aio
 from pyfx.dispatch.oanda.models import (  # type: ignore [attr-defined]
     ListAccounts200Response, AccountProperties,
     GetAccountInstruments200Response, Instrument,
-    GetInstrumentCandles200Response, AccountId
+    GetInstrumentCandles200Response
 )
+from pyfx.dispatch.oanda.transport.account_id import AccountId
 
 from pyfx.dispatch.oanda.models.candlestick_granularity import CandlestickGranularity
 from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair

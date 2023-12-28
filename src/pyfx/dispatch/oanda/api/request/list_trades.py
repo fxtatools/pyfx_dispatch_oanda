@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from typing import Annotated, Iterator, Mapping, Optional, Sequence
 from typing_extensions import ClassVar
 
+from ...transport.account_id import AccountId
+
 from ...util.singular_map import SingularMap
 
 from ...api.request_base import ApiLinkedRequest
@@ -13,7 +15,7 @@ from ...request_constants import RequestMethod
 from ...transport.data import ApiClass
 from ...api.param_info import path_param, query_param
 
-from ...models.common_types import AccountId, InstrumentName, TradeId
+from ...models.common_types import InstrumentName, TradeId
 from ...models.trade_state_filter import TradeStateFilter
 
 

@@ -27,7 +27,7 @@ from .transport import (  # type: ignore
     )
 from .configuration import Configuration
 from .parser import ModelBuilder
-from .models.common_types import AccountId
+from .transport.account_id import AccountId
 from .util.typeref import get_literal_value
 
 from .models import Order, Transaction, CreateOrderRequest, Time, InstrumentName, Currency, CurrencyPair

@@ -3,10 +3,12 @@
 from collections.abc import Mapping
 from typing import Annotated, Optional, Sequence
 from typing_extensions import ClassVar
+
+from ...transport.account_id import AccountId
 from ...api.param_info import path_param, query_param
 
 from ...api.request_base import ApiStreamRequest
-from ...models.common_types import AccountId, InstrumentName
+from ...models.common_types import InstrumentName
 from ...models.streaming_price_bind import StreamingPriceObject
 from ...request_constants import RequestMethod
 from ...transport.data import ApiClass

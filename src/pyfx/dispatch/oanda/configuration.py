@@ -28,7 +28,7 @@ from . import __version__
 from .credential import Credential
 from .hosts import FxHostInfo
 from .util.paths import Pathname
-from .models.common_types import AccountId
+from .transport.account_id import AccountId
 from .util import exporting
 
 

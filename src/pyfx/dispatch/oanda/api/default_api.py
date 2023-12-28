@@ -26,8 +26,9 @@ from .. import models
 
 from ..models.response_mixins import ApiErrorResponse
 
+from ..transport.account_id import AccountId
+
 from ..models import (
-    AccountId,
     InstrumentName,
     CancelOrder200Response,
     ClosePosition200Response,

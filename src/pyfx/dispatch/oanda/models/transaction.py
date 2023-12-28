@@ -5,9 +5,11 @@ from persistent import Persistent
 
 from typing import Annotated, Optional
 
+from ..transport.account_id import AccountId
+
 from ..transport import AbstractApiObject, TransportField  # type: ignore[attr-defined]
 
-from .common_types import TransactionId, AccountId, ClientRequestId, Time
+from .common_types import TransactionId, ClientRequestId, Time
 from .transaction_type import TransactionType
 
 
