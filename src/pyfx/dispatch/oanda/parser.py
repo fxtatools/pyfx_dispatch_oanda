@@ -2,27 +2,21 @@
 
 from abc import abstractmethod, ABC
 import asyncio as aio
-import concurrent.futures as cofutures
 from contextlib import closing
 import ijson  # type: ignore[import-untyped]
-import inspect
 import logging
 import os
 import sys
 import time
 
-from typing import Any, AsyncGenerator, Callable, Generic, Mapping, Optional, Self, Sequence, Union, TYPE_CHECKING
-from typing_extensions import Generic, TypeVar
+from typing import Any, Generic, Mapping, Optional, Sequence, Union, TYPE_CHECKING
+from typing_extensions import Generic, Self, TypeVar
 
 from .io import AsyncSegmentChannel, DataError
 from .transport import (   # type: ignore
     ApiObject, AbstractApiObject, InterfaceClass,
-    TransportFieldInfo, TransportType, TransportValuesType # , JsonTypesRepository
+    TransportFieldInfo, TransportType, TransportInterface, TransportValuesType
 )
-from .response_common import ResponseInfo
-from .exceptions import ApiException
-from .response_common import REST_CONTENT_TYPE
-from .exec_controller import ExecController, thread_loop
 
 
 class NoResponse(DataError):
@@ -187,6 +181,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                 assert ttyp, "Field has a null transport type"
                 return ttyp
             else:
+                raise RuntimeError("Parser transport type inferrence is not supported")
                 # Pseudocode for generalized applications onto pydantic
                 #
                 # Untested, this endeavors to provide a certain degree of
@@ -206,7 +201,7 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
                 if not annot:
                     raise ValueError("Field is not annotated", key, self.instance_class)
                 assert self.instance_class, "Null instance class"
-                ttyp = self.instance_class.get_transport_type(annot)
+                ttyp = self.instance_class.get_transport_type(annot) ## ?
                 if ttyp:
                     return ttyp
                 else:
@@ -251,90 +246,107 @@ class ModelBuilder(InstanceBuilder[Tmodel], Generic[Tmodel]):
         if builder is self:
             if __debug__:
                 model_builder_debug("ModelBuilder: event %s %s (%s)", self.key, event, self.instance_class.__name__ if self.instance_class else "<Abstract>")
-            match event:
-                case "start_map":
-                    key = self.key
-                    if key is None:
-                        ## ensure that this builder's primary instance is created
-                        ## for per-field initialization during the parse
-                        if not hasattr(self, "instance"):
-                            if __debug__:
-                                model_builder_debug("Create primary instance, %s", self.instance_class.__name__ if self.instance_class else "<Abstract>")
-                            self.instance = self.instance_prototype()
-                    else:
-                        # create a new model builder for event forwarding at start_map
-                        #
-                        # mtyp may be none when parsing a mapping under an unrealized abstract type
-                        mtyp = self.get_field_transport_type(key)
-                        proto_cls: type[ApiObject] = mtyp.storage_class if mtyp else None
-                        builder = self.__class__(proto_cls, self)
-                        self.builder = builder
-                        await builder.aevent(event, value)
-
-                case 'end_map':
-                    # Implementation Note:
-                    # Using one model builder per top-level element,
-                    # streaming or otherwise in the reader protocol
-                    if __debug__:
-                        model_builder_debug("Finalizing %r", self.instance)
-                    self.finalize_builder()
-                    if async_callback:
+            if event == "start_map":
+                key = self.key
+                if key is None:
+                    ## ensure that this builder's primary instance is created
+                    ## for per-field initialization during the parse
+                    if not hasattr(self, "instance"):
                         if __debug__:
-                            model_builder_debug("Dispatch to callback for %r", self.instance)
-                        await async_callback(self.instance)
-                    return
-                case 'map_key':
-                    self.key = value
-                case 'start_array':
-                    # create a new sequence builder for event forwarding
+                            model_builder_debug("Create primary instance, %s", self.instance_class.__name__ if self.instance_class else "<Abstract>")
+                        self.instance = self.instance_prototype()
+                else:
+                    # create a new model builder for event forwarding at start_map
                     #
-                    # this assumes that the containing field is decribed with
-                    # a values-typed field info instance, such that the internal
-                    # member class for the field is represented in the provided
-                    # field info
-                    inst_cls: Tmodel = self.instance_class
-                    ## field may be null when parsing a mapping under an unrealized abstract type
-                    field: TransportFieldInfo = inst_cls.json_fields.get(self.key, None) if inst_cls else None  # type: ignore
-                    member_transport: TransportValuesType = field.transport_type if field else None
-                    builder = SequenceBuilder(member_transport, self)
+                    # mtyp may be none when parsing a mapping under an unrealized abstract type
+                    mtyp = self.get_field_transport_type(key)
+                    proto_cls: type[ApiObject] = mtyp.storage_class if mtyp else None
+                    builder = self.__class__(proto_cls, self)
                     self.builder = builder
                     await builder.aevent(event, value)
-                case 'end_array':
-                    seq = builder.instance
-                    self.set_field(tuple(seq))
-                    self.builder = self
-                case 'string':
-                    if self.designator_key is not None and self.key == self.designator_key:
-                        self.realize_instance(value)
-                    transport = self.get_field_transport_type(self.key)  # type: ignore
-                    parsed = None
+            elif event == 'end_map':
+                # Implementation Note:
+                # Using one model builder per top-level element,
+                # streaming or otherwise in the reader protocol
+                if __debug__:
+                    model_builder_debug("Finalizing %r", self.instance)
+                self.finalize_builder()
+                if async_callback:
                     if __debug__:
-                        # the transport type may not be known when parsing a mapping
-                        # under an unrealized abstract type
-                        if transport and not isinstance(transport, type):
-                            raise AssertionError("Not a class", transport, self.key, self.instance_class, self.instance)
-                    if transport is None:
-                        # deferring deserialization
-                        parsed = value
-                    elif issubclass(transport, TransportType) or isinstance(transport, TransportType):
-                        parsed = transport.parse(value)
-                    else:
-                        raise ValueError("Not a transport type", transport)
-                        # parsed = cls(value)
-                    self.set_field(parsed)
-                case _:
-                    self.set_field(value)
+                        model_builder_debug("Dispatch to callback for %r", self.instance)
+                    await async_callback(self.instance)
+                return
+            elif event == 'map_key':
+                # try:
+                self.key = value
+                # except ValueError as exc: ## previously ...
+                #     if value == self.designator_key:
+                #         # Assumption: the next parser event should provide
+                #         # the value for the designator key
+                #         self.realize_abstract = True
+                #         self.key = value
+                #     else:
+                #         raise
+            elif event == 'start_array':
+                # create a new sequence builder for event forwarding
+                #
+                # this assumes that the containing field is decribed with
+                # a values-typed field info instance, such that the internal
+                # member class for the field is represented in the provided
+                # field info
+                inst_cls: Tmodel = self.instance_class
+                ## field may be null when parsing a mapping under an unrealized abstract type
+                field: TransportFieldInfo = inst_cls.json_fields.get(self.key, None) if inst_cls else None  # type: ignore
+                member_transport: TransportValuesType = field.transport_type if field else None
+                builder = SequenceBuilder(member_transport, self)
+                self.builder = builder
+                await builder.aevent(event, value)
+            elif event == 'end_array':
+                seq = builder.instance
+                self.set_field(tuple(seq))
+                self.builder = self
+            elif event == 'string':
+                # if self.realize_abstract:
+                #     self.realize_instance(value)
+                if self.designator_key is not None and self.key == self.designator_key:
+                    ## FIXME TEST UPDATE && remove the realize_abstract field
+                    self.realize_instance(value)
+                transport = self.get_field_transport_type(self.key)  # type: ignore
+                parsed = None
+                if __debug__:
+                    # the transport type may not be known when parsing a mapping
+                    # under an unrealized abstract type
+                    if transport and not isinstance(transport, type):
+                        raise AssertionError("Not a class", transport, self.key, self.instance_class, self.instance)
+                if transport is None:
+                    # deferring deserialization
+                    if __debug__:
+                            ## state flag for backtrace
+                        parse_deferred = True
+                    parsed = value
+                else:
+                    if __debug__:
+                        if not (issubclass(transport, TransportInterface) or isinstance(transport, TransportInterface)):
+                            raise AssertionError("Not a transport type", transport)
+                    parsed = transport.parse(value)
+                    if __debug__:
+                            ## state flag for backtrace
+                        parse_deferred = False
+                self.set_field(parsed)
+            else:
+                self.set_field(value)
         else:
             # dispatch to the forwarded builder
             await builder.aevent(event, value)
             if builder.builder is builder:
                 # process the builder for finalization
-                match event:
-                    case 'end_map' | 'end_array':
-                        if builder.finalized:
-                            self.set_field(builder.instance)
-                            del builder
-                            self.builder = self
+                if event == 'end_map' or event == 'end_array':
+                    if builder.finalized:
+                        # set the last parsed key value to the
+                        # newly initialized object
+                        self.set_field(builder.instance)
+                        del builder
+                        self.builder = self
 
     @classmethod
     async def from_text_async(cls, model_cls: type[Tmodel], data: Union[bytes, str],
@@ -390,38 +402,37 @@ class SequenceBuilder(InstanceBuilder[Sequence]):
         if builder is self:
             if __debug__:
                 model_builder_debug("SequenceBuilder.aevent %s %s (%s)", self.key, event, self.instance_class.__name__ if self.instance_class else None)
-            match event:
-                case 'start_array':
-                    self.instance = []
-                    return
-                case 'end_array':
-                    self.finalized = True
-                case 'map_key':
-                    raise ValueError("map_key not supported in SequenceBuilder", self)
-                case 'start_map':
-                    member_type_class: Optional[type[ApiObject]]
-                    if self.transport_type:
-                        member_type_class = self.transport_type.member_transport_type.storage_class
-                    else:
-                        ## parsing a mapping under an unrealized abstract type
-                        member_type_class = None
-                    builder = ModelBuilder(member_type_class, self)
-                    self.builder = builder
-                    await builder.aevent(event, value)
-                case _:
-                    parsed = None
-                    if self.transport_type:
-                        parsed = self.transport_type.parse_member(value)
-                    else:
-                        # defer deserialization when parsing under an unrealized abstract type
-                        parsed = value
-                    self.instance.append(parsed)  # type: ignore
+            if event == 'start_array':
+                self.instance = []
+                return
+            elif event == 'end_array':
+                self.finalized = True
+            elif event == 'map_key':
+                raise ValueError("map_key not supported in SequenceBuilder", self)
+            elif event == 'start_map':
+                member_type_class: Optional[type[ApiObject]]
+                if self.transport_type:
+                    member_type_class = self.transport_type.member_transport_type.storage_class
+                else:
+                    ## parsing a mapping under an unrealized abstract type
+                    member_type_class = None
+                builder = ModelBuilder(member_type_class, self)
+                self.builder = builder
+                await builder.aevent(event, value)
+            else:
+                parsed = None
+                if self.transport_type:
+                    parsed = self.transport_type.parse_member(value)
+                else:
+                    # defer deserialization when parsing under an unrealized abstract type
+                    parsed = value
+                self.instance.append(parsed)  # type: ignore
         else:
             await builder.aevent(event, value)
             if builder.builder is builder:
-                match event:
-                    case 'end_map' | 'end_array':
-                        if builder.finalized:
-                            self.instance.append(builder.instance)  # type: ignore
-                            del builder
-                            self.builder = self
+                if event == 'end_map' or event == 'end_array':
+                    if builder.finalized:
+                        # add the completed instance
+                        self.instance.append(builder.instance)  # type: ignore
+                        del builder
+                        self.builder = self
