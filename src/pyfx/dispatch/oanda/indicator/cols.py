@@ -2,7 +2,7 @@
 
 
 from pyfx.dispatch.oanda.models.get_instrument_candles200_response import CandlestickFrequency, CandlestickGranularity
-from pyfx.dispatch.oanda.kernel.fx_const import FxLabel, FxCol
+from pyfx.dispatch.oanda.fx_const import FxLabel, FxCol
 from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
 import pandas as pd
 import importlib_metadata as imd
@@ -20,7 +20,7 @@ import warnings
 
 import numba
 
-from pyfx.dispatch.oanda.kernel.indicator import PriceFilter, PriceSummary
+from pyfx.dispatch.oanda.indicator.filter import PriceFilter, PriceSummary
 
 # TBD @ defining a localized notify()
 # from zope.event import notify, classhandler

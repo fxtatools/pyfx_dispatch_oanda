@@ -3,9 +3,8 @@
 import aioconsole
 import atexit
 import asyncio as aio
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 import os
-from quattro import move_on_after
 import sys
 import traceback
 from typing_extensions import TypeAlias, Optional, Union
@@ -18,6 +17,7 @@ ConsoleStreamWriter: TypeAlias = Union[aioconsole.stream.StandardStreamWriter, a
 
 class ConsoleIO:
     '''Streams wrapper for aioconsole via console_io()'''
+
     def __init__(self, loop: aio.AbstractEventLoop,
                  reader: aio.StreamReader,
                  out_writer: aio.StreamWriter,

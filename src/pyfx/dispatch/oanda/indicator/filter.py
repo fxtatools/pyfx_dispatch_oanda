@@ -29,7 +29,7 @@ from typing import Callable, Generic, Optional, Sequence, Union
 from typing_extensions import ClassVar, Self, TypeAlias, TypeVar
 
 
-from pyfx.dispatch.oanda.kernel.fx_const import FxLabel, FxCol
+from pyfx.dispatch.oanda.fx_const import FxLabel, FxCol
 
 
 class IndicatorManager():

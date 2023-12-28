@@ -9,12 +9,12 @@ from typing import Optional
 from pyfx.dispatch.oanda.test import ComponentTest, run_tests
 
 from pyfx.dispatch.oanda.util.ndata import dataframe_from_npz
-from pyfx.dispatch.oanda.kernel.fx_const import FxLabel
+from pyfx.dispatch.oanda.fx_const import FxLabel
 
 #
 # the components to test
 #
-from pyfx.dispatch.oanda.kernel.indicator import PriceFilter, PriceSummary
+from pyfx.dispatch.oanda.indicator.filter import PriceFilter, PriceSummary
 
 
 EXAMPLES_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sample_data"))

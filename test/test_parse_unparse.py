@@ -23,7 +23,7 @@ from pyfx.dispatch.oanda.models import (
     ListTrades200Response
 )
 
-from pyfx.dispatch.oanda.kernel.fx_const import FxLabel, FxCol
+from pyfx.dispatch.oanda.fx_const import FxLabel, FxCol
 
 pytest_plugins = ('pytest_asyncio',)
 

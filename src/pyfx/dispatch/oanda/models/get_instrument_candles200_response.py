@@ -10,7 +10,7 @@ from ..transport.transport_fields import TransportField
 from .candlestick import Candlestick
 from .candlestick_granularity import CandlestickGranularity, CandlestickFrequency
 from .common_types import InstrumentName, PriceValue, Time
-from ..kernel.fx_const import FxLabel, FxCol
+from ..fx_const import FxLabel, FxCol
 
 class GetInstrumentCandles200Response(ApiObject):
     """
