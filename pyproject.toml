@@ -62,7 +62,7 @@ typing = [
 socks = ["httpx[socks]", "socksio"]
 
 dev = [
-    "numba,"
+    "numba",
     "tox",
     "pyfx.dispatch.oanda[typing]",
     "assertpy",
