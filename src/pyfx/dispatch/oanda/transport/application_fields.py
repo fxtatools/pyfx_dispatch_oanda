@@ -20,7 +20,7 @@ class ApplicationFieldInfo(FieldInfo):
         self.defining_class = cls
 
 
-def ApplicationField(default, **kw):
+def application_field(default, **kw):
     return ApplicationFieldInfo.from_field(default=default, **kw)
 
 
@@ -31,4 +31,4 @@ def ApplicationFactoryField(default_factory: Callable[[], T_co], **kw):
     return ApplicationFieldInfo.from_field(default_factory=default_factory, **kw)
 
 
-__all__ = "ApplicationFieldInfo", "ApplicationField", "ApplicationFactoryField"
+__all__ = "ApplicationFieldInfo", "application_field", "ApplicationFactoryField"

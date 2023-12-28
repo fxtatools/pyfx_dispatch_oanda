@@ -1,8 +1,8 @@
 ## SingletonClass definition
 
-from abc import ABCMeta, abstractmethod
-from typing import Any, Generic, Self
-from typing_extensions import ClassVar, TypeVar
+from abc import ABC, ABCMeta, abstractmethod
+from typing import Any, Generic
+from typing_extensions import ClassVar, Self, TypeVar
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -31,7 +31,6 @@ class SingletonClass(Generic[T_co], ABCMeta):
         """Return a value for access under the __singleton__ property of the class"""
         raise NotImplementedError(cls.initialize_singleton)
 
-    # @staticmethod
     def __new__(mcls: type[Self], name: str, bases: tuple[type, ...], attrs: dict[str, Any]) -> Self:
         """Ensure annotations for singleton class variables in the new SingletonClass
 
@@ -42,6 +41,7 @@ class SingletonClass(Generic[T_co], ABCMeta):
         to the new class.
         """
         new_cls = super().__new__(mcls, name, bases, attrs)
+
         annot = new_cls.__annotations__
         if "__singleton__" not in annot:
             annot["__singleton__"] = ClassVar[new_cls]

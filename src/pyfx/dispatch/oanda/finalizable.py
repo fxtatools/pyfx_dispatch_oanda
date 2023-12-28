@@ -3,8 +3,8 @@
 from abc import ABC, ABCMeta
 from contextlib import contextmanager
 from enum import Enum
-from typing import Any, Self
-
+from typing import Any
+from typing_extensions import Self
 
 class FinalizationState(Enum):
     NONE = "NONE"

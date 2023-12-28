@@ -16,14 +16,15 @@ from pydantic.fields import PydanticUndefined
 from pydantic._internal._model_construction import ModelMetaclass
 from reprlib import repr
 import sys
-from types import new_class, NoneType
-from typing import Any, Generic, Iterable, Iterator, Optional, TypeAlias, Union, TYPE_CHECKING
+from types import new_class
+from typing import Any, Generic, Iterable, Iterator, Optional, Union, TYPE_CHECKING
 from typing_extensions import ClassVar, Self, TypeVar, TypeAlias, Union, get_origin, get_type_hints
 
 from ..finalizable import Finalizable, FinalizableClass
 from ..util.cofuture import CoFuture
 from ..util.paths import Pathname
-from ..util.typeref import get_type_class, get_literal_value, resolve_forward_reference
+from ..util.sequence_like import is_sequence_or_set_type
+from ..util.typeref import get_type_class, get_literal_value, resolve_forward_reference, TypeRef
 from ..util.naming import exporting
 from .transport_common import IntermediateObject
 
@@ -39,8 +40,8 @@ from .application_fields import ApplicationFieldInfo
 from .repository import TransportBaseRepository
 from .encoder_constants import EncoderConstants
 
-if TYPE_CHECKING:
-    from ..exec_controller import ExecController, thread_loop
+from ..exec_controller import thread_loop, ExecController
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class TransportModelRepository(TransportBaseRepository):
         singleton = super().initialize_singleton()
         singleton.bind_types({
             bool: TransportBoolType,
-            NoneType: TransportNoneType,
+            None.__class__: TransportNoneType,
             str: TransportStrType,
             int: TransportIntType,
             float: TransportFloatStrType,
@@ -83,7 +84,7 @@ class TransportModelRepository(TransportBaseRepository):
         self.direct_types_map[value_type] = typ  # type: ignore[index]
         return typ
 
-    def get_transport_type(self, value_type: type | TypeAlias,
+    def get_transport_type(self, value_type: Union[type, TypeRef],
                            storage_class: Optional[type] = None) -> TransportType:
         storage_cls = storage_class or get_type_class(value_type)
         found = self.find_transport_type(value_type, storage_cls)
@@ -93,7 +94,7 @@ class TransportModelRepository(TransportBaseRepository):
             raise RuntimeError("Finalizble instance has no __finalized__ property", isinstance(self, Finalizable), get_type_hints(self.__class__))
         elif self.__finalized__:
             raise ValueError("Repository is finalized", self)
-        elif issubclass(storage_cls, ApiObject):
+        elif get_origin(storage_cls) is not object and not is_sequence_or_set_type(get_origin(storage_cls)) and issubclass(storage_cls, ApiObject):
             # Create a new transport type for the ApiObject class
             new_type = self.make_object_transport_type(storage_cls)
             # register and return the new transport type
@@ -222,7 +223,7 @@ class InterfaceClass(ModelMetaclass, FinalizableClass, ABC):
                 # assumption: the new_cls may represent a generalized type
                 pass
 
-    def get_transport_type(self, value_type: Union[type, TypeAlias]) -> TransportType:
+    def get_transport_type(self, value_type: Union[type, TypeRef]) -> TransportType:
         """Forward a transport type query to the types repository of the class `self`
 
         Raises AttributeError if the class does not provide a `types_repository` attribtue value"""
@@ -304,7 +305,6 @@ class ApiClass(InterfaceClass, ABC):
     api_transport_fields: frozenset[str]  # ApiClass conly
     """This field is Documented as a class variable in ApiObject"""
 
-    # @staticmethod
     def __new__(mcls, cls_name: str, bases: tuple[type, ...], namespace: dict[str, Any]):
 
         if "api_transport_fields" not in namespace:
@@ -750,7 +750,8 @@ class InterfaceModel(BaseModel, ABC, metaclass=InterfaceClass):
 
     def __repr__(self, cache: Optional[list] = None):
         # fmt: off
-        return self.__class__.__qualname__ + "(" + ", ".join({field + "=" + repr(getattr(self, field)) for field in self.model_fields_set}) + ")"
+        dct = self.__dict__
+        return self.__class__.__qualname__ + "(" + ", ".join({field + "=" + repr(dct.get(field,  "<Unbound>")) for field in self.model_fields_set}) + ")"
         # fmt: on
 
     def __str__(self):

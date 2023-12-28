@@ -1,14 +1,32 @@
 ## dist.py
 
-from importlib_metadata import distribution, Distribution, PackageNotFoundError
+from importlib_metadata import distribution, distributions, Distribution, PackageNotFoundError
 from importlib.util import find_spec
-from importlib.machinery import NamespaceLoader, SourceFileLoader, ExtensionFileLoader
+import importlib.machinery as im
+from immutables import Map
 import os
+import re
 import sys
 from typing import Union
 
 from .paths import Pathname
 from .naming import ModuleLike, ModuleType
+
+
+def distribution_match(expr: Union[re.Pattern, str],
+                       ignore_case: bool = True
+                       ) -> Map[str, Distribution]:
+    all_dist = {d.metadata['Name']: d for d in distributions()}
+
+    flags = re.IGNORECASE if ignore_case else None
+    pattern = re.compile(expr, flags)
+
+    def match(name: str):
+        nonlocal pattern
+        return re.match(pattern, name)
+
+    match_names = filter(match, all_dist.keys())
+    return {name: all_dist[name] for name in match_names}
 
 
 def module_distribution(module: ModuleLike) -> Distribution:
@@ -71,15 +89,16 @@ def module_dir(module: ModuleLike) -> Pathname:
             if not spec:
                 raise ValueError("Module not found", module)
             loader = spec.loader
-            if isinstance(loader, SourceFileLoader):
+            if isinstance(loader, im.SourceFileLoader):
                 return os.path.dirname(loader.path)
-            elif isinstance(loader, NamespaceLoader) and hasattr(loader, "_path"):
+            elif hasattr(im, "NamespaceLoader") and isinstance(loader, im.NamespaceLoader) and hasattr(loader, "_path"):
+                # Python 3.11+
                 paths = loader._path
                 if len(paths) is int(1):
                     return paths[0]
                 else:
                     raise ValueError("Unable to locate a single path for namespace module", module,  paths)
-            elif isinstance(loader, ExtensionFileLoader):
+            elif isinstance(loader, im.ExtensionFileLoader):
                 # test interactively with e.g "mypyc.ir.class_ir"
                 return os.path.dirname(loader.get_filename())
             else:
@@ -97,4 +116,4 @@ def module_dir(module: ModuleLike) -> Pathname:
     raise ValueError("Unrecognized module", module)
 
 
-__all__ = ("module_distribution", "class_distribution", "module_dir")
+__all__ = "distribution_match", "module_distribution", "class_distribution", "module_dir"

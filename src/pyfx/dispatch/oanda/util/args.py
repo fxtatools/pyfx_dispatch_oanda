@@ -3,7 +3,8 @@
 import argparse as ap
 import re
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, TypeAlias
+from typing import Any, Callable, Iterator
+from typing_extensions import TypeAlias
 
 
 OptionsFunc: TypeAlias = Callable[[ap.Namespace], Any]

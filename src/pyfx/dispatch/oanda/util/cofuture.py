@@ -3,12 +3,12 @@
 import asyncio as aio
 import concurrent.futures as cofutures
 from contextlib import suppress
-import exceptiongroup
+from exceptiongroup import ExceptionGroup
 import sys
 import threading
 import time
-from typing import Any, Awaitable, Callable, Generator, Mapping, Optional, Generic, Self, Union, TYPE_CHECKING
-from typing_extensions import TypeAlias, TypeVar
+from typing import Any, Awaitable, Callable, Generator, Mapping, Optional, Generic, Union, TYPE_CHECKING
+from typing_extensions import Self, TypeAlias, TypeVar
 
 from .aio import safe_running_loop
 
@@ -41,7 +41,7 @@ class CoFuture(cofutures.Future[T], Generic[T]):
                              self, result_value, result_callback)
             # fmt: on
         super().__init__()
-        self.name = name or self.__class__.__name__ + "_" + str(id(self))
+        self.name = name or self.__class__.__name__ + "_" + hex(id(self))
         switch = sys.getswitchinterval()
         self.timeout = timeout or switch
         self.interval = interval or switch
@@ -57,10 +57,9 @@ class CoFuture(cofutures.Future[T], Generic[T]):
         timeout = self.timeout
         interval = self.interval
         while True:
-            try:
+            with suppress(cofutures.TimeoutError):
                 return self.result(timeout=timeout)
-            except TimeoutError:
-                await aio.sleep(interval)
+            await aio.sleep(interval)
 
     def poll(self) -> T:
         timeout = self.timeout
@@ -103,7 +102,8 @@ class CoFuture(cofutures.Future[T], Generic[T]):
             self._repr_state(), id(self),
         )
 
-    def __await__(self) -> Generator[Any, None, T]:
+    def __await__(self) -> Generator[Any, None, Awaitable[T]]:
+        ## Known limitation: cancellation in the __await__ call will not cancel the concurrent future
         return self.apoll().__await__()
 
     def __enter__(self) -> Self:
@@ -111,13 +111,19 @@ class CoFuture(cofutures.Future[T], Generic[T]):
 
     def __exit__(self, exc_type, exc, tb):
         if exc or exc_type:
-            with suppress(cofutures.InvalidStateError):
+            with suppress(cofutures.InvalidStateError, cofutures.CancelledError):
                 self.set_exception(exc or exc_type)
         elif self.done():
             return
         else:
             cb = self.result_callback
-            self.set_result(cb(self) if cb else self.result_value)
+            try:
+                cf_value = cb(self) if cb else self.result_value
+                self.set_result(cf_value)
+            except Exception as exc:
+                # try to catch any exception from a value callback
+                with suppress(cofutures.InvalidStateError, cofutures.CancelledError):
+                    self.set_exception(exc)
 
     async def __aenter__(self) -> Awaitable[Self]:
         return self

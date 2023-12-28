@@ -10,21 +10,19 @@ from enum import Enum
 from json import JSONEncoder
 import logging
 from numbers import Real
-from types import NoneType
-from typing import Any, Generic, Optional, Self, Union
-from typing_extensions import ClassVar, TypeAlias, TypeVar, get_args, get_origin, get_original_bases
+from typing import Any, Generic, Optional, Union
+from typing_extensions import ClassVar, TypeAlias, Self, TypeVar, get_args, get_origin, get_original_bases
 import numpy as np
 import pandas as pd
 from urllib.parse import quote_from_bytes
 
 from pydantic import SecretStr
 
-from ..util.typeref import get_type_class
+from ..util.typeref import get_type_class, TypeRef
 from ..util.naming import exporting
 
 from .encoder_constants import EncoderConstants
 
-TypeDesignator: TypeAlias = Union[type, TypeAlias]
 
 Ti = TypeVar("Ti")
 To = TypeVar("To")
@@ -34,7 +32,7 @@ InitArg = TypeVar("InitArg")
 logger = logging.getLogger(__name__)
 
 
-def get_sequence_member_class(spec: TypeAlias) -> type:
+def get_sequence_member_class(spec: TypeRef) -> type:
     """Utility function for initialization of values transport types
 
     Provided with a type specifier `spec`, generally as a type alias
@@ -48,7 +46,7 @@ def get_sequence_member_class(spec: TypeAlias) -> type:
     if origin == Union:
         ## parse a stored type alias from an Optional[concrete_type] declaration
         args = get_args(spec)
-        if args and len(args) is int(2) and args[-1] == NoneType:
+        if args and len(args) is int(2) and args[-1] == None.__class__:
             return get_sequence_member_class(args[0])
         else:
             ## too many type names in the Union type
@@ -62,9 +60,45 @@ def get_sequence_member_class(spec: TypeAlias) -> type:
         raise ValueError("Unable to determine a concrete member class for sequence type declaration", spec)
 
 
-class TransportInterface(Generic[Ti, To]):
 
-    storage_type: ClassVar[TypeDesignator]
+class TransportInterfaceClass(ABCMeta):
+    def __subclasscheck__(cls, test_cls: type) -> bool:
+        """Abstract subclass check for TransportType type instance scope
+
+        subcls: A class to test for subclass relation to this TransportType class
+
+        Returns true if the TypeClass `cls` is in the MRO for `test_cls`
+        """
+        return cls in test_cls.__mro__
+    def __instancecheck__(cls, instance: Any) -> bool:
+        """Abstract instance check for TransportType type instance scope
+
+        instance: An object to test for instance relation to this
+        TransportType class
+
+        Returns true if TransportType class `cls` is present in the MRO for
+        the instance's class, or if `cls` has a defined `storage_class`
+        attribute and that `storage_class` is present in the MRO for the
+        instance's class.
+        """
+        if instance == "cls":
+            return False
+        if isinstance(instance, type):
+            return cls in instance.__mro__
+        imro = instance.__class__.__mro__
+        if cls in imro:
+            return True
+        elif hasattr(cls, "storage_class") and cls.storage_class in imro:
+            return True
+        else:
+            styp = cls.storage_type if hasattr(cls, "storage_type")  else None
+            if styp and isinstance(styp, cls):
+                return styp in imro
+
+
+class TransportInterface(Generic[Ti, To], metaclass=TransportInterfaceClass):
+
+    storage_type: ClassVar[TypeRef]
     """Effective storage type for values of this transport type"""
 
     storage_class: ClassVar[type]
@@ -76,7 +110,7 @@ class TransportInterface(Generic[Ti, To]):
     intermediate transport value received by `parse()
     """
 
-    serialization_type: ClassVar[TypeDesignator]
+    serialization_type: ClassVar[TypeRef]
     """Intermediate serialization type for protocol data encoding
 
     For a transport type serialized to JSON, this type would typically
@@ -181,6 +215,26 @@ class TransportInterface(Generic[Ti, To]):
         if ABC in cls.__bases__:
             return
         attrs = cls.__dict__
+        if hasattr(cls, "storage_class"):
+            scls = cls.storage_class
+            if scls is Self:
+                cls.storage_class = cls
+        else:
+            for b in cls.__bases__:
+                if hasattr(b, "storage_class"):
+                    cls.storage_class = b.storage_class
+                    break
+        if hasattr(cls, "storage_type"):
+            styp = cls.storage_type
+            if styp is Self:
+                cls.storage_type = cls
+        else:
+            for b in cls.__bases__:
+                if hasattr(b, "storage_type"):
+                    cls.storage_type = b.storage_type
+                    break
+
+
         ## if the class definition does not already provide type/class information
         ## for storage values and/or transport (serialization) values, derive the
         ## transport storage and serialization classes for the class, based on args
@@ -216,7 +270,7 @@ class TransportObject(TransportInterface[Ti, To]):
 T_co = TypeVar("T_co", covariant=True)
 
 
-class TransportTypeClass(ABCMeta, type[T_co]):
+class TransportTypeClass(TransportInterfaceClass, ABCMeta, type[T_co]):
 
     def __subclasscheck__(cls, test_cls: type) -> bool:
         """support for `__subclasscheck__` at the TransportType type instance scope
@@ -235,38 +289,7 @@ class TransportTypeClass(ABCMeta, type[T_co]):
 
 class TransportType(type, TransportInterface[Ti, To], metaclass=TransportTypeClass):
     # base class for TransportInterface classes defininig a type class
-
-    def __subclasscheck__(cls, test_cls: type) -> bool:
-        """Abstract subclass check for TransportType type instance scope
-
-        subcls: A class to test for subclass relation to this TransportType class
-
-        Returns true if the TypeClass `cls` is in the MRO for `test_cls`
-        """
-        return cls in test_cls.__mro__
-
-    def __instancecheck__(cls, instance: Any) -> bool:
-        """Abstract instance check for TransportType type instance scope
-
-        instance: An object to test for instance relation to this
-        TransportType class
-
-        Returns true if TransportType class `cls` is present in the MRO for
-        the instance's class, or if `cls` has a defined `storage_class`
-        attribute and that `storage_class` is present in the MRO for the
-        instance's class.
-        """
-        ## test case:
-        # import numpy as np
-        # import pyfx.dispatch.oanda as dispatch
-        # dispatch.PriceValue.__instancecheck__(np.double(1.5))
-        ## => True
-        ## i.e
-        # isinstance(np.double(1.5), dispatch.PriceValue)
-        ## => True
-        imro = instance.__class__.__mro__
-        return cls in imro or (hasattr(cls, "storage_class") and cls.storage_class in imro)
-
+    pass
 
 class TransportFieldInfo(ApplicationFieldInfo, Generic[Ti, To]):
     '''FieldInfo base class for transport fields'''
@@ -278,7 +301,7 @@ class TransportFieldInfo(ApplicationFieldInfo, Generic[Ti, To]):
     ])
 
     transport_type: TransportType[Ti, To]
-    value_type: Union[type, TypeAlias]
+    value_type: Union[type, TypeRef]
     json_name: str
     json_name_bytes: bytes
     storage_class: type
@@ -441,11 +464,13 @@ class TransportNone(TransportType[None, None]):
         return b'null'
 
 
-class TransportNoneType(TransportNone, TransportType[NoneType, NoneType]):
+class TransportNoneType(TransportNone, TransportType[None.__class__, None.__class__]):
     pass
 
 
 class TransportBool(TransportInterface[bool, bool]):
+    storage_class: ClassVar[type[bool]] = bool
+
     @classmethod
     def parse(cls, value: Union[bool, str]) -> bool:
         # during processing for an abstract API model type,
@@ -505,6 +530,7 @@ class TransportFloatStrType(TransportFloatStr, TransportType[np.double, str]):
 
 
 class TransportInt(TransportInterface[int, int]):
+    storage_class: ClassVar[type[int]] = int
     @classmethod
     def unparse_py(cls, value: int,
                    encoder: Optional[JSONEncoder] = None) -> int:
@@ -532,6 +558,8 @@ class TransportIntType(TransportInt, TransportType[int, int]):
 
 
 class TransportStr(TransportInterface[str, str]):
+    storage_class: ClassVar[type[str]] = str
+
     @classmethod
     def unparse_py(cls, value: str,
                    encoder: Optional[JSONEncoder] = None) -> str:
@@ -547,14 +575,16 @@ class TransportStr(TransportInterface[str, str]):
 
     @classmethod
     def unparse_bytes(cls, value: str) -> bytes:
-        if value or isinstance(value, str):
+        if isinstance(value, str):
             ## ensuring encode for value == ""
             ## given that "" is processed as a false-like value in Python
             return b'"' + value.encode() + b'"'
-        else:
-            ## In data fetched from the a v20 demo server, str typed fields
-            ## may sometimes be provided with a null value
+        elif value is None:
+            ## In data from a v20 demo server, str typed fields
+            ## may sometimes be provided with a JSON null value
             return EncoderConstants.NULL
+        else:
+            raise ValueError("Not a string", value)
 
     @classmethod
     def unparse_url_bytes(cls, value: str) -> bytes:
@@ -605,16 +635,18 @@ class TransportSecretStrType(TransportSecretStr, TransportType[SecretStr, str]):
 
 
 class TransportIntStr(TransportStr, TransportInterface[int, str]):
+    storage_class: ClassVar[type[int]] = int
+
     ## the server may encode some integer identifiers as string values
     ## e.g TradeID
     @classmethod
     def unparse_py(cls, value: int,
                    encoder: Optional[JSONEncoder] = None) -> str:
-        return str(value)
+        return cls.serialization_class(value)
 
     @classmethod
     def parse(cls, value: str) -> int:
-        return int(value)
+        return cls.storage_class(value)
 
     @classmethod
     def unparse_bytes(cls, value: str) -> bytes:
@@ -637,7 +669,8 @@ class TransportIntStrType(TransportIntStr[int, str], TransportType[int, str]):
     pass
 
 
-NullableTimesamp: TypeAlias = Union[datetime, pd.NaT]
+NullableTimesamp: TypeAlias = Union[datetime, pd.NaT.__class__]
+
 
 class TransportTimestamp(TransportInterface[datetime, str]):
     """Nullable datetime transport type
@@ -657,7 +690,7 @@ class TransportTimestamp(TransportInterface[datetime, str]):
     ##   (e.g using epoch coding) then unparsed from the erroneous timetamp
     ##   (ca. 1970)
 
-    storage_class = datetime
+    storage_class: ClassVar[type[datetime]] = pd.Timestamp
 
     @classmethod
     def parse(cls, dt: Union[str, NullableTimesamp]) -> NullableTimesamp:
@@ -741,6 +774,7 @@ Tenum = TypeVar("Tenum", bound=MappedEnum)
 
 
 class TransportEnum(TransportInterface[Tenum, To]):
+    storage_class: ClassVar[type[Tenum]] = Enum
 
     @classmethod
     def check_type(cls, value) -> bool:

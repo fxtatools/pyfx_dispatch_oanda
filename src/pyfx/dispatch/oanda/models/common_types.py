@@ -3,8 +3,9 @@
 from datetime import datetime
 from json import JSONEncoder
 from numpy import double
-from typing import Literal, Optional, Self, Union, TYPE_CHECKING
-from typing_extensions import ClassVar
+import pandas as pd
+from typing import Any, Literal, Optional, Union, TYPE_CHECKING
+from typing_extensions import ClassVar, Self
 
 from ..util.naming import exporting
 from ..mapped_enum import MappedEnum
@@ -14,10 +15,9 @@ from ..transport.transport_base import (
     TransportIntStr, TransportIntStrType,
     TransportEnum, TransportEnumStrType,
     TransportStr, TransportStrType,
-    TransportSecretStr, TransportSecretStrType,
-    TransportTimestamp, TransportTimestampType
+    TransportTimestamp, TransportTimestampType,
+    TransportInterfaceClass
 )
-from ..credential import Credential
 from .currency_pair import CurrencyPair
 
 
@@ -38,6 +38,7 @@ class DoubleConstants(double, MappedEnum):
 
 
 
+class InstrumentName(str, TransportEnum[CurrencyPair, str]):
     """
     Symbol name for an instrument in the fxTrade v20 API
 
@@ -111,7 +112,7 @@ class DoubleConstants(double, MappedEnum):
         return cls.unparse_py(value)
 
 
-class ClientRequestId(str, TransportStr, metaclass=TransportStrType):
+class ClientRequestId(str, TransportStr):
     """
     Request identifier provided by the client
 
@@ -120,7 +121,7 @@ class ClientRequestId(str, TransportStr, metaclass=TransportStrType):
     """
 
 
-class ClientId(str, TransportStr, metaclass=TransportStrType):
+class ClientId(str, TransportStr):
     """
     Client-provided identifier, generally used by
     third party trade platforms in relation to an
@@ -131,7 +132,7 @@ class ClientId(str, TransportStr, metaclass=TransportStrType):
     """
 
 
-class AccountUnits(double, TransportFloatStr, metaclass=TransportFloatStrType):
+class AccountUnits(TransportFloatStr):
     """
     a numeric value representing a quantity of an
     Account's home currency.
@@ -139,12 +140,14 @@ class AccountUnits(double, TransportFloatStr, metaclass=TransportFloatStrType):
     Transport encoding: String-encoded Decimal
     Runtime encoding: numpy.double
     """
+    storage_class: ClassVar[type[float]] = double
+
     @classmethod
     def get_display_string(cls, value: double) -> str:
         return "{0:.2f}".format(value)
 
 
-class FloatValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
+class FloatValue(TransportFloatStr):
     """
     an unscoped decimal measure
 
@@ -153,7 +156,7 @@ class FloatValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
     """
 
 
-class PriceValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
+class PriceValue(TransportFloatStr):
     """
     a numeric value representing a unit of price within
     the scope of a defining trade instrument.
@@ -162,9 +165,10 @@ class PriceValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
     Runtime encoding: numpy.double
     Interface type: float
     """
+    storage_class: ClassVar[type[float]] = double
 
 
-class LotsValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
+class LotsValue(TransportFloatStr):
     """
     a numeric value representing a quanity of trade units
 
@@ -174,9 +178,10 @@ class LotsValue(double, TransportFloatStr, metaclass=TransportFloatStrType):
     Transport encoding: String-encoded Decimal
     Runtime encoding: numpy.double
     """
+    storage_class: ClassVar[type[float]] = double
 
 
-class TradeId(int, TransportIntStr, metaclass=TransportIntStrType):
+class TradeId(int, TransportIntStr):
     """
     Trade identifier for the fxTrade v20 API
 
@@ -185,7 +190,7 @@ class TradeId(int, TransportIntStr, metaclass=TransportIntStrType):
     """
 
 
-class TransactionId(int, TransportIntStr, metaclass=TransportIntStrType):
+class TransactionId(int, TransportIntStr):
     """
     Transaction identifier for the fxTrade v20 API
 
@@ -195,7 +200,7 @@ class TransactionId(int, TransportIntStr, metaclass=TransportIntStrType):
     pass
 
 
-class OrderId(int, TransportIntStr, metaclass=TransportIntStrType):
+class OrderId(int, TransportIntStr):
     """
     Order identifier
 
@@ -205,7 +210,14 @@ class OrderId(int, TransportIntStr, metaclass=TransportIntStrType):
     pass
 
 
-class Time(datetime, TransportTimestamp, metaclass=TransportTimestampType):
+class NullableTimeInterface(TransportInterfaceClass):
+    def __instancecheck__(cls, instance) -> bool:
+        if instance is pd.NaT:
+            return True
+        else:
+            return super().__instancecheck__(instance)
+
+class Time(datetime, TransportTimestamp, metaclass=NullableTimeInterface):
     """Timestamp transport type
 
     Typical Time values in fxapi will be encoded as pd.Timestamp.
@@ -215,5 +227,7 @@ class Time(datetime, TransportTimestamp, metaclass=TransportTimestampType):
     Runtime encoding: pd.Timestamp
     Interface type: datetime
     """
+    storage_class: ClassVar[type[datetime]] = pd.Timestamp
+    storage_type: ClassVar[type[datetime]] = datetime
 
 __all__ = tuple(frozenset(exporting(__name__, ...)) | {"DoubleConstants"})

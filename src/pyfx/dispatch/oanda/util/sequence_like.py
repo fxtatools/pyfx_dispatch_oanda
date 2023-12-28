@@ -1,30 +1,20 @@
-"""Sequence-like protocol classes"""
+"""Sequence type utilities"""
 
-from abc import abstractmethod
-from typing import Iterable, Protocol, Union, runtime_checkable
-from typing_extensions import TypeAlias, TypeVar
+from typing import Sequence
+from typing_extensions import get_origin
 
+def is_sequence_or_set_type(expr) -> bool:
+    if isinstance(expr, type):
+        # in Python releases previous to 3.11, the expression
+        # `list[str]` is interpreted as a type. The get_origin()
+        # call may serve to determine whether the type is a
+        # type alias in this case.
+        origin = get_origin(expr)
+        if origin is None:
+            return issubclass(expr, Sequence) or issubclass(expr, set)
+        else:
+            return is_sequence_or_set_type(origin)
+    else:
+        return False
 
-T_co = TypeVar("T_co", covariant=True)
-
-StdSequenceLike: TypeAlias = Union[list, tuple, set]
-"""Type alias for indexed and non-indexed sequence-like types in stdlib"""
-
-
-@runtime_checkable
-class SequenceLike(Iterable[T_co], Protocol):
-    """Protocol class for iterable sequence-like types providing a `__len__` implementation"""
-    @abstractmethod
-    def __len__(self) -> int:
-        raise NotImplementedError(self.__len__)
-
-
-@runtime_checkable
-class IndexedSequenceLike(SequenceLike, Protocol):
-    """Protocol class for SequenceLike types providing a `__getitem__` implementation"""
-    @abstractmethod
-    def __getitem__(self, key) -> T_co:
-        raise NotImplementedError(self.__getitem__)
-
-
-__all__ = "StdSequenceLike",  "SequenceLike", "IndexedSequenceLike"
+__all__ = ("is_sequence_or_set_type",)
