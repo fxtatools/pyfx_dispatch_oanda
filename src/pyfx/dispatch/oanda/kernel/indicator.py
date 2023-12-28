@@ -16,7 +16,9 @@ from dataclasses import dataclass, field
 
 from numbers import Real
 
+import numba as nb
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 import warnings
@@ -237,12 +239,11 @@ class Smoothed(SeriesFilter):
     Reference:
 
     Ehlers, John F. (2013). The Hilbert Transformer. In Cycle Analytics for Traders:
-        Advanced Technical Trading Concepts (pp. 175–194). Wiley    
+        Advanced Technical Trading Concepts (pp. 175–194). Wiley
     """
 
-    window_size: ClassVar[np.int8] = np.int8(2)
-    min_periods: ClassVar[np.int8] = np.int8(2)
-    # min_periods: ClassVar[np.int8] = np.int8(1)
+    window_size: ClassVar[np.int8] = nb.uchar(2)
+    min_periods: ClassVar[np.int8] = nb.uchar(0)
 
     type_label: ClassVar[str] = "Smoothed"
     label: str = type_label
@@ -297,10 +298,10 @@ class Smoothed(SeriesFilter):
         # assuming a constant indicator period
         #
         a1 = np.exp(-SmoothedConst.SQRT_2 * SmoothedConst.PI / p)
-        b1 = 2 * a1 * np.cos(SmoothedConst.SQRT_2 * SmoothedConst.PI_HALF / p)
+        b1 = np.double(2) * a1 * np.cos(SmoothedConst.SQRT_2 * SmoothedConst.PI_HALF / p)
         c2 = b1
         c3 = -(a1 * a1)
-        c1 = 1 - c2 - c3
+        c1 = np.double(1) - c2 - c3
         set("c1", c1)
         set("c2", c2)
         set("c3", c3)
@@ -312,73 +313,39 @@ class Smoothed(SeriesFilter):
         self.set_factors(period)
 
     def apply(self, ser: pd.Series) -> pd.Series:
-        c1 = self.c1
-        c2 = self.c2
-        c3 = self.c3
-        nan = np.nan
+        c1: np.double = self.c1
+        c2: np.double = self.c2
+        c3: np.double = self.c3
 
-        o_0_pre = nan  # ser.iloc[0:2].mean()
-        o_1_pre = nan  # o_0_pre
+        #
+        # initialize the intermediate values buffer
+        #
+        prebuf: npt.NDArray[np.double] = np.empty(2, dtype=np.double)
+        pre_0 = ser.iloc[0]
+        pre_1 = ser.iloc[0:1].mean()
+        prebuf[0] = pre_0
+        prebuf[1] = pre_1
 
-        n = 0
-
-        def calc(nan, c1, c2, c3, vals: np.ndarray[2, 1]):
-            # FIXME implement the two-point output caching
-            # with an ndarray (2,)
-            nonlocal o_0_pre, o_1_pre
-
-            nonlocal n
-
-            # if (n < 5):
-            #     print(vals)
-            #     n += 1
+        @nb.jit(nopython=True, nogil=True)
+        def calc(vals: nb.float64[:, :],
+                 c1: nb.float64, c2: nb.float64, c3: nb.float64,
+                 prebuf: nb.float64[:]) -> nb.double:
+            #
+            # primary Super Smoother calculation
+            #
+            pre_0 = prebuf[0]
+            pre_1 = prebuf[1]
             m = vals.mean()
-            if o_1_pre is nan:
-                # return m ## then it only produces an intermediate mean ..
-                # s = m
-                # ret = m
-                ## ^^ then it's lagged a.f in this implementation
+            smoothed = (c1 * m) + (c2 * pre_1) + (c3 * pre_0)
+            prebuf[1] = smoothed
+            prebuf[0] = pre_1
+            return smoothed
 
-                #
-                # earlier tests
-                #
-
-                if o_0_pre is nan:
-                    # return vals[0]
-                    # return m
-
-                    s = c1 * m + c2 * m + c3 * m
-                    # s= c1 * m + c2 * m # not this
-                    # s = c1 * m # not this, if without trimming initial values
-                    # ret = s
-
-                    # s = m
-                    ret = m
-                else:
-                    # return vals[0]
-                    # return m
-                    # s= c1 * m + c2 * o_0_pre + c3 * o_0_pre
-                    s = c1 * m + c2 * m + c3 * o_0_pre
-                    # s = c1 * m + c2 * o_0_pre ## not this
-
-                    ret = s
-
-                    # s = m
-                    # ret = m
-            else:
-                if n is int(0):
-                    print("...")
-                    n = False
-
-                s = c1 * m + c2 * o_0_pre + c3 * o_1_pre
-                ret = s  # or just return the result now
-                # ret = o_0_pre # ?
-                # ret = o_1_pre # TBD side effects for rollback/recalc during udpate
-            o_1_pre = o_0_pre
-            o_0_pre = s
-            return ret
-        cb = partial(calc, nan, c1, c2, c3)
-        ## FIXME implement the actual 'calc' callback as a Python func realized with cython
-        s = ser.rolling(self.window_size, self.min_periods).apply(cb, raw=True)
-        s.attrs['indicator'] = self.label
+        nbargs = dict(nopython=True, nogil=True)
+        s: pd.Series = ser.rolling(self.window_size, self.min_periods).apply(
+            calc, engine="numba", engine_kwargs=nbargs, raw=True,
+            args=(c1, c2, c3, prebuf,)
+        )
+        s.name = self.label
+        s.attrs = ser.attrs
         return s

@@ -5,10 +5,12 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
+from typing import Optional
 from pyfx.dispatch.oanda.test import ComponentTest, run_tests
 
 from pyfx.dispatch.oanda.util.ndata import dataframe_from_npz
 from pyfx.dispatch.oanda.kernel.fx_const import FxLabel
+
 #
 # the components to test
 #
@@ -17,13 +19,28 @@ from pyfx.dispatch.oanda.kernel.indicator import PriceFilter, PriceSummary
 
 EXAMPLES_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sample_data"))
 
+ASK: Optional[pd.DataFrame] = None
+
 
 @pytest.fixture
-def ask():
-    return dataframe_from_npz(os.path.join(EXAMPLES_DIR, "quotes.npz")).loc[:, "ask"]
+def ask() -> pd.DataFrame:
+    global ASK
+    if ASK is None:
+        ASK = dataframe_from_npz(os.path.join(EXAMPLES_DIR, "quotes.npz")).loc[:, "ask"]
+    return ASK
 
 
 class TestPriceFiler(ComponentTest):
+
+    def run_price(self, filter: PriceFilter, data: pd.DataFrame) -> pd.Series:
+        # common price series tests
+        prices: pd.Series = filter.apply(data)
+        assert_that(prices.shape).is_equal_to(data.index.shape)
+        assert_that(isinstance(prices, pd.Series)).is_true()
+        assert_that((prices.index == data.index).all()).is_true()
+        assert_that(prices.name).is_equal_to(filter.label)
+        assert_that(prices.attrs).is_equal_to(data.attrs)
+        return prices
 
     @pytest.mark.parametrize(
         "summary", [
@@ -70,9 +87,7 @@ class TestPriceFiler(ComponentTest):
         #
         colname = FxLabel[summary.name].value  # e.g "o" given "OPEN"
         filter = PriceFilter(mode=summary)
-        prices = filter.apply(ask)
-        assert_that(prices.shape).is_equal_to(ask.index.shape)
-        assert_that(isinstance(prices, pd.Series)).is_true()
+        prices = self.run_price(filter, ask)
         col = ask.loc[:, colname]
         assert_that((prices == col).all()).is_true()
         assert_that(prices.attrs).is_equal_to(ask.attrs)
@@ -82,9 +97,7 @@ class TestPriceFiler(ComponentTest):
         # test the median price filter
         #
         filter = PriceFilter(mode=PriceSummary.MEDIAN)
-        prices = filter.apply(ask)
-        assert_that(prices.shape).is_equal_to(ask.index.shape)
-        assert_that(isinstance(prices, pd.Series)).is_true()
+        prices = self.run_price(filter, ask)
         median = np.mean([ask.loc[:, FxLabel.HIGH], ask.loc[:, FxLabel.LOW]], axis=0)
         assert_that((prices == median).all()).is_true()
         assert_that(prices.attrs).is_equal_to(ask.attrs)
@@ -94,9 +107,7 @@ class TestPriceFiler(ComponentTest):
         # test the typiccal price filter
         #
         filter = PriceFilter(mode=PriceSummary.TYPICAL)
-        prices = filter.apply(ask)
-        assert_that(prices.shape).is_equal_to(ask.index.shape)
-        assert_that(isinstance(prices, pd.Series)).is_true()
+        prices = self.run_price(filter, ask)
         typical = np.mean([ask.loc[:, FxLabel.HIGH], ask.loc[:, FxLabel.LOW], ask.loc[:, FxLabel.CLOSE]], axis=0)
         assert_that((prices == typical).all()).is_true()
         assert_that(prices.attrs).is_equal_to(ask.attrs)
@@ -107,9 +118,7 @@ class TestPriceFiler(ComponentTest):
         #
         filter = PriceFilter(mode=PriceSummary.WEIGHTED)
         ask = ask.set_flags(allows_duplicate_labels=True, copy=False)
-        prices = filter.apply(ask)
-        assert_that(prices.shape).is_equal_to(ask.index.shape)
-        assert_that(isinstance(prices, pd.Series)).is_true()
+        prices = self.run_price(filter, ask)
         close = ask.loc[:, FxLabel.CLOSE]
         weighted = np.mean([ask.loc[:, FxLabel.HIGH], ask.loc[:, FxLabel.LOW], close, close], axis=0)
         assert_that((prices == weighted).all()).is_true()
@@ -121,9 +130,7 @@ class TestPriceFiler(ComponentTest):
         #
         filter = PriceFilter(mode=PriceSummary.WEIGHTED)
         ask = ask.set_flags(allows_duplicate_labels=False, copy=False)
-        prices = filter.apply(ask)
-        assert_that(prices.shape).is_equal_to(ask.index.shape)
-        assert_that(isinstance(prices, pd.Series)).is_true()
+        prices = self.run_price(filter, ask)
         close = ask.loc[:, FxLabel.CLOSE]
         weighted = np.mean([ask.loc[:, FxLabel.HIGH], ask.loc[:, FxLabel.LOW], close, close], axis=0)
         assert_that((prices == weighted).all()).is_true()
