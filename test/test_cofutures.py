@@ -4,7 +4,9 @@ from assertpy import assert_that  # type: ignore[import-untyped]
 import asyncio as aio
 import concurrent.futures as cofutures
 from contextlib import suppress
+from exceptiongroup import ExceptionGroup
 import pytest
+from quattro import move_on_after
 import sys
 import time
 from typing import TYPE_CHECKING
@@ -107,7 +109,8 @@ class TestCoFutures(ComponentTest):
         thr_future = self.run_threaded(set_done, delay, cf, 5)
 
         with suppress(aio.TimeoutError):
-            async with aio.timeout(delay * 4):
+            with move_on_after(delay * 4):
+                ## aio.timeout N/A in Pyton 3.10 and previous
                 await thr_future
                 await cf
 
@@ -127,7 +130,8 @@ class TestCoFutures(ComponentTest):
         thr_future = self.run_threaded(set_done, delay, cf, 5)
 
         with suppress(aio.TimeoutError):
-            async with aio.timeout(delay * 4):
+            with move_on_after(delay * 4):
+                ## aio.timeout N/A in Pyton 3.10 and previous
                 await thr_future
                 await cf
 

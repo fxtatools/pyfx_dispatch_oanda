@@ -7,6 +7,7 @@ import asyncio as aio
 from datetime import datetime
 from immutables import Map
 import logging
+from quattro import TaskGroup
 import sys
 import time
 from typing import (
@@ -171,7 +172,7 @@ class ApiController(ExecController):
         super().close(immediate)
 
     @asynccontextmanager
-    async def async_context(self) -> AsyncContextManager[aio.TaskGroup]:
+    async def async_context(self) -> AsyncContextManager[TaskGroup]:
         async with super().async_context() as context_obj:
             async with self.api_client:
                 yield context_obj

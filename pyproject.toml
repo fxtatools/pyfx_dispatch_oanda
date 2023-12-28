@@ -8,6 +8,7 @@ Home = "https://github.com/fxtatools/pyfx_dispatch_oanda"
 [project]
 name = "pyfx.dispatch.oanda"
 version = "1.0.1"
+requires-python = ">= 3.9"
 description = "aio support for OANDA v20 REST API (Unofficial)"
 authors = [
     { name = "Sean Champ", email = "spchamp@users.noreply.github.com" }
@@ -21,9 +22,11 @@ classifiers = [
 ]
 dependencies = [
     "aenum >= 3.1.11",
+    "anyio >= 3.0.0",
     "appdirs",
     "aioconsole",
     "certifi",
+    "click",
     "currency-symbols",
     "exceptiongroup > 1.1.0",
     "httpcore[http2] >= 1.0.2",
@@ -38,15 +41,16 @@ dependencies = [
     "pydantic >2, <3",
     "python-dateutil >= 2.8.2",
     "pyyaml",
+    "quattro >= 23.1.0",
     "typing_extensions",
     "tzdata",
+    "tzlocal",
     "uvloop; platform_system != 'Windows'",
     "ZODB >= 5.8.0",
     "zope.password",
     "persistent >= 5.0.0",
     "transaction >= 3.1.0"
 ]
-requires-python = ">= 3.11.0, < 3.12"
 
 [project.optional-dependencies]
 typing = [
@@ -70,7 +74,7 @@ dev = [
     "jedi>=0.19.1",
     "keyring >= 24.1.1",
     "line_profiler",
-    "mypy",
+    "mypy > 1.1.0",
     "pip-tools",
     "polyfactory",
     "pytest >= 7.2.1",
@@ -80,6 +84,8 @@ dev = [
 
 [tool.mypy]
 check_untyped_defs = true
+disable_error_code = ["import-untyped"]
+plugins = ["numpy.typing.mypy_plugin"] # ? syntax here ? https://numpy.org/doc/1.21/reference/typing.html#numpy.typing.ArrayLike
 
 [tool.setuptools.packages.find]
 where = ["src"]

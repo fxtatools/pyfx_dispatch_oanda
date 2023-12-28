@@ -5,6 +5,7 @@ import atexit
 import asyncio as aio
 from contextlib import asynccontextmanager, suppress
 import os
+from quattro import move_on_after
 import sys
 import traceback
 from typing_extensions import TypeAlias, Optional, Union
@@ -138,7 +139,7 @@ async def console_io(*, stderr_out: bool = False, loop: Optional[aio.AbstractEve
         atexit.register(sys.stdin.close)
         if pipe:
             try:
-                async with aio.timeout(sys.getswitchinterval()):
+                with move_on_after(sys.getswitchinterval()):
                     await pipe.aclose()
             except:
                 print("Error during ConsoleIO.aclose()", file=stderr)

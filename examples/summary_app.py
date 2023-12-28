@@ -1,7 +1,4 @@
 # Prototype API application: Print account summary information in the console
-#
-# This example depends on TaskGroup support, using the
-# coroutines-based implementation available in Python 3.11+
 
 import argparse as ap
 import asyncio as aio

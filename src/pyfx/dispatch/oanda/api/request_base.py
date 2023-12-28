@@ -4,17 +4,21 @@
 ## Request Class Prototypes
 ##
 
+import click
+
 import concurrent.futures as cofutures
 from abc import abstractmethod, ABC
+import argparse as ap
 import asyncio as aio
 from collections import ChainMap
-from collections.abc import Generator, Mapping
 from contextlib import asynccontextmanager, contextmanager, suppress
 from functools import partial
-import httpcore
+from click.core import Context
 import httpx
 import inspect
+from itertools import chain
 import ijson  # type: ignore[import-untyped]
+from quattro import TaskGroup
 import reprlib
 from immutables import Map
 import logging
@@ -22,15 +26,25 @@ from pydantic import field_validator
 from queue import SimpleQueue, Empty
 import re
 import sys
-from typing import Annotated, Any, AsyncIterator, Awaitable, Callable, ContextManager, Generic, Iterator, Literal, Mapping, Optional, Self, Union, TYPE_CHECKING
-from typing_extensions import ClassVar, TypeAlias, TypeVar
+
+
+from typing import (
+    Annotated, Any, AsyncIterator, Awaitable, Callable,
+    ContextManager, Dict, Generator, Generic, Iterator, Literal,
+    Mapping, Optional, Sequence, Union,
+    TYPE_CHECKING, overload
+)
+from typing_extensions import ClassVar, Self, TypeAlias, TypeVar, Unpack
+
+from pydantic.config import ConfigDict
+
 
 
 # from pydantic.config import ConfigDict
 
 from ..finalizable import Finalizable
 from ..util.singular_map import SingularMap
-from ..util.aio import safe_running_loop, chain_cancel_callback, cancel_when_done
+from ..util.aio import safe_running_loop, chain_cancel_callback, cancel_when_done, AnyFuture
 from ..util.log import configure_logger
 from ..util.cofuture import CoFuture
 
@@ -47,16 +61,27 @@ from ..models.response_mixins import ApiResponse, ApiErrorResponse, UnknownError
 from ..exec_controller import ExecController, thread_loop
 from ..request_constants import RequestMethod
 
-from ..transport.transport_base import TransportFieldInfo
+from ..transport.transport_base import TransportFieldInfo, TransportValuesType, TransportEnum, TransportInterface
+from ..transport.repository import TransportBaseRepository
 from ..transport.data import InterfaceClass, InterfaceModel, AbstractApiObject, ApiObject
-from ..transport.application_fields import ApplicationField
+from ..transport.application_fields import application_field, ApplicationFieldInfo
 from ..transport.account_id import AccountId
 
-from .param_info import ParamInfo, PathParamInfo, QueryParamInfo, path_param
+from ..mapped_enum import MappedEnum
+
+from .param_info import ParamInfo, PathParamInfo, QueryParamInfo, path_param, ParamTypesRepository, ParamInterface
 
 
 logger = logging.getLogger(__name__)
 
+EMPTY_MAP = Map()
+
+
+class ReConstants(MappedEnum):
+    __finalize__: ClassVar[Literal[True]] = True
+
+    PARAGRAPH_BREAK = re.compile(r'(?:\n|\n\r|\r\n){2,}')
+    LINE_BREAK = re.compile(r'\n|\n\r|\r\n')
 
 def set_future_exception(future: aio.Future, exception: Exception) -> Optional[aio.Handle]:
     """Set the exception for a future, in a thread-safe approach.
@@ -187,6 +212,31 @@ class RequestController(ExecController):
             return self.__class__(self.request_class, **new_args)
 
         def build(self, **kw) -> tuple[T_request_co, aio.Future[Response_contra]]:
+            """Return an ApiRequest initialized for this request builder and the future
+            initialized for the ApiRequest.
+
+            If a future is neither provided in `kw` nor has already been bound to this
+            request builder, a new CoFuture object will be created for the individual
+            ApiRequest instance. Whether initialized previously, or provided in kw,
+            or created within this method, the future will be available as the second
+            return value.
+
+            The resulting request object `req` can be processed asynchronously within
+            a worker thread, using the following:
+            ```python
+            request = builder.build(<optional kw args>)
+            future = controller.dispatch(request.dispatch_request())
+            ```
+            such that the `controller` represents the API request controller for this request
+            builder. The `future` returned from the `controller.dispatch()` call would
+            represent the processing for the `dispatch_request()` coroutine within a
+            worker thread.
+
+            This example assumes that the future created in the request builder is an
+            awaitable, thread-safe `CoFuture` or more generally, a `concurrent.futures.Future`.
+            This will be the case, if no future was provided either when the builder was
+            initialized or in the keyword args to `build()`.
+            """
             if not ("future" in kw or "future" in self.request_args):
                 kw["future"] = self.controller.add_cofuture(self.request_class.request_path)
             args = self.override_args(kw)
@@ -194,6 +244,9 @@ class RequestController(ExecController):
             return self.request_class(**args), future
 
         def add_args(self, **args: Mapping[str, Any]):
+            self.add_arg_map(args)
+
+        def add_arg_map(self, args: Mapping[str, Any]):
             if self.__finalized__:
                 raise ValueError("Builder is finalized", self)
             rcls = self.request_class
@@ -231,6 +284,15 @@ class RequestController(ExecController):
         ## finalize the builder
         builder.__finalize_instance__()
 
+    def get_request_builder(self,
+                            request_cls: type[T_request_co],
+                            arg_map: Optional[Mapping[str, Any]] = None
+                            ) -> RequestBuilder[T_request_co]:
+        with self.request_builder(request_cls) as builder:
+            if arg_map:
+                builder.add_arg_map(arg_map)
+            return builder
+
     @contextmanager
     def run_context(self) -> Iterator[Self]:
         ApiObject.types_repository.__finalize_instance__()
@@ -238,7 +300,7 @@ class RequestController(ExecController):
             yield supra
 
     @asynccontextmanager
-    async def async_context(self) -> AsyncIterator[aio.TaskGroup]:
+    async def async_context(self) -> AsyncIterator[TaskGroup]:
         async with super().async_context() as tg:
             async with self.rest_client:
                 yield tg
@@ -249,10 +311,67 @@ class RequestController(ExecController):
 
 
 #
-# Request Classes
+# utility definitions for request dispatch from  shell commands
 #
 
 
+class RequestContext(click.Context, Generic[T_request_co]):
+    def get_user_args(self) -> Mapping[str, Any]:
+        #
+        # given a click.Context object, return a dict representing the set
+        # of option names and parsed values for options provided when the
+        # context was constructed, such as with the argv to parse()
+        #
+        # i.e this filters out parameters initialized from default values
+        #
+        params = self.params
+        filter_cmdline = filter(lambda p: self.get_parameter_source(p) is click.core.ParameterSource.COMMANDLINE, params.keys())
+        return {name: params[name] for name in filter_cmdline}
+
+
+class RequestCommand(click.Command, Generic[T_request_co]):
+    # e.g test:
+    #
+    #  context = GetInstrumentCandlesRequest.get_click_command(None).parse(("USDJPY",))
+    #  context.get_user_args()
+    #
+    # usage e.g in fxcmds for %cmd <text> processing with ipython/jupyter
+    #
+    context_class: type[RequestContext[T_request_co]] = RequestContext
+
+    if TYPE_CHECKING:
+        request_class: T_request_co
+
+    def parse(self, argv: Iterator[str] = ()) -> RequestContext:
+        pass_args = list(argv)
+        return self.make_context(self.name, args=pass_args)
+
+    def parse_user_args(self, argv: Iterator[str] = ()) -> Mapping[str, Any]:
+        #
+        # parse the provided argv sequence, returning a mapping representing
+        # parsed arg values for only those args provided in argv
+        #
+        context = self.parse(argv)
+        context.get_user_args()
+    def get_user_args(self, context: RequestContext) -> Mapping[str, Any]:
+        #
+        # given a click.Context object, return a dict representing the set
+        # of option names and parsed values for options provided when the
+        # context was constructed, such as with the argv to parse()
+        #
+        return context.get_user_args()
+    def make_null_context(self, parent=None) -> click.Context:
+        ## create a context without args
+        return self.context_class(self, info_name=self.name, parent=parent)
+
+    def get_help_text(self) -> str:
+        ctx = self.make_null_context()
+        return self.get_help(ctx)
+
+
+#
+# Request Classes
+#
 PathTokens: TypeAlias = tuple[Union[bytes, ParamInfo]]
 
 
@@ -323,13 +442,21 @@ class ApiRequestClass(InterfaceClass, type):
     `response_types` mapping.
     """
 
+    command_label: str
+    """String label for the request class, when modeled as a user interface command.
+
+    Default value is the class name
+    """
+
     def __repr__(cls):
         unbound = "<unbound>"
         mtd = cls.request_method if hasattr(cls, "request_method") else unbound
         path = cls.request_path if hasattr(cls, "request_path") else unbound
         return "<%s %s %s>" % (cls.__name__, mtd, path)
 
-    def simplify_param_model(cls, model: Mapping[str, ParamInfo]) -> Optional[Mapping[str, ParamInfo]]:
+    def simplify_param_model(cls, model: Mapping[str, ParamInfo],
+                             none_if_empty: bool = True
+                             ) -> Optional[Mapping[str, ParamInfo]]:
         """Reduce a parameters model to None, a SingularMap, or an immutable Map.
 
         If the parameters model `model` contains no mapped values, returns `None`
@@ -338,12 +465,10 @@ class ApiRequestClass(InterfaceClass, type):
 
         Else, returns an immutable Map for the provided paratemters model.
         """
-        if not model:
+        if not model and none_if_empty:
             return None
         n_mapped = len(model)
-        if n_mapped is int(0):
-            return None
-        elif n_mapped is int(1):
+        if n_mapped is int(1):
             for name, info in model.items():
                 return SingularMap(name, info)
         else:
@@ -369,11 +494,17 @@ class ApiRequestClass(InterfaceClass, type):
         # elif __debug__:
         #     raise AssertionError("Unmanaged request model field", field_name, info)
 
+    def default_types_repository(self) -> TransportBaseRepository:
+        return ParamTypesRepository.__singleton__
+
     def __new__(mcls: type[Self], name: str,
                 bases: tuple[type, ...],
                 attrs: dict[str, Any],
                 **kw) -> Self:
         """Initialize a new request class"""
+
+        if "command_label" not in attrs:
+            attrs["command_label"] = name
 
         if "path_params" not in attrs:
             attrs["path_params"] = dict()
@@ -414,7 +545,9 @@ class ApiRequestClass(InterfaceClass, type):
         new_cls.query_params = new_cls.simplify_param_model(new_cls.query_params)
 
         if hasattr(new_cls, "request_path") and not hasattr(new_cls, "path_tokens"):
-            new_cls.path_tokens = new_cls.tokenize_path(new_cls.request_path)
+            new_cls.path_tokens = tuple(new_cls.tokenize_path(new_cls.request_path))
+
+        new_cls.types_repository = new_cls.default_types_repository()
 
         return new_cls
 
@@ -424,6 +557,9 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
     #
     # Common ApiRequest class variables
     #
+
+    if TYPE_CHECKING:
+        model_fields: Mapping[str, ParamInfo]
 
     request_path: ClassVar[str]
     """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.request_path`"""
@@ -449,16 +585,19 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
     response_types: ClassVar[Map[int, type[ApiObject]]]
     """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.response_types`"""
 
+    command_name: ClassVar[str]
+    """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.command_label`"""
+
     #
     # Common ApiRequest instance fields
     #
 
     # future: Annotated[aio.Future[T_response], ApplicationField(..., default_factory=aio.Future)]
     ## nuts !
-    future: Annotated[Union[CoFuture[T_response], aio.Future[T_response]], ApplicationField(..., default_factory=CoFuture)]
+    future: Annotated[Union[CoFuture[T_response], aio.Future[T_response]], application_field(..., default_factory=CoFuture)]
     """Response future for the API request"""
 
-    controller: Annotated[RequestController, ApplicationField(...)]
+    controller: Annotated[RequestController, application_field(...)]
     """Request controller for the API request"""
 
     host: Annotated[FxHostInfo, path_param(...)]
@@ -494,7 +633,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
         path = cls.request_path if hasattr(cls, "request_path") else unbound
         host = str(self.host) if hasattr(self, "host") else unbound
         ftr = str(self.future) if hasattr(self, "future") else unbound
-        return "<%s %s %s %s (%s) at 0x%x>" % (cls.__name__, mtd, path, host, reprlib.repr(ftr), id(self))
+        return "<%s %s %s %s (%s) at 0x%x>" % (cls.__name__, mtd,  host, path, reprlib.repr(ftr), id(self))
 
     @classmethod
     def ensure_transport_type(self) -> None:
@@ -539,7 +678,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
             yield text
 
     @classmethod
-    def process_param_str(self, param: Union[bytes, ParamInfo], values: Mapping[str, Any]) -> str:
+    def process_param_str(cls, param: Union[bytes, ParamInfo], values: Mapping[str, Any]) -> str:
         """process a path parameter to a URL string, given field values for a request,
         or return param if param is a URL string component
 
@@ -562,12 +701,12 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
             return param.transport_type.unparse_url_str(value)
 
     @classmethod
-    def fill_path_str(self, values) -> bytes:
+    def fill_path_str(cls, values) -> bytes:
         """process the request class' tokenized URL path to a string
 
         this string will not include any generally optional query segment
         """
-        return "/".join(self.process_param_str(token, values) for token in self.path_tokens)
+        return "/".join(cls.process_param_str(token, values) for token in cls.path_tokens)
 
     @classmethod
     def path_values(cls, instance: Self) -> Optional[Mapping[str, Any]]:
@@ -637,6 +776,89 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
                 )
 
     #
+    # Shell API support
+    #
+
+    if TYPE_CHECKING:
+        arg_path_params: Mapping[str, PathParamInfo]
+        arg_query_params: Mapping[str, QueryParamInfo]
+
+    @classmethod
+    def get_arg_path_params(cls) -> Mapping[str, PathParamInfo]:
+        if hasattr(cls, "arg_path_params"):
+            return cls.arg_path_params
+        params = cls.path_params
+        if params:
+            def filter_path_param(item: tuple[str, PathParamInfo]):
+                param = item[1]
+                #
+                # AccountId param is provided from the controller.config
+                #
+                # FxHostInfo param is provided from the request class
+                #
+                # other params can be set from cmds, generally
+                #
+                txtyp = param.transport_type
+                return not (txtyp is AccountId or txtyp.storage_class is FxHostInfo)
+            mapped = Map(filter(filter_path_param, params.items()))
+            cls.arg_path_params = mapped
+            return mapped
+        else:
+            cls.arg_path_params = EMPTY_MAP
+            return EMPTY_MAP
+
+    @classmethod
+    def get_arg_query_params(cls) -> Mapping[str, QueryParamInfo]:
+        if hasattr(cls, "arg_query_params"):
+            return cls.arg_query_params
+        params = cls.query_params
+        if params:
+            cls.arg_query_params = params
+            return params
+        else:
+            cls.arg_query_params = EMPTY_MAP
+            return EMPTY_MAP
+
+
+    @classmethod
+    def get_click_command(cls) -> RequestCommand:
+        params = tuple(info.to_click_param() for info in chain(cls.get_arg_path_params().values(), cls.get_arg_query_params().values()))
+        help = cls.get_command_help()
+        short_help = cls.get_command_short_help()
+        cmd = RequestCommand(name = cls.command_name, params=params, help=help, short_help=short_help, no_args_is_help=True)
+        return cmd
+
+    @classmethod
+    def dispatch_click(cls, controller: RequestController, args: Iterator[str] = ()
+                       ) -> tuple[Self, CoFuture[T_value], CoFuture]:
+        cmd = cls.get_click_command()
+        context = cmd.make_context(cmd.name, args=args)
+        if TYPE_CHECKING:
+            builder: RequestController.RequestBuilder[type[ApiRequest[T_response, T_value]]]
+        # print("-- ... " + repr(context.get_user_args()))
+        builder = controller.get_request_builder(cls, context.get_user_args())
+        request, req_future = builder.build()
+
+        task_future = controller.add_task(request.dispatch_request())
+
+        return request, req_future, task_future
+
+    @classmethod
+    def get_command_help(cls) -> str:
+        doc = cls.__doc__
+        return None if doc is None else inspect.cleandoc(doc)
+
+
+    @classmethod
+    def get_command_short_help(cls) -> Optional[str]:
+        doc = cls.__doc__
+        if doc is None:
+            return None
+        else:
+            paragraphs = re.split(ReConstants.PARAGRAPH_BREAK.value, inspect.cleandoc(doc))
+            first_lines = re.split(ReConstants.LINE_BREAK.value, paragraphs[0])
+            return " ".join(map(str.strip, first_lines))
+    #
     # ApiRequest => response dispatch
     #
 
@@ -647,7 +869,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
     @classmethod
     @contextmanager
     def request_builder(cls, controller: RequestController, **kw
-                        ) -> ContextManager[RequestController.RequestBuilder[Self]]:
+                        ) -> Iterator[RequestController.RequestBuilder[Self]]:
         with controller.request_builder(cls, **kw) as builder:
             yield builder
 
@@ -838,7 +1060,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
             with suppress(aio.CancelledError):
                 await client_response.aclose()
 
-    async def dispatch_request(self) -> Awaitable[aio.Future[T_response]]:
+    async def dispatch_request(self) -> Awaitable[CoFuture[T_response]]:
         request = await self.prepare_request()
         response_future = self.future
         async with self.request_stream(request) as client_response:
@@ -1051,7 +1273,7 @@ class ApiRestRequest(ApiRequest[T_response, T_value], ABC):
 
 class ApiIterativeRequest(ApiRequest[T_response, T_value], ABC):
 
-    response_queue: Annotated[SimpleQueue[T_response], ApplicationField(..., default_factory=SimpleQueue)]
+    response_queue: Annotated[SimpleQueue[T_response], application_field(..., default_factory=SimpleQueue)]
 
     async def aeach_response(self, interval: Union[int, float] = 0) -> AsyncIterator[T_response]:
         # non-blocking iterator for response member objects @ stream I/O
@@ -1166,6 +1388,6 @@ class ApiStreamRequest(ApiIterativeRequest[T_abstract_co, T_abstract_co], ABC):
             ## dispatch to set the response future
             return await super().dispatch_response(response, client_response, initial_request)
 
-    async def aeach_object(self, interval: int | float = 0) -> AsyncIterator[T_abstract_co]:
+    async def aeach_object(self, interval: Union[int, float] = 0) -> AsyncIterator[T_abstract_co]:
         async for obj in self.aeach_response(interval):
             yield obj

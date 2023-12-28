@@ -15,13 +15,14 @@ import logging
 import logging.config
 import os
 import platform
+from quattro import TaskGroup
 import signal
 import stat
 import threading
 if platform.system != "Windows":
     import uvloop
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor # TBD blocking in atexit per assumptions in the design of it
 import concurrent.futures as cofutures
 from functools import partial
 from prompt_toolkit import prompt
@@ -39,12 +40,11 @@ from typing import (
     Literal,
     Mapping,
     Optional,
-    Self,
     Sequence,
     Union,
     TYPE_CHECKING
 )
-from typing_extensions import ClassVar, TypeVar
+from typing_extensions import ClassVar, Self, TypeVar
 
 from .util.dist import class_distribution, module_dir, PackageNotFoundError
 from .util.args import argparser
@@ -167,7 +167,7 @@ class ExecController(ABC):
     generally not be modified external to the controller.
     """
 
-    task_group: aio.TaskGroup
+    task_group: TaskGroup
     """Task group for this controller.
 
     Coroutines may be added to this task group with the controller
@@ -322,7 +322,7 @@ class ExecController(ABC):
 
         self.managed_loops = SimpleQueue()
         if not hasattr(self, "task_group"):
-            self.task_group = aio.TaskGroup()
+            self.task_group = TaskGroup()
         if not hasattr(self, "exit_future"):
             self.exit_future = CoFuturePool("main", result_value=0)
         if not hasattr(self, "logger"):
@@ -780,7 +780,7 @@ class ExecController(ABC):
     def add_cofuture(self) -> CoFuture:
         return self.exit_future.create_future()
 
-    def add_task(self, coro: Coroutine) -> aio.Task[T_co]:
+    def add_task(self, coro: Coroutine[Any, Any, T_co]) -> CoFuture[T_co]:
         """Task inteface for the exec controller's task group
 
         `add_task()` will create a task calling the provided
@@ -794,13 +794,32 @@ class ExecController(ABC):
             with suppress(RuntimeError):
                 running = aio.get_running_loop()
             main = self.main_loop
+            coro_future = None
             if running is main:
-                task = self.task_group.create_task(coro)
+                # here :: coro_future: aio.Task
+                coro_future = self.task_group.create_task(coro)
+                chain_cancel_callback(self.exit_future, coro_future)
             else:
-                task = thread_loop.get().create_task(coro)
-
-            chain_cancel_callback(self.exit_future, task)
-            return task
+                # here :: coro_future: concurrent.futures.Future
+                coro_future = aio.run_coroutine_threadsafe(coro, main)
+            #
+            # returning a uniform thread-safe, awaitable CoFuture interface
+            # for the task or concurrent future
+            #
+            cofuture = self.add_cofuture("add_task_" + hex(id(coro)))
+            def pass_result(cfaio: CoFuture, future: aio.Future): ## rly AnyFuture
+                if future.cancelled():
+                    cfaio.cancel()
+                    return
+                exc = future.exception()
+                if exc:
+                    cfaio.set_exception(exc)
+                    return
+                with suppress(cofutures.InvalidStateError, cofutures.CancelledError):
+                    cfaio.set_result(future.result())
+            coro_future.add_done_callback(partial(pass_result, cofuture))
+            chain_cancel_callback(self.exit_future, coro_future)
+            return cofuture
         except Exception as exc:
             logger.critical("Failed to start task %r : %r", coro, exc)
             raise
@@ -848,7 +867,7 @@ class ExecController(ABC):
             self.exceptions.add(exc)
 
     @asynccontextmanager
-    async def async_context(self) -> AsyncIterator[aio.TaskGroup]:
+    async def async_context(self) -> AsyncIterator[TaskGroup]:
         """Async context manager for ExecController.task_group handling
 
         ## Usage
@@ -877,7 +896,7 @@ class ExecController(ABC):
         with self.exit_future:
             with self.run_context():
                 if __debug__:
-                    term_program = os.environ.get("TERM_PROGRAM", None)
+                    term_program = os.getenv("TERM_PROGRAM", None)
                     if term_program == "vscode" and "debugpy" in sys.modules:
                         #
                         # load additional debugger support for multi-
@@ -901,35 +920,40 @@ class ExecController(ABC):
         import traceback
         try:
             def run(cls: Self, args, future: CoFuture):
-                if True:
+                with future:
                     try:
-                        controller = cls.from_args(args)
                         if __debug__:
-                            logger.debug("run: %r", controller)
+                            logger.debug("Initializing controller")
+                        controller = cls.from_args(args)
                         future.set_result(controller)
                         if __debug__:
-                            logger.debug("main: %r", controller)
+                            logger.debug("Main: %r", controller)
                         controller.main()
+                    except SystemExit:
+                        # reached e.g when args includes "--help"
+                        if __debug__:
+                            logger.debug("Controller initialization cancelled")
+                        future.cancel()
                     except Exception as exc:
+                        logger.critical("Error initializing controller", exc_info=sys.exc_info())
                         with suppress(cofutures.InvalidStateError, cofutures.CancelledError):
                             future.set_exception(exc)
-            # inst_future = CoFuture()
-            inst_future = cofutures.Future()
+            inst_future = CoFuture(cls.__name__ + "::run")
             import threading
             thread = threading.Thread(target=run, args=(cls, additional_args or (), inst_future,), daemon=True)
             if __debug__:
                 logger.debug("Running %s under new thread 0x%x", cls.__name__, thread.native_id or 0)
             thread.start()
-            while True:
-                with suppress(cofutures.TimeoutError):
-                    controller = inst_future.result()  # why does this block now?
-                    break
-                time.sleep(sys.getswitchinterval())
+            try:
+                controller = inst_future.poll()
+            except cofutures.CancelledError as exc:
+                raise RuntimeError("Controller initialization cancelled") from exc
             return controller, thread
         except:
             info = sys.exc_info()
             traceback.print_exception(*info, file=sys.stderr)
             logger.critical("%s.run_threaded: Exiting", cls.__name__, exc_info=info)
+            raise
 
     @classmethod
     def run_main(cls, additional_args: Optional[Sequence[str]] = None):

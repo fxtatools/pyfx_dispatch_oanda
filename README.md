@@ -48,11 +48,11 @@ For more information about the OpenAPI Generator, please visit
 This project is not affiliated with OANDA, the OpenAPI Generator, or any
 of their associated institutions.
 
-## Requirements
-
-This project depends on the asyncio TaskGroup API, as available in Python 3.11 and more recent releases of the Python (cpython) platform.
-
 ## Installation & Usage
+
+> **Supported Python Platforms**
+>
+> Python 3.9+
 
 pyfx.dispatch.oanda is available for installation from source. The project source code can be retrieved
 using `git` and installed via `pip`.

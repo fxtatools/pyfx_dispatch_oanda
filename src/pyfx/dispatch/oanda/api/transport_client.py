@@ -5,6 +5,7 @@ import asyncio as aio
 from contextlib import suppress
 import httpx
 import logging
+from quattro import move_on_after
 from immutables import Map
 import ssl
 import sys
@@ -100,7 +101,7 @@ class TransportClient():
                 if __debug__:
                     logger.debug("closing transport")
                 with suppress(aio.TimeoutError):
-                    async with aio.timeout(sys.getswitchinterval()):
+                    with move_on_after(sys.getswitchinterval()): ## N/A Python 3.10 and previous
                         await self.transport.aclose()
                 if __debug__:
                     logger.debug("closed transport")

@@ -1,8 +1,4 @@
 # Prototype API application: Print latest quote information
-#
-# This example depends on TaskGroup support, using the
-# coroutines-based implementation available in Python 3.11+
-
 
 import argparse as ap
 import asyncio as aio
