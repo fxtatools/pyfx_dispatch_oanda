@@ -8,7 +8,6 @@ from queue import SimpleQueue, Empty
 import sys
 from typing import Awaitable, Generic, Iterator, Literal, Optional, Union
 from typing_extensions import Generic, TypeVar
-from ..util.sequence_like import IndexedSequenceLike
 
 Tdata = TypeVar("Tdata", bound=IndexedSequenceLike)
 
