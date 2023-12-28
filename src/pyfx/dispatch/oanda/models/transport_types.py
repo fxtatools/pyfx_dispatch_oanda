@@ -1,10 +1,12 @@
 """Supplemental transport type definitions"""
 
+from typing import Union
+
 from .common_types import DoubleConstants
 from ..transport.transport_base import TransportFloatStr, TransportFloatStrType
 
-
-class TransportDecmialAll(TransportFloatStr, metaclass=TransportFloatStrType):
+#class TransportDecmialAll(TransportFloatStr, metaclass=TransportFloatStrType):
+class TransportDecmialAll(TransportFloatStr):
     """Transport type interface for values encoded with the symbolic
     alias`"ALL"` or as a decimal string.
 
@@ -26,7 +28,7 @@ class TransportDecmialAll(TransportFloatStr, metaclass=TransportFloatStrType):
     """
 
     @classmethod
-    def parse(cls, value: str | float) -> float:
+    def parse(cls, value: Union[str, float]) -> float:
         if isinstance(value, float):
             return value
         elif value == "ALL":
@@ -42,7 +44,7 @@ class TransportDecmialAll(TransportFloatStr, metaclass=TransportFloatStrType):
             return super().unparse_py(value)
 
 
-class TransportDecimalAllNone(TransportFloatStr, metaclass=TransportFloatStrType):
+class TransportDecimalAllNone(TransportFloatStr):
     """Transport type ifor encoding symoblic value aliases
     and literal decimal values, given the possible aliases
     `"ALL"` and  `"NONE"`.
@@ -68,7 +70,7 @@ class TransportDecimalAllNone(TransportFloatStr, metaclass=TransportFloatStrType
     - TransportDecmialAll
     """
     @classmethod
-    def parse(cls, value: str | float) -> float:
+    def parse(cls, value: Union[str, float]) -> float:
         if isinstance(value, float):
             return value
         elif value == "ALL":
