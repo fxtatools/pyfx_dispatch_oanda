@@ -3,7 +3,8 @@
 
 from contextvars import ContextVar
 from pydantic import SecretStr
-from typing import Optional, Self
+from typing import Optional
+from typing_extensions import Self
 from zope.password.interfaces import IPasswordManager  # type: ignore [import-untyped]
 
 shadow_encoder: ContextVar[IPasswordManager] = ContextVar("shadow_encoder")
@@ -19,7 +20,7 @@ class Credential(SecretStr):
         if hasattr(self, "_shadow_value"):
             return self._shadow_value
         else:
-            enc = encoder or shadow_encoder.get()
+            enc = shadow_encoder.get() if encoder is None else encoder
             encoded = enc.encodePassword(self.get_secret_value())
             self._shadow_value = encoded
             return encoded
@@ -100,4 +101,4 @@ class Credential(SecretStr):
         self._secret_value = ''
 
 
-__all__ = ("Credential",)
+__all__ = ("Credential", "shadow_encoder")
