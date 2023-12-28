@@ -9,7 +9,7 @@ import sys
 from typing import Awaitable, Generic, Iterator, Literal, Optional, Union
 from typing_extensions import Generic, TypeVar
 
-Tdata = TypeVar("Tdata", bound=IndexedSequenceLike)
+Tdata = TypeVar("Tdata", bound=Collection)
 
 
 class ReaderConst(float, Enum):
