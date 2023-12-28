@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import pytest
 from typing import Optional
+from pyfx.dispatch.oanda.indicator.price import PriceFilter, PriceSummary
 from pyfx.dispatch.oanda.test import ComponentTest, run_tests
 
 from pyfx.dispatch.oanda.util.ndata import dataframe_from_npz
@@ -14,7 +15,7 @@ from pyfx.dispatch.oanda.fx_const import FxLabel
 #
 # the components to test
 #
-from pyfx.dispatch.oanda.indicator.filter import PriceFilter, PriceSummary, Smoothed
+from pyfx.dispatch.oanda.indicator.smoothed import Smoothed
 
 
 EXAMPLES_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sample_data"))

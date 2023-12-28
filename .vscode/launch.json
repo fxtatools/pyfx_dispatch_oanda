@@ -11,7 +11,18 @@
                         "program": "${file}",
                         "console": "integratedTerminal",
                         "justMyCode": true,
-                        "cwd": "${workspaceFolder}"
+                        "cwd": "${workspaceFolder}",
+                        "pythonArgs": ["-W", "default", "-X", "faulthandler"],
+                        "env":
+                        {
+                                "PYTHONMALLOC": "debug",
+                                "PYTHONASYNCIODEBUG": "1",
+                                "NUMBA_COLOR_SCHEME": "no_color",
+                                "NUMBA_HIGHLIGHT_DUMPS": "0",
+                                "NUMBA_DISABLE_ERROR_MESSAGE_HIGHLIGHTING": "1",
+                                "NUMBA_SHOW_HELP": "1"
+                        }
+
                 },
                 {
                         "name": "Python: quotes_async.py",

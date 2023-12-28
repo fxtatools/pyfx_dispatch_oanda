@@ -14,7 +14,7 @@ from pyfx.dispatch.oanda.fx_const import FxLabel
 #
 # the components to test
 #
-from pyfx.dispatch.oanda.indicator.filter import PriceFilter, PriceSummary
+from pyfx.dispatch.oanda.indicator.price import PriceFilter, PriceSummary
 
 
 EXAMPLES_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sample_data"))

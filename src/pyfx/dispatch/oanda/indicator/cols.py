@@ -1,52 +1,30 @@
 # data schemas [prototype]
 
-
-from pyfx.dispatch.oanda.models.get_instrument_candles200_response import CandlestickFrequency, CandlestickGranularity
-from pyfx.dispatch.oanda.fx_const import FxLabel, FxCol
-from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
 import pandas as pd
 import importlib_metadata as imd
 from abc import ABC, ABCMeta, abstractmethod
-import cython
-from datetime import datetime
 from functools import partial
 from immutables import Map
 import inspect
-from itertools import chain
-from numbers import Number
 import numpy as np
 import numpy.typing as npt
 import warnings
 
-import numba
-
-from pyfx.dispatch.oanda.indicator.filter import PriceFilter, PriceSummary
-
-# TBD @ defining a localized notify()
-# from zope.event import notify, classhandler
-
+from pyfx.dispatch.oanda.fx_const import FxLabel
+from pyfx.dispatch.oanda.indicator.common import get_annotation, get_dtype
 from pyfx.dispatch.oanda.util.typeref import TypeRef
+from pyfx.dispatch.oanda.models.get_instrument_candles200_response import CandlestickGranularity
+from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
 
-from typing_extensions import get_origin, get_original_bases
+from pyfx.dispatch.oanda.indicator.price import PriceFilter
 
-
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping
 from types import MemberDescriptorType
-from typing import TYPE_CHECKING,  Annotated, Any, Generic, Literal, Optional, Union
-from typing_extensions import get_args, get_type_hints, Protocol, Any, Self, ClassVar, TypeAlias, TypeVar
-
-#
-# metaprogramming util
-#
-
-
-def get_annotation(name: str, scope: type) -> Optional[TypeRef]:
-    annot = get_type_hints(scope)
-    scoped = annot.get(name, None)
-    if isinstance(scoped, Annotated):
-        return get_args(scoped)[0]
-    else:
-        return scoped
+from typing import TYPE_CHECKING,  Any, Generic, Literal, Optional, Union
+from typing_extensions import (
+    get_type_hints, get_origin, get_args,
+    Protocol, Any, Self, ClassVar, TypeAlias, TypeVar
+)
 
 
 def get_dtype(annot) -> np.dtype:
@@ -70,98 +48,6 @@ def get_dtype(annot) -> np.dtype:
 
 
 #
-# data util
-#
-
-@numba.jit(nopython=True, nogil=True)
-def usec(n: numba.uint64[:]) -> numba.uint64[:]:
-    ## truncate an np times array as uint64 to uint64 seconds
-    return n * 10**-9
-
-
-FreqData: TypeAlias = Union[pd.DataFrame, pd.Series, pd.TimedeltaIndex, pd.DatetimeIndex, pd.PeriodIndex]
-
-def interpolate_freq(data: FreqData) -> Optional[pd.PeriodDtype]:
-    # [prototype]
-    #
-    # infer a frequency for some dataframe or series with a time index,
-    # or from a literal index
-    #
-    # returns a frequency string if a frequency could be inferred,
-    # None if no frequency can be inferred by this approach
-    #
-    # this operates generally for a dataframe having a time index
-    # with a number n >= 2 of index values continuous under a
-    # pandas time index frequency. This will allow for discontinuous
-    # values,  discarding the "None" case when some frequency can be
-    # determined from other values in the index
-    #
-    # for a pd.DatetimeIndex, this will return the "Most frequently
-    # occurring" frequency. Given a tie between two frequency values,
-    # the first occurring, non-None frequency will be returned
-    #
-    # FIXME needs test under time delta index
-    #
-    ##
-    if len(data) < 3:
-        return None
-
-    if isinstance(data, pd.PeriodIndex):
-        return data.freq
-
-    f = pd.infer_freq(data)
-    if f is not None:
-        # using the frequency inferred by pandas
-        return pd.PeriodDtype(f)
-    #
-    # collect values form infer_freq() under rolling().apply()
-    #
-    idx = data.index if isinstance(data, (pd.DataFrame, pd.Series,)) else data
-    freqs = {}
-    icls = idx.__class__
-
-    def parse(icls, dct, row):
-        #
-        # create a new index for each call within
-        # rolling(3).apply(... parse ...), then
-        # inferring  a frequency from the minimum
-        # index. This uses the same index class
-        # as used for the input value
-        #
-        # this will operate by side effect,
-        # accumulating the number of occurrences
-        # of distinct frequency strings in dct
-        #
-        # the return value from rolling().apply()
-        # will be discarded, here
-        #
-        f = pd.infer_freq(icls(row))
-        if f is not None:
-            try:
-                dct[f] += 1
-            except KeyError:
-                dct[f] = 1
-        return np.nan
-    intermediate = pd.DataFrame(dict(utime=idx.to_numpy(dtype=np.uint64)), index=idx)
-    intermediate.rolling(3).apply(partial(parse, icls, freqs), raw=True)
-    nfreq = len(freqs)
-    if nfreq == 1:
-        # simplest case: one predominant frequency, with any number > 0
-        # of inconsistent values for which pd.infer_freq([a0, a1, a2]) => None
-        freq = next(chain(freqs.keys()))
-        return pd.PeriodDtype(freq)
-    elif nfreq == 0:
-        return None
-    max = np.array(tuple(freqs.values()), dtype=int).max()
-    # initial prototype: using the first most frequent frequency str
-    #
-    # with the previous checks, StopIteration should not be reached here
-    #
-    freq = next(k for k, v in freqs.items() if v == max)
-    return pd.PeriodDtype(freq)
-
-
-#
 # generalized types
 #
 IndexName: TypeAlias = Union[str, int, tuple[Union[str, int], ...]]
@@ -169,33 +55,11 @@ IndexName: TypeAlias = Union[str, int, tuple[Union[str, int], ...]]
 T_dt = TypeVar("T_dt", bound=npt.DTypeLike)
 T_data = TypeVar("T_data", bound=npt.ArrayLike)
 
-#
-# generalization for pandas column/index names,
-#
-# mixing loc (int) and iloc-style syntaxes here
-#
-ColumnRef: TypeAlias = Union[str, int, tuple[str, ...]]
-RowRef: TypeAlias = Union[Number, datetime]
-
 
 class Named(Protocol):
     @property
     def __name__(self) -> str:
         raise NotImplementedError(self.__name__)
-
-
-class DataFrameLike(ABC):
-    # abstract protocol class (unused)
-
-    @property
-    @abstractmethod
-    def columns(self) -> Sequence[ColumnRef]:
-        raise NotImplementedError(self.columns)
-
-    @property
-    @abstractmethod
-    def index(self) -> Sequence[RowRef]:
-        raise NotImplementedError(self.index)
 
 
 #
@@ -207,7 +71,7 @@ T = TypeVar("T")
 
 
 class BindableAttr(ABC, Generic[T]):
-    # early prototype, a descriptor mixin class for MetaProperty
+    # early prototype, a descriptor mixin class for MetaProperty (Descriptor mixin)
 
     if TYPE_CHECKING:
         __name__: str
