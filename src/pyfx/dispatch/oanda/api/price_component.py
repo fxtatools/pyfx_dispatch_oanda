@@ -1,18 +1,23 @@
 """Price components for instrument candlestick requests"""
 
-from typing import Union
-from ..util.sequence_like import SequenceLike
+from json import JSONEncoder
+from typing import Optional, Union, Iterable, TYPE_CHECKING
+from typing_extensions import Self
 
-from ..mapped_enum import MappedEnum, MappedEnumType
+from ..models.api_enum import ApiEnum, ApiEnumType
+from ..transport.transport_base import TransportEnum
 
-
-class PriceComponentType(MappedEnumType):
-    def __getitem__(cls, key: Union[str, SequenceLike[str]]) -> str:
+class PriceComponentType(ApiEnumType):
+    def __getitem__(cls, key: Union[str, Iterable[str]]) -> str:
         return cls.get(key)
 
-
-class PriceComponent(str, MappedEnum, metaclass=PriceComponentType):
+class PriceComponent(ApiEnum, metaclass=PriceComponentType):
     """Enum for instrument candlestick requests"""
+
+    if TYPE_CHECKING:
+        value: str
+        # url_string will be bound during component unparse, below
+        url_string: str
 
     ASK = "A"
     """Candlestick summarization of Ask price"""
@@ -36,7 +41,7 @@ class PriceComponent(str, MappedEnum, metaclass=PriceComponentType):
     """All Candlestick summarization prices"""
 
     @classmethod
-    def get(cls, ident: Union[str, SequenceLike[str]]) -> "PriceComponent":
+    def get(cls, ident: Union[str, Iterable[str]]) -> "PriceComponent":
         """Return a the PriceComponent for  a string `ident`
 
         `ident` may represnt a name, value, or repeating string of values
@@ -58,6 +63,9 @@ class PriceComponent(str, MappedEnum, metaclass=PriceComponentType):
         ```
         """
         if not isinstance(ident, str):
+            if __debug__:
+                if not isinstance(ident, Iterable):
+                    raise AssertionError("Not iterable", ident)
             ident = "".join(ident)
         ident_uc = ident.upper()
         members = cls._member_map_
@@ -74,11 +82,18 @@ class PriceComponent(str, MappedEnum, metaclass=PriceComponentType):
             else:
                 raise KeyError("PriceComponent not found", ident)
 
+    @classmethod
+    def unparse(cls, value: Union[str, Self]) -> str:
+        if isinstance(value, cls):
+            name = value.value
+
+
     def __or__(self, value: Union[str, "PriceComponent"]) -> str:
         lhval = self.value
         rhval = self.__class__.get(value) if isinstance(value, str) else value.name  # type: ignore
         args = "".join(set(lhval + rhval))
         return self.__class__.get(args)
+
 
 
 __all__ = "PriceComponent", "PriceComponentType"
