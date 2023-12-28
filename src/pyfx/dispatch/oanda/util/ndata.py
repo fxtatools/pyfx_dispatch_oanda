@@ -216,16 +216,13 @@ def dataframe_to_npz(data: pd.DataFrame,
 def dataframe_from_npz(file: Pathname,
                        labels: Optional[NPMapLabels] = None,
                        mmap_mode: Optional[str] = None,
-                       encoding: str = 'ASCII',
-                       max_header_size: Optional[int] = None
-                       ) -> pd.DataFrame:
+                       encoding: str = 'ASCII') -> pd.DataFrame:
 
     # encoding: note limitations denoted in the np.load/np.savez_compressed docs
 
     filename = expand_path(file)
     npmap = np.load(filename, mmap_mode=mmap_mode,
                     encoding=encoding,
-                    max_header_size=max_header_size,
                     allow_pickle=True,
                     fix_imports=True)
     schema = labels or make_npmap_labels()
