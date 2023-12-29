@@ -2,7 +2,6 @@
 
 import pandas as pd
 import importlib_metadata as imd
-from abc import ABC, ABCMeta, abstractmethod
 from functools import partial
 from immutables import Map
 import inspect
@@ -12,15 +11,17 @@ import warnings
 
 from pyfx.dispatch.oanda.fx_const import FxLabel
 from pyfx.dispatch.oanda.indicator.common import get_annotation
+from pyfx.dispatch.oanda.util.decorator import Decorator
 from pyfx.dispatch.oanda.util.typeref import TypeRef
 from pyfx.dispatch.oanda.models.get_instrument_candles200_response import CandlestickGranularity
 from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
 
 from pyfx.dispatch.oanda.indicator.price import PriceFilter
 
+from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Iterable, Mapping
 from types import MemberDescriptorType
-from typing import TYPE_CHECKING,  Any, Generic, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, Optional, Union
 from typing_extensions import (
     get_type_hints, get_origin, get_args,
     Protocol, Any, Self, ClassVar, TypeAlias, TypeVar
@@ -89,7 +90,7 @@ class BindableAttr(ABC, Generic[T]):
         self.__scope__ = scope
 
 
-class MetaProperty(property, BindableAttr, Generic[T]):
+class MetaProperty(property, BindableAttr, Decorator, Generic[T]):
     if TYPE_CHECKING:
         __name__: str
 
@@ -141,12 +142,15 @@ class MetaProperty(property, BindableAttr, Generic[T]):
             #
             if not (obj is None and ABC in objtype.__bases__) and inspect.isdatadescriptor(value):
                 #
-                # assuming that any value accessed under a @MetaProperty would not
+                # assuming that any value accessed under a @metaproperty would not
                 # be bound to a descriptor object under normal application, this may
                 # represent - through some indirection - an "unbound descriptor" state
                 #
                 raise AssertionError("Unbound data descriptor", value, self, obj, objtype)
         return value
+
+def metaproperty(decorated: Callable):
+    return MetaProperty.decorate_new(decorated)
 
 
 class Interface(ABC):
@@ -227,12 +231,12 @@ class IndexSchema(ArraySchema[T, T_view]):
 
 class DataModelInterface(Interface, metaclass=InterfaceType):
 
-    @MetaProperty
+    @metaproperty
     @abstractmethod
     def columns(cls: type[Self], self: Union[Self, None]) -> ColumnSchema:
         raise NotImplementedError(vars(cls).get("columns", "columns"))  # ...
 
-    @MetaProperty
+    @metaproperty
     @abstractmethod
     def indices(cls: type[Self], self: Union[Self, None]) -> IndexSchema:
         raise NotImplementedError(vars(cls).get("indices", "indices"))
@@ -246,7 +250,7 @@ class DataSchema(DataModelInterface, ABC):
         __columns__: ClassVar[ColumnSchema["ArrayView", "ArrayModel"]]
         __indices__: ClassVar[IndexSchema["IndexView", "IndexModel"]]
 
-    @MetaProperty
+    @metaproperty
     ## FIXME duplicate methods in this initial prototype
     ##
     ## the primary way to test which one is being called is through a backtrace ...
@@ -255,7 +259,7 @@ class DataSchema(DataModelInterface, ABC):
         # if 'scope' is 'base' then this is being accessed at class scope
         return scope.__columns__
 
-    @MetaProperty
+    @metaproperty
     def indices(scope: Union[Self, type[Self]], base: type[Self]) -> IndexSchema["IndexView", "IndexModel"]:
         # if 'scope' is 'base' then this is being accessed at class scope
         return scope.__indices__
@@ -290,7 +294,7 @@ class DataProvider(metaclass=InterfaceType):
     if TYPE_CHECKING:
         __name__: str
 
-    @MetaProperty
+    @metaproperty
     def name(cls: type[Self], obj: Union[Self, None]):
         if obj is None:
             return cls.__name__
@@ -723,7 +727,7 @@ class DataSchemaType(DataModelInterface, InterfaceType, metaclass=InterfaceType)
 
         return new_cls
 
-    @MetaProperty
+    @metaproperty
     def schema(scope: Union[Self, type[Self]], base: type[Self]) -> DataSchema:
         # print("-- M SCHEMA %r %r => %r" % (scope, base, scope.__schema__,))
         return scope.__schema__
@@ -732,11 +736,11 @@ class DataSchemaType(DataModelInterface, InterfaceType, metaclass=InterfaceType)
         # else:
         #     return self.__schema__
 
-    @MetaProperty
+    @metaproperty
     def columns(scope: Union[Self, type[Self]], base: type[Self]) -> Iterable[ColumnModel]:
         return scope.schema.columns
 
-    @MetaProperty
+    @metaproperty
     def indices(scope: Union[Self, type[Self]], base: type[Self]) -> Iterable[IndexModel]:
         return scope.schema.indices
 
@@ -752,7 +756,7 @@ class ProviderModel(DataSchema):
     if TYPE_CHECKING:
         __provider__: "ProviderView"
 
-    @MetaProperty
+    @metaproperty
     def provider(scope: Union[Self, type[Self]], base: type[Self]):
         return scope.__provider__
 
@@ -773,16 +777,16 @@ class ProviderView(DataSchemaType, Generic[T_model], metaclass=DataSchemaType):
         __schema__: type[T_model]
         __model__: ProviderModel
 
-    @MetaProperty
+    @metaproperty
     def model(scope: Union[Self, type[Self]], base: type[Self]) -> ProviderModel:
         return scope.__model__
 
-    @MetaProperty
+    @metaproperty
     def columns(scope: Union[Self, type[Self]], base: type[Self]):
         # provider column j/t schema columns
         return scope.model.columns
 
-    @MetaProperty
+    @metaproperty
     def indices(scope: Union[Self, type[Self]], base: type[Self]):
         # provider indices (?) j/t schema indices
         return scope.model.indices
@@ -832,7 +836,7 @@ class DataView(Generic[T_data], ABC, metaclass=DataSchemaType):
     def data(self) -> T_data:
         return self.__data__
 
-    @MetaProperty
+    @metaproperty
     def provider(scope: Union[Self, type[Self]], base: type[Self]) -> ProviderView[T]:
         # Implementation Note
         #
@@ -851,11 +855,11 @@ class DataView(Generic[T_data], ABC, metaclass=DataSchemaType):
 
 class DataframeView(DataView[pd.DataFrame], metaclass=DataSchemaType):
 
-    @MetaProperty
+    @metaproperty
     def columns(scope: Union[Self, type[Self]], base: type[Self]):
         return scope.__columns__
 
-    @MetaProperty
+    @metaproperty
     def indices(scope: Union[Self, type[Self]], base: type[Self]):
         return scope.__indices__
 
@@ -947,7 +951,7 @@ class FxComponentFrame(QuotesView, metaclass=FxComponent):
     __provider__: ClassVar[type[ProviderView]] = FxComponent
     __component__: FxComponentName
 
-    @MetaProperty
+    @metaproperty
     def component(obj: Self, scope: type[Self]):
         return obj.__component__
 
