@@ -82,19 +82,6 @@ class MappedEnumType(Finalizable, EnumType):
         class. When `__new__` would be called within such a call form, 'metacls' would
         denote the enum  class and the enum value would be provided as `name`
 
-        ### Missing Values
-
-        When defining a new enum class, `MappedEnumType.__new__` will add a
-        `_missing_value_` function to the new class, unless a `_missing_value_`
-        attribute  is already  defined in the new class at the time when this method
-        is called.
-
-        The added _missing_value_` function would have the call form of a static
-        method accepting one arg, `value`. The function will return the value of
-        `enum_cls.get(value)` for the initialized enum class. This behavior is
-        extensional to a convention introduced in aenum, for application when
-        dereferencing an enum value by way of an enum class' constructor.
-
         ### Value Generation
 
         A `__gen__` argument may be provided when a new MappedEnum class is defined.
@@ -106,7 +93,7 @@ class MappedEnumType(Finalizable, EnumType):
         If not provided as a callable value, the `__gen__` value should represent
         a generator object.
 
-        Whehter implemented with a function or provided as a generator object, the
+        Whether implemented with a function or provided as a generator object, the
         `__gen__` generator should produce a series of individual sequence values,
         suitable as member args in a call to `extend_enum()` provided after the new
         enum class.
@@ -129,7 +116,7 @@ class MappedEnumType(Finalizable, EnumType):
             return mcls[name]  # type: ignore
         else:
             attrs = args[1]
-            def_missing: bool = "_missing_value_" not in attrs
+            # note also: _missing_value_ handling under aenum
             gen = attrs.get("__gen__", False)
             if gen:
                 if __debug__:
@@ -141,9 +128,6 @@ class MappedEnumType(Finalizable, EnumType):
                 del attrs["__finalize__"]
 
             new_cls: Self = super().__new__(mcls, name, *args)
-
-            if def_missing:
-                new_cls._missing_value_ = lambda value: new_cls.get(value)
 
             if gen:
                 for args in (gen(new_cls) if callable(gen) else gen):
