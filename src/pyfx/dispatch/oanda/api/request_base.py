@@ -4,16 +4,13 @@
 ## Request Class Prototypes
 ##
 
-import click
-
-import concurrent.futures as cofutures
 from abc import abstractmethod, ABC
-import argparse as ap
 import asyncio as aio
+import click
 from collections import ChainMap
+import concurrent.futures as cofutures
 from contextlib import asynccontextmanager, contextmanager, suppress
 from functools import partial
-from click.core import Context
 import httpx
 import inspect
 from itertools import chain
@@ -26,25 +23,19 @@ from pydantic import field_validator
 from queue import SimpleQueue, Empty
 import re
 import sys
-
+import warnings
 
 from typing import (
     Annotated, Any, AsyncIterator, Awaitable, Callable,
-    ContextManager, Dict, Generator, Generic, Iterator, Literal,
-    Mapping, Optional, Sequence, Union,
-    TYPE_CHECKING, overload
+    Generator, Generic, Iterator, Literal,
+    Mapping, Optional, Union,
+    TYPE_CHECKING
 )
-from typing_extensions import ClassVar, Self, TypeAlias, TypeVar, Unpack
-
-from pydantic.config import ConfigDict
-
-
-
-# from pydantic.config import ConfigDict
+from typing_extensions import ClassVar, Self, TypeAlias, TypeVar
 
 from ..finalizable import Finalizable
 from ..util.singular_map import SingularMap
-from ..util.aio import safe_running_loop, chain_cancel_callback, cancel_when_done, AnyFuture
+from ..util.aio import safe_running_loop, chain_cancel_callback, cancel_when_done
 from ..util.log import configure_logger
 from ..util.cofuture import CoFuture
 
@@ -61,15 +52,15 @@ from ..models.response_mixins import ApiResponse, ApiErrorResponse, UnknownError
 from ..exec_controller import ExecController, thread_loop
 from ..request_constants import RequestMethod
 
-from ..transport.transport_base import TransportFieldInfo, TransportValuesType, TransportEnum, TransportInterface
+from ..transport.transport_base import TransportFieldInfo
 from ..transport.repository import TransportBaseRepository
 from ..transport.data import InterfaceClass, InterfaceModel, AbstractApiObject, ApiObject
-from ..transport.application_fields import application_field, ApplicationFieldInfo
+from ..transport.application_fields import application_field
 from ..transport.account_id import AccountId
 
 from ..mapped_enum import MappedEnum
 
-from .param_info import ParamInfo, PathParamInfo, QueryParamInfo, path_param, ParamTypesRepository, ParamInterface
+from .param_info import ParamInfo, PathParamInfo, QueryParamInfo, path_param, ParamTypesRepository
 
 
 logger = logging.getLogger(__name__)
@@ -82,6 +73,7 @@ class ReConstants(MappedEnum):
 
     PARAGRAPH_BREAK = re.compile(r'(?:\n|\n\r|\r\n){2,}')
     LINE_BREAK = re.compile(r'\n|\n\r|\r\n')
+
 
 def set_future_exception(future: aio.Future, exception: Exception) -> Optional[aio.Handle]:
     """Set the exception for a future, in a thread-safe approach.
@@ -128,22 +120,15 @@ def set_future_result(future: aio.Future, result: Any) -> Optional[aio.Handle]:
             return loop.call_soon_threadsafe(future.set_result, result)
 
 
-@contextmanager
-def safe_await():
-    ## useless in fact
-
-    #with suppress(aio.CancelledError, RuntimeError):
-    with suppress(aio.CancelledError):
-        # RuntimeError may occur here, during controller shutdown
-        yield
-
 #
 # Controller Base
 #
 
+
 T_co = TypeVar("T_co", covariant=True)
 
 T_request_co = TypeVar("T_request_co", covariant=True, bound="ApiRequest")
+# ^ controller-scoped typevar
 
 T_response = TypeVar("T_response", bound=ApiResponse)
 T_value = TypeVar("T_value", bound=ApiResponse)
@@ -445,7 +430,7 @@ class ApiRequestClass(InterfaceClass, type):
     command_label: str
     """String label for the request class, when modeled as a user interface command.
 
-    Default value is the class name
+    Default value is the name of the class' module
     """
 
     def __repr__(cls):
@@ -497,22 +482,75 @@ class ApiRequestClass(InterfaceClass, type):
     def default_types_repository(self) -> TransportBaseRepository:
         return ParamTypesRepository.__singleton__
 
+    def tokenize_path(cls, path: str) -> Iterator[Union[str, ParamInfo]]:
+        """Tokenize a request path, returning a sequcence of parameter info
+        and contiguous string values"""
+        if __debug__:
+            if not isinstance(path, str):
+                raise AssertionError("Not a string", path)
+        param_info = cls.path_params
+        json_param_info = dict({info.alias or field_name: info for field_name, info in param_info.items()})
+        parsed_start: bool = False
+        text: Optional[str] = None
+        parsed_params = set()
+        for token in path.split("/"):
+            if len(token) == 0:
+                if parsed_start:
+                    raise AssertionError("Empty token in request path", path)
+                else:
+                    parsed_start = True
+            elif token[0] == "{":
+                if __debug__:
+                    if token[-1] != "}" or len(token) < 3:
+                        raise AssertionError("Syntax error in request path", path)
+                if text:
+                    yield text
+                    text = None
+                param_name = token[1:-1]
+                info = json_param_info.get(param_name, None)
+                if __debug__:
+                    if info is None:
+                        raise AssertionError("Path parameter is undefined", param_name, path, cls)
+                    elif param_name in parsed_params:
+                        raise AssertionError("Duplicate path parameter", param_name, path, cls)
+                yield info
+                parsed_params.add(param_name)
+            else:
+                if text:
+                    text = text + '/' + token
+                else:
+                    text = token
+        ## yield any trailing path
+        if text:
+            yield text
+        ## additional linting when __debug__
+        if __debug__:
+            unused = (frozenset(json_param_info.keys()) - {"host"}).difference(parsed_params)
+            if unused:
+                raise AssertionError("Unused path parameters", unused, param_info, path, cls)
+
     def __new__(mcls: type[Self], name: str,
                 bases: tuple[type, ...],
                 attrs: dict[str, Any],
                 **kw) -> Self:
         """Initialize a new request class"""
 
-        if "command_label" not in attrs:
-            attrs["command_label"] = name
+        if ABC not in bases:
+            if "command_label" not in attrs:
+                module = attrs.get("__module__", None)
+                if module is not None:
+                    attrs["command_label"] = module.rsplit(".", maxsplit=1)[-1]
 
         if "path_params" not in attrs:
             attrs["path_params"] = dict()
         if "query_params" not in attrs:
             attrs["query_params"] = dict()
+
         if "response_types" in attrs:
-            # inference for primary response status and type,
+            #
+            # infer any primary response status and type,
             # when not provided in the class definition
+            #
             response_types: Mapping[int, type[ApiObject]] = attrs["response_types"]
             primary_status = None
             primary_type = None
@@ -525,15 +563,17 @@ class ApiRequestClass(InterfaceClass, type):
                 success_codes = []
                 for status in response_types.keys():
                     if 200 <= status <= 299:
-                        ## typically the default response code,
-                        ## not always 200
+                        #
+                        # typically the default response code,
+                        # not always 200
+                        #
                         success_codes.append(status)
                 if len(success_codes) == 1:
                     primary_status = success_codes[0]
                     primary_type = response_types[primary_status]
-            if primary_status and "primary_status" not in attrs:
+            if primary_status is not None and "primary_status" not in attrs:
                 attrs["primary_status"] = primary_status
-            if primary_type and "primary_type" not in attrs:
+            if primary_type is not None and "primary_type" not in attrs:
                 attrs["primary_type"] = primary_type
 
         new_cls: Self = super().__new__(mcls, name, bases, attrs, **kw)
@@ -547,7 +587,38 @@ class ApiRequestClass(InterfaceClass, type):
         if hasattr(new_cls, "request_path") and not hasattr(new_cls, "path_tokens"):
             new_cls.path_tokens = tuple(new_cls.tokenize_path(new_cls.request_path))
 
+        # using the param types repository, for request classes
         new_cls.types_repository = new_cls.default_types_repository()
+
+        if __debug__:
+            if ABC not in bases and "[" not in name and not hasattr(new_cls, "response_types"):
+                #
+                # Pre-check to prevent later error.
+                #
+                # Caveat:
+                #
+                # Each implementation class must define a response_types field,
+                # generally scoped as a ClassVar in the implementation class.
+                #
+                #
+                # This may also be reached by pydantic parsing a generic class
+                # reference for a request model class, absent of any real class
+                # definition. In such case, for an ApiRequestClass instance,
+                # the class name would resemble a generic type signature
+                #
+                #   e.g "ApiIterativeRequest[+T_abstract_co, +T_abstract_co]"
+                #
+                # Not any additional values may have been provided in the class
+                # initargs, to denote that this would not in fact represent a
+                # normal class definition from user code.
+                #
+                # So, skipping the test if "[" is in the class name
+                #
+                warnings.warn(
+                    "Implementation class defined without response_types: %s (%s)" % (
+                        name, ", ".join(map(str, bases))
+                    ),
+                    stacklevel=2)
 
         return new_cls
 
@@ -585,15 +656,13 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
     response_types: ClassVar[Map[int, type[ApiObject]]]
     """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.response_types`"""
 
-    command_name: ClassVar[str]
+    command_label: ClassVar[str]
     """Metaclass instance attribute, described in {py:obj}`ApiRequestClass.command_label`"""
 
     #
     # Common ApiRequest instance fields
     #
 
-    # future: Annotated[aio.Future[T_response], ApplicationField(..., default_factory=aio.Future)]
-    ## nuts !
     future: Annotated[Union[CoFuture[T_response], aio.Future[T_response]], application_field(..., default_factory=CoFuture)]
     """Response future for the API request"""
 
@@ -637,48 +706,11 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
 
     @classmethod
     def ensure_transport_type(self) -> None:
+        # protocol method - no-op
         pass
 
     @classmethod
-    def tokenize_path(cls, path: str) -> Iterator[Union[str, ParamInfo]]:
-        """Tokenize a request path, returning a sequcence of parameter info
-        and contiguous string values"""
-        if __debug__:
-            if not isinstance(path, str):
-                raise AssertionError("Not a string", path)
-        param_info = cls.path_params
-        json_param_info = dict({info.alias or field_name: info for field_name, info in param_info.items()})
-        parsed_start: bool = False
-        text: Optional[str] = None
-        for token in path.split("/"):
-            if len(token) == 0:
-                if parsed_start:
-                    raise AssertionError("Empty token in request path", path)
-                else:
-                    parsed_start = True
-            elif token[0] == "{":
-                if __debug__:
-                    if token[-1] != "}" or len(token) < 3:
-                        raise AssertionError("Syntax error in request path", path)
-                if text:
-                    yield text
-                    text = None
-                param_name = token[1:-1]
-                if __debug__:
-                    if not (param_name in json_param_info):
-                        raise AssertionError("Path parameter not defined in param info", param_name, param_info, cls)
-                yield json_param_info[param_name]
-            else:
-                if text:
-                    text = text + '/' + token
-                else:
-                    text = token
-        ## yield any trailing path
-        if text:
-            yield text
-
-    @classmethod
-    def process_param_str(cls, param: Union[bytes, ParamInfo], values: Mapping[str, Any]) -> str:
+    def process_param_str(cls, param: Union[str, ParamInfo], values: Mapping[str, Any]) -> str:
         """process a path parameter to a URL string, given field values for a request,
         or return param if param is a URL string component
 
@@ -698,7 +730,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
                 if name not in values:
                     raise AssertionError("No value provided for parameter", name, param, values)
             value = values[name]
-            return param.transport_type.unparse_url_str(value)
+            return param.unparse(value)
 
     @classmethod
     def fill_path_str(cls, values) -> bytes:
@@ -799,7 +831,7 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
                 # other params can be set from cmds, generally
                 #
                 txtyp = param.transport_type
-                return not (txtyp is AccountId or txtyp.storage_class is FxHostInfo)
+                return not (issubclass(txtyp, AccountId) or txtyp.storage_class is FxHostInfo)
             mapped = Map(filter(filter_path_param, params.items()))
             cls.arg_path_params = mapped
             return mapped
@@ -847,7 +879,6 @@ class ApiRequest(InterfaceModel, ABC, Generic[T_response, T_value], metaclass=Ap
     def get_command_help(cls) -> str:
         doc = cls.__doc__
         return None if doc is None else inspect.cleandoc(doc)
-
 
     @classmethod
     def get_command_short_help(cls) -> Optional[str]:

@@ -161,13 +161,14 @@ class TestParseUnparse(PytestTest):
         # the static sample data does not include fxtrade 'mid' quotes
         assert_that(FxLabel.MID not in col_categories).is_true()
         assert_that(FxLabel.VOLUME in col_categories).is_true()
+        assert_that(FxLabel.COMPLETE in col_categories).is_true()
 
         l2_cols_uniq = frozenset(col[1] for col in cols)
         #
         # column labels in this section of the test would
         # include  "o", "h", "l", "c", and an empty string
-        # for the top-level "volume" column
-        # i.e ("volume", "")
+        # for both the top-level "volume" and "complete"
+        # columns e.g ("volume", "")
         #
         assert_that(len(l2_cols_uniq)).is_greater_than_or_equal_to(5)
         assert_that(FxLabel.OPEN in l2_cols_uniq).is_true()

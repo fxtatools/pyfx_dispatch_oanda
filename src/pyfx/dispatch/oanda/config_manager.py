@@ -8,8 +8,8 @@ import logging
 import os
 
 import yaml
-from typing import Any, Mapping, Optional, Union, Self
-from typing_extensions import TypeAlias
+from typing import Any, Mapping, Optional, Union
+from typing_extensions import Self, TypeAlias
 
 from .configuration import Configuration
 from .util.paths import expand_path, Pathname

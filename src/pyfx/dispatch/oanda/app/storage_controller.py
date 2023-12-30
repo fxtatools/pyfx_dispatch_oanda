@@ -2,13 +2,17 @@
 
 from abc import ABC, abstractmethod
 import argparse as ap
-from contextlib import contextmanager, asynccontextmanager
+from contextlib import suppress, contextmanager, asynccontextmanager
 from contextvars import ContextVar
+from datetime import datetime
+from functools import partial
 import logging
 import os
 from pathlib import Path
-from typing import Iterator, Optional
-from transaction import TransactionManager  # type: ignore[import-untyped]
+import sys
+from typing import Any, Iterator, Optional, TYPE_CHECKING
+from typing_extensions import ClassVar, Self
+from transaction import Transaction, TransactionManager, ThreadTransactionManager, Savepoint  # type: ignore[import-untyped]
 import ZODB  # type: ignore[import-untyped]
 from ZODB.Connection import Connection  # type: ignore[import-untyped]
 from ZODB.FileStorage import FileStorage  # type: ignore[import-untyped]

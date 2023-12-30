@@ -1,11 +1,10 @@
 """Parameter definition classes for the API requests model"""
 
-from abc import ABC
 from datetime import datetime
 import click
 from collections.abc import Callable, Sequence
 from enum import Enum
-from click.core import Context, Parameter
+from click.core import Context, Context as Context, Parameter
 from immutables import Map
 import inspect
 import os
@@ -15,6 +14,7 @@ from pydantic.fields import PydanticUndefined
 from types import new_class
 from typing import TYPE_CHECKING, Any, Generic, Mapping, Optional, Union
 from typing_extensions import ClassVar, Self, TypeVar, TypeAlias
+from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
 
 from pyfx.dispatch.oanda.transport.data import (
     JsonTypesRepository, TransportModelRepository
@@ -24,18 +24,14 @@ from pyfx.dispatch.oanda.transport.transport_base import (
     TransportStr,  TransportIntStr,  TransportFloatStr,
     TransportBool, TransportEnum, TransportFieldInfo,
     TransportInt, TransportTimestamp, TransportValuesType,
-    TransportNone, TransportEnumStrType, TransportTypeClass,
-    TransportInterfaceClass, TRANSPORT_VALUES_STORAGE_CLASS
+    TransportNone, TransportInterfaceClass, TRANSPORT_VALUES_STORAGE_CLASS
 )
 from pyfx.dispatch.oanda.models.common_types import (
     InstrumentName, AccountUnits, FloatValue, PriceValue, LotsValue,
     TradeId, TransactionId, OrderId, Time
 )
 
-from pyfx.dispatch.oanda.transport.repository import TransportBaseRepository
 from pyfx.dispatch.oanda.mapped_enum import MappedEnum
-
-
 
 #
 # Request Parameter Definitions - Base Classes
@@ -65,14 +61,14 @@ class ModelParam(click.Parameter, Generic[T_info]):
 
     def get_help_record(self, ctx: Context) -> Optional[tuple[str, str]]:
         ## add default value information to the help string, when avaialble
-        hrec  = super().get_help_record(ctx)
+        hrec = super().get_help_record(ctx)
         if hrec:
             name, desc = hrec
             info = self.field_info
             field_desc = info.description
             new_para = False
             if field_desc:
-                desc = desc + os.linesep +  inspect.cleandoc(field_desc)
+                desc = desc + os.linesep + inspect.cleandoc(field_desc)
                 new_para = True
             default = info.get_default()
             if default is not PydanticUndefined:
@@ -118,7 +114,6 @@ class ParamInfo(TransportFieldInfo, Generic[Ti, To]):
     if TYPE_CHECKING:
         transport_type: ClassVar["ParamInterface[Ti, To]"]
         click_param: click.Parameter
-        parse: Optional[ParseCallback] = None ## FIXME apply when provided
 
     @classmethod
     def get_types_repository(cls) -> TransportModelRepository:
@@ -134,11 +129,11 @@ class ParamInfo(TransportFieldInfo, Generic[Ti, To]):
             info.parse = parse
         return info
 
-    def parse_input(self, value: Union[Ti, To], context: Optional[click.Context] = None) -> To:
-        if hasattr(self, "parse"):
-            return self.parse(value, self)
-        else:
-            return self.transport_type.parse_arg(value, context)
+    def parse(self, value: Union[Ti, To], context: Optional[click.Context] = None) -> To:
+        return self.transport_type.parse_arg(value, context)
+
+    def unparse(self, value: Union[Ti, To]):
+        return self.transport_type.unparse_url_str(value)
 
     def to_click_param(self) -> click.Parameter:
         # usage: see ApiRequest.get_click_command()
@@ -168,9 +163,9 @@ class ParamInfo(TransportFieldInfo, Generic[Ti, To]):
             if issubclass(txtyp, TransportValuesType):
                 nargs = -1
             elif required is True:
-                nargs=1
+                nargs = 1
             else:
-                nargs=1
+                nargs = 1
 
             metavar = name
 
@@ -186,12 +181,12 @@ class ParamInfo(TransportFieldInfo, Generic[Ti, To]):
                 metavar=metavar,
                 **restargs
             )
-            param.field_info = self ## FIXME use this extension field during help formatting
+            param.field_info = self
             self.click_param = param
             return param
 
 
-class UrlParamInfo(ParamInfo):
+class UrlParamInfo(ParamInfo[Ti, To]):
     pass
 
 
@@ -200,7 +195,7 @@ class UrlParamInfo(ParamInfo):
 #
 
 
-class PathParamInfo(UrlParamInfo):
+class PathParamInfo(UrlParamInfo[Ti, To]):
     pass
 
 
@@ -212,7 +207,7 @@ def path_param(default, alias: Optional[str] = None, description: Optional[str] 
 #
 
 
-class QueryParamInfo(UrlParamInfo):
+class QueryParamInfo(UrlParamInfo[Ti, To]):
     pass
 
 
@@ -232,7 +227,6 @@ class ParamInterface(TransportInterface[Ti, To], metaclass=TransportInterfaceCla
             return cls.parse(arg)
         else:
             return arg
-
 
 
 class ParamInterfaceType(click.ParamType):
@@ -259,7 +253,7 @@ class ParamInterfaceType(click.ParamType):
 
     def convert(self, value, param: Optional[Parameter], context: Optional[Context]) -> Ti:
         # print("-- %s PARSE %r" % (self.name, value,))
-        return self.field_info.parse_input(value, context)
+        return self.field_info.parse(value, context)
 
 
 class ParamNone(ParamInterface, TransportNone):
@@ -305,6 +299,7 @@ class ParamEnum(ParamInterface, TransportEnum):
 class ParamTimestamp(ParamInterface, TransportTimestamp):
     pass
 
+
 class ParamValues(ParamInterface, TransportValuesType[Ti, To]):
     @classmethod
     def parse_arg(cls, arg: Union[Sequence[str], Sequence[Ti]]) -> Sequence[Ti]:
@@ -314,39 +309,48 @@ class ParamValues(ParamInterface, TransportValuesType[Ti, To]):
             return tuple(map(mtyp.parse_arg, arg))
         else:
             return ()
+
+#
+# common param types
+#
+
+
+class ParamInstrument(ParamInterface[InstrumentName, str], InstrumentName):
+    @classmethod
+    def parse(cls, value: Union[str, CurrencyPair]) -> CurrencyPair:
+        name = value.upper() if isinstance(value, str) else value
+        return super().parse(name)
+
+
 class ParamAccountUnits(ParamInterface, AccountUnits):
     pass
 
 
-class ParamInstrument(ParamInterface, InstrumentName):
+class ParamFloat(ParamInterface[FloatValue, str], FloatValue):
     pass
 
 
-class ParamFloat(ParamInterface, FloatValue):
+class ParamPrice(ParamInterface[PriceValue, str], PriceValue):
     pass
 
 
-class ParamPrice(ParamInterface, PriceValue):
+class ParamLots(ParamInterface[LotsValue, str], LotsValue):
     pass
 
 
-class ParamLots(ParamInterface, LotsValue):
+class ParamTradeId(ParamInterface[TradeId, str], TradeId):
     pass
 
 
-class ParamTradeId(ParamInterface, TradeId):
+class ParamTransactionId(ParamInterface[TransactionId, str], TransactionId):
     pass
 
 
-class ParamTransactionId(ParamInterface, TransactionId):
+class ParamOrderId(ParamInterface[OrderId, str], OrderId):
     pass
 
 
-class ParamOrderId(ParamInterface, OrderId):
-    pass
-
-
-class ParamTime(ParamInterface, Time):
+class ParamTime(ParamInterface[Time, str], Time):
     pass
 
 

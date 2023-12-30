@@ -84,7 +84,7 @@ from ..request_constants import RequestMethod
 from ..response_common import ResponseInfo
 from ..parser import ModelBuilder
 
-from .price_component import PriceComponent
+from ..models.price_component import PriceComponent
 
 def validate_request(func: Callable):
     ## conditional dispatch for enabling validation in

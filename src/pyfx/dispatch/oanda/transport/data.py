@@ -829,33 +829,18 @@ class ApiObject(InterfaceModel, ABC, metaclass=ApiClass):
     async def afrom_file(cls: type[T_o], file: Pathname, encoding: Optional[str] = None) -> T_o:
         # localizing the parser import, to prevent a circular dependency
         from ..parser import ModelBuilder
-        from ..io.segment import AsyncSegmentChannel
+        from anyio import open_file
 
         builder = ModelBuilder(cls)
 
-        async with AsyncSegmentChannel[bytes]() as stream:
-            ## loading the bytes data, using synchronous read
-            ## in the current thread - tpically a short duration
-            with open(file, "rb", encoding=encoding) as bytestream:
-                await stream.feed(bytestream.read(), True)
-
+        async with await open_file(file, "rb") as stream:
             async for event, value in ijson.basic_parse_async(stream, use_float=True):
-                ## parse the loaded bytes
-                ##
-                ## if ijson has reverted to using the yajl-like Python API - as may be
-                ## due to a missing yajl lib, fairly common on Windows platforms outside
-                ## of conda - then performance for e.g large OHLC quotes series may be less
-                ## than stellar here. also pretty clunky under ipython, strangely
-                ##
-                ## Not typically an issue with yajl installed, and using uvloop on other
-                ## host platforms (and not in inpython - is it the tornado novelty there?)
-                ##
+                ## parse the byte stream
                 await builder.aevent(event, value)
         return builder.instance
 
     @classmethod
-    def from_file(cls: type[T_o], controller: "ExecController", file: Pathname, encoding: Optional[str] = None) -> T_o:
-        from ..exec_controller import thread_loop
+    def from_file(cls: type[T_o], controller: ExecController, file: Pathname, encoding: Optional[str] = None) -> T_o:
         future = controller.add_cofuture()
 
         def parse_in_thread(cls: Self, file: Pathname, encoding, future: CoFuture):

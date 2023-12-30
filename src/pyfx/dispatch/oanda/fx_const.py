@@ -3,6 +3,7 @@
 from pyfx.dispatch.oanda.mapped_enum import MappedEnum
 from typing import TYPE_CHECKING
 
+
 class FxLabel(str, MappedEnum):
     if TYPE_CHECKING:
         value: str
@@ -23,13 +24,11 @@ class FxLabel(str, MappedEnum):
     #
     TIME = "time"
     VOLUME = "volume"
+    COMPLETE = "complete"
 
 
 class FxCol(tuple[str, str], MappedEnum):
     # column schema names for fxpy v20 dataframes
-    #
-    # theoretically for convenience. Pandas tends to copy
-    # any strings when constructing names for a multindex
 
     if TYPE_CHECKING:
         value: tuple[str, str]
@@ -49,7 +48,7 @@ class FxCol(tuple[str, str], MappedEnum):
     MID_LOW = (FxLabel.MID.value, FxLabel.LOW.value)
     MID_CLOSE = (FxLabel.MID.value, FxLabel.CLOSE.value)
 
-    VOLUME = (FxLabel.VOLUME.value, FxLabel.NONE.value)
     TIME = (FxLabel.TIME.value, FxLabel.NONE.value)
-    # ^ FIXME only used in the quotes static_merge_subset() prototype
     # ^ using named index otherwise
+    VOLUME = (FxLabel.VOLUME.value, FxLabel.NONE.value)
+    COMPLETE = (FxLabel.COMPLETE.value, FxLabel.NONE.value)

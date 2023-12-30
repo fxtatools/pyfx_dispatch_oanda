@@ -1,11 +1,9 @@
 """Price components for instrument candlestick requests"""
 
-from json import JSONEncoder
-from typing import Optional, Union, Iterable, TYPE_CHECKING
+from typing import Union, Iterable, TYPE_CHECKING
 from typing_extensions import Self
 
-from ..models.api_enum import ApiEnum, ApiEnumType
-from ..transport.transport_base import TransportEnum
+from .api_enum import ApiEnum, ApiEnumType
 
 class PriceComponentType(ApiEnumType):
     def __getitem__(cls, key: Union[str, Iterable[str]]) -> str:

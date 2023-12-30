@@ -18,8 +18,8 @@ import os
 import platform
 import sys
 import sysconfig
-from typing import Annotated, Any, Callable, Literal, Mapping, Optional, Self, Sequence, Union
-from typing_extensions import ClassVar, TypeVar, override
+from typing import Annotated, Any, Callable, Literal, Mapping, Optional, Sequence, Union
+from typing_extensions import ClassVar, Self, TypeVar, override
 
 if platform.system != "Windows":
     import uvloop

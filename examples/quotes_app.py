@@ -12,7 +12,7 @@ from pyfx.dispatch.oanda.transport.account_id import AccountId
 
 from pyfx.dispatch.oanda.models.candlestick_granularity import CandlestickGranularity
 from pyfx.dispatch.oanda.models.currency_pair import CurrencyPair
-from pyfx.dispatch.oanda.api.price_component import PriceComponent
+from pyfx.dispatch.oanda.models.price_component import PriceComponent
 
 from contextlib import contextmanager
 import logging
