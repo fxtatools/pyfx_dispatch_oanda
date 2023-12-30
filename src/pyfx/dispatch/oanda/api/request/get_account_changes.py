@@ -18,7 +18,7 @@ from ...api.param_info import path_param, query_param
 
 
 class GetAccountSummaryRequest(ApiRestRequest[GetAccountChanges200Response, Account]):
-    """Fetch information about changes in orders, trades, positions, and transactions
+    """Fetch details for changes in orders, trades, positions, and transactions
     since some transaction ID
     """
 
@@ -33,4 +33,4 @@ class GetAccountSummaryRequest(ApiRestRequest[GetAccountChanges200Response, Acco
     since_transaction_id = Annotated[Optional[TransactionId], query_param(None, alias="sinceTransactionID")]
 
 
-__all__ = ("GetAccountRequest",)
+__all__ = ("GetAccountSummaryRequest",)

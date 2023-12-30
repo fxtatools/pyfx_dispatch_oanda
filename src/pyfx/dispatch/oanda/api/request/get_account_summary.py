@@ -28,4 +28,4 @@ class GetAccountSummaryRequest(ApiRestRequest[GetAccountSummary200Response, Acco
     account_id: Annotated[AccountId, path_param(..., alias="accountID")]
 
 
-__all__ = ("GetAccountRequest",)
+__all__ = ("GetAccountSummaryRequest",)
