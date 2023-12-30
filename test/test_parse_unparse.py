@@ -23,6 +23,8 @@ from pyfx.dispatch.oanda.models import (
     ListTrades200Response
 )
 
+from pyfx.dispatch.oanda.models.get_instrument_candles200_response import GetAccountCandlesLatest200Response
+
 from pyfx.dispatch.oanda.fx_const import FxLabel, FxCol
 
 pytest_plugins = ('pytest_asyncio',)
@@ -62,6 +64,7 @@ class TestParseUnparse(PytestTest):
             GetAccountSummary200Response,
             GetAccountInstruments200Response,
             GetInstrumentCandles200Response,
+            GetAccountCandlesLatest200Response,
             GetTransactionRange200Response,
             ListOrders200Response,
             ListTrades200Response
