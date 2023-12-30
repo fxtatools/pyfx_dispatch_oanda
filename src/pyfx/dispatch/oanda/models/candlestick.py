@@ -2,6 +2,8 @@
 
 from typing import Annotated, Optional
 
+import numpy as np
+
 from ..transport.data import ApiObject
 from ..transport.transport_fields import TransportField
 
@@ -34,7 +36,7 @@ class Candlestick(ApiObject):
     The candlestick data based on bids. Only provided if bid-based candles were requested.
     """
 
-    volume: Annotated[int, TransportField(...)]
+    volume: Annotated[int, TransportField(..., storage_type = np.uint32)]
     """
     The number of prices created during the time-range represented by the candlestick.
     """
